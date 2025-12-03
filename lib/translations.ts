@@ -746,6 +746,24 @@ const fr: TranslationMap = {
   'workout.intensity.medium': 'Moyenne',
   'workout.intensity.high': 'Élevée',
   'workout.inputPlaceholder': 'Décrivez un objectif spécifique ou une blessure...',
+
+  // Profile Page - French
+  'profile.premiumMember': 'Membre Premium',
+  'profile.goal': 'Objectif',
+  'goal.build_muscle': 'Prise de masse',
+  'profile.level': 'Niveau',
+  'level.intermediate': 'Intermédiaire',
+  'device.title': 'Équipement Holographique',
+  'profile.subscription.title': 'Abonnement',
+  'profile.history.title': 'Historique',
+  'profile.saved.title': 'Séances Sauvegardées',
+  'profile.services.title': 'Services d\'Experts',
+  'profile.sync.title': 'Synchroniser Profil',
+  'profile.share.title': 'Partager Progrès',
+  'profile.language.title': 'Langue',
+  'profile.about.title': 'À propos',
+  'profile.privacy.title': 'Confidentialité & Conditions',
+  'profile.reset': 'Réinitialiser App',
 };
 
 // --- ARABIC ---
@@ -914,6 +932,24 @@ const ar: TranslationMap = {
   'workout.intensity.medium': 'متوسطة',
   'workout.intensity.high': 'عالية',
   'workout.inputPlaceholder': 'صف أي تركيز محدد أو إصابة...',
+
+  // Profile Page - Arabic
+  'profile.premiumMember': 'عضو بريميوم',
+  'profile.goal': 'الهدف',
+  'goal.build_muscle': 'بناء العضلات',
+  'profile.level': 'المستوى',
+  'level.intermediate': 'متوسط',
+  'device.title': 'معدات هولوغرافية',
+  'profile.subscription.title': 'الاشتراك',
+  'profile.history.title': 'السجل',
+  'profile.saved.title': 'التمارين المحفوظة',
+  'profile.services.title': 'خدمات الخبراء',
+  'profile.sync.title': 'مزامنة الملف',
+  'profile.share.title': 'مشاركة التقدم',
+  'profile.language.title': 'اللغة',
+  'profile.about.title': 'حول التطبيق',
+  'profile.privacy.title': 'الخصوصية والشروط',
+  'profile.reset': 'إعادة تعيين التطبيق',
 };
 
 // --- SPANISH ---
@@ -1082,6 +1118,24 @@ const es: TranslationMap = {
   'workout.intensity.medium': 'Media',
   'workout.intensity.high': 'Alta',
   'workout.inputPlaceholder': 'Describe cualquier enfoque específico o lesión...',
+
+  // Profile Page - Spanish
+  'profile.premiumMember': 'Miembro Premium',
+  'profile.goal': 'Objetivo',
+  'goal.build_muscle': 'Ganar Músculo',
+  'profile.level': 'Nivel',
+  'level.intermediate': 'Intermedio',
+  'device.title': 'Equipo Holográfico',
+  'profile.subscription.title': 'Suscripción',
+  'profile.history.title': 'Historial',
+  'profile.saved.title': 'Rutinas Guardadas',
+  'profile.services.title': 'Servicios Expertos',
+  'profile.sync.title': 'Sincronizar Perfil',
+  'profile.share.title': 'Compartir Progreso',
+  'profile.language.title': 'Idioma',
+  'profile.about.title': 'Sobre la App',
+  'profile.privacy.title': 'Privacidad y Términos',
+  'profile.reset': 'Reiniciar App',
 };
 
 // --- JAPANESE ---
@@ -1250,6 +1304,24 @@ const ja: TranslationMap = {
   'workout.intensity.medium': '中',
   'workout.intensity.high': '高',
   'workout.inputPlaceholder': '特定の焦点や怪我について記述してください...',
+
+  // Profile Page - Japanese
+  'profile.premiumMember': 'プレミアム会員',
+  'profile.goal': '目標',
+  'goal.build_muscle': '筋肥大',
+  'profile.level': 'レベル',
+  'level.intermediate': '中級',
+  'device.title': 'ホログラフィックギア',
+  'profile.subscription.title': 'サブスクリプション',
+  'profile.history.title': '履歴',
+  'profile.saved.title': '保存されたワークアウト',
+  'profile.services.title': '専門家サービス',
+  'profile.sync.title': 'プロフィール同期',
+  'profile.share.title': '進捗を共有',
+  'profile.language.title': '言語',
+  'profile.about.title': 'アプリについて',
+  'profile.privacy.title': 'プライバシーと規約',
+  'profile.reset': 'アプリをリセット',
 };
 
 // --- PORTUGUESE ---
@@ -1418,6 +1490,24 @@ const pt: TranslationMap = {
   'workout.intensity.medium': 'Média',
   'workout.intensity.high': 'Alta',
   'workout.inputPlaceholder': 'Descreva qualquer foco específico ou lesão...',
+
+  // Profile Page - Portuguese
+  'profile.premiumMember': 'Membro Premium',
+  'profile.goal': 'Objetivo',
+  'goal.build_muscle': 'Ganhar Músculo',
+  'profile.level': 'Nível',
+  'level.intermediate': 'Intermediário',
+  'device.title': 'Equipamento Holográfico',
+  'profile.subscription.title': 'Assinatura',
+  'profile.history.title': 'Histórico',
+  'profile.saved.title': 'Treinos Salvos',
+  'profile.services.title': 'Serviços Especializados',
+  'profile.sync.title': 'Sincronizar Perfil',
+  'profile.share.title': 'Compartilhar Progresso',
+  'profile.language.title': 'Idioma',
+  'profile.about.title': 'Sobre o App',
+  'profile.privacy.title': 'Privacidade e Termos',
+  'profile.reset': 'Redefinir App',
 };
 
 // --- CHINESE ---
@@ -1586,6 +1676,24 @@ const zh: TranslationMap = {
   'workout.intensity.medium': '中',
   'workout.intensity.high': '高',
   'workout.inputPlaceholder': '描述任何特定重点或受伤情况...',
+
+  // Profile Page - Chinese
+  'profile.premiumMember': '高级会员',
+  'profile.goal': '目标',
+  'goal.build_muscle': '增肌',
+  'profile.level': '等级',
+  'level.intermediate': '中级',
+  'device.title': '全息装备',
+  'profile.subscription.title': '订阅',
+  'profile.history.title': '历史记录',
+  'profile.saved.title': '已保存的锻炼',
+  'profile.services.title': '专家服务',
+  'profile.sync.title': '同步资料',
+  'profile.share.title': '分享进度',
+  'profile.language.title': '语言',
+  'profile.about.title': '关于应用',
+  'profile.privacy.title': '隐私与条款',
+  'profile.reset': '重置应用',
 };
 
 // --- RUSSIAN ---
@@ -1754,6 +1862,24 @@ const ru: TranslationMap = {
   'workout.intensity.medium': 'Средняя',
   'workout.intensity.high': 'Высокая',
   'workout.inputPlaceholder': 'Опишите особые пожелания или травмы...',
+
+  // Profile Page - Russian
+  'profile.premiumMember': 'Премиум участник',
+  'profile.goal': 'Цель',
+  'goal.build_muscle': 'Набор массы',
+  'profile.level': 'Уровень',
+  'level.intermediate': 'Средний',
+  'device.title': 'Голографическое снаряжение',
+  'profile.subscription.title': 'Подписка',
+  'profile.history.title': 'История',
+  'profile.saved.title': 'Сохраненные',
+  'profile.services.title': 'Экспертные услуги',
+  'profile.sync.title': 'Синхронизация',
+  'profile.share.title': 'Поделиться',
+  'profile.language.title': 'Язык',
+  'profile.about.title': 'О приложении',
+  'profile.privacy.title': 'Конфиденциальность',
+  'profile.reset': 'Сбросить',
 };
 
 export const TRANSLATIONS: { [key in Language]: TranslationMap } = {
