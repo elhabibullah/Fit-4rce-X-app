@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3043/3043233.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fit-4rce-X</title>
+
+    <!-- PWA & Mobile Display Enhancements -->
+    <meta name="application-name" content="Fit-4rce-X">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fit-4rce-X">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3043/3043233.png">
+
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="manifest.json?v=10" crossorigin="use-credentials">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+      body {
+        font-family: 'Poppins', sans-serif;
+        background-color: transparent; /* Allow background layers to show through */
+        color: #d1d5db; /* Gray-300 */
+        min-height: 100vh;
+      }
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Poppins', sans-serif;
+        color: #ffffff; /* White */
+        font-weight: 700; /* Bold */
+      }
+      
+      /* Core Animations */
+      .animate-fadeIn {
+        animation: fadeIn 0.5s ease-in-out;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .animate-slideInUp {
+        animation: slideInUp 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+      }
+      @keyframes slideInUp {
+        0% { transform: translateY(100%); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+
+      /* TV On Animation */
+      @keyframes tvOn {
+          0% { transform: scale(1, 0.01); opacity: 0; }
+          30% { transform: scale(1, 0.01); opacity: 1; }
+          32% { transform: scale(0.01, 0.01); opacity: 0; } /* Blink */
+          34% { transform: scale(1, 0.01); opacity: 1; } /* Blink */
+          70% { transform: scale(1, 1); opacity: 1; }
+          100% { transform: scale(1, 1); opacity: 1; }
+      }
+      .animate-tv-on {
+          animation: tvOn 0.7s forwards;
+          transform-origin: center;
+      }
+
+      /* Glowing Border Effect (Purple) */
+      @keyframes rotateGlow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .glow-container {
+        position: relative;
+        border-radius: 1rem; /* 16px */
+        padding: 1px; /* Thinner border */
+        overflow: hidden;
+        z-index: 0;
+      }
+      .glow-container::before {
+        content: "";
+        position: absolute;
+        z-index: -1;
+        top: -150%;
+        left: -150%;
+        width: 400%;
+        height: 400%;
+        background: conic-gradient(
+          from 0deg at 50% 50%, 
+          transparent 0%, 
+          #8A2BE2 4%, 
+          transparent 10%
+        );
+        animation: rotateGlow 3s linear infinite;
+        transition: animation-duration 0.3s ease;
+      }
+      .glow-container:hover::before {
+        animation-duration: 1.5s;
+      }
+
+      /* Golden Glow Effect for Premium Highlights */
+      .gold-glow-container {
+        position: relative;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .gold-glow-container::before {
+        content: "";
+        position: absolute;
+        z-index: -1;
+        top: -150%;
+        left: -150%;
+        width: 400%;
+        height: 400%;
+        background: conic-gradient(
+          from 0deg at 50% 50%, 
+          transparent 0%, 
+          #FFD700 15%, 
+          transparent 30%
+        );
+        animation: rotateGlow 2.5s linear infinite;
+      }
+
+      .glow-content {
+        background-color: #121212; /* Dark, almost black background */
+        border-radius: calc(1rem - 1px); /* Match container border-radius minus padding */
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* --- Background Layering System --- */
+      #root {
+        isolation: isolate; /* Create a new stacking context for the app */
+      }
+      .app-background {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #000;
+        z-index: -2; /* Layer 1: The very back */
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@19.2.0/",
+    "react": "https://aistudiocdn.com/react@19.2.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@19.2.0/",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@19.2.0/client",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@1.27.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@0.548.0",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@2.45.0",
+    "@stripe/stripe-js": "https://aistudiocdn.com/@stripe/stripe-js@4.3.0",
+    "three": "https://aistudiocdn.com/three@0.164.1/build/three.module.js",
+    "three/": "https://aistudiocdn.com/three@0.164.1/",
+    "@react-three/fiber": "https://aistudiocdn.com/@react-three/fiber@8.16.8",
+    "@react-three/fiber/": "https://aistudiocdn.com/@react-three/fiber@8.16.8/",
+    "@react-three/drei": "https://aistudiocdn.com/@react-three/drei@9.109.2",
+    "@react-three/drei/": "https://aistudiocdn.com/@react-three/drei@9.109.2/",
+    "@react-three/postprocessing": "https://aistudiocdn.com/@react-three/postprocessing@2.17.0",
+    "@react-three/postprocessing/": "https://aistudiocdn.com/@react-three/postprocessing@2.17.0/",
+    "leaflet": "https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js",
+    "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?external=react,react-dom,leaflet"
+  }
+}
+</script>
+</head>
+  <body>
+    <div class="app-background"></div>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          // Updated to v14 to ensure fresh cache load
+          navigator.serviceWorker.register('sw.js?v=14', { scope: './' })
+            .then(registration => {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(error => {
+              console.log('ServiceWorker registration failed: ', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

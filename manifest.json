@@ -1,0 +1,24 @@
+{
+  "name": "Fit-4rce-X",
+  "short_name": "Fit-4rce-X",
+  "description": "A premium, AI-powered mobile fitness application featuring personalized workout generation, interactive 3D exercise models, nutrition and fasting modules, self-defense training, and expert advice booking. Designed with a futuristic, holographic UI for a cutting-edge fitness experience.",
+  "start_url": "/index.html",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3043/3043233.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3043/3043233.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
