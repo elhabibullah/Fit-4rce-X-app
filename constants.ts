@@ -1,14 +1,23 @@
 
 import { DurationOption, Language } from './types.ts';
 
-// This file now primarily contains non-translatable data structures.
-// The translatable content (plans, trainers, etc.) is now generated in `lib/i18n.ts`.
-
 // AWS S3 Link - High Performance 3D Streaming
-// CLEAN URL - No query parameters
-export const COACH_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/Android%20model%20coach%20ft4x_compressed.glb";
-export const SPINNING_COACH_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/Spinning_coach_compressed.glb"; 
-export const TECHNIQUE_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/Android%20model%20coach%20ft4x_compressed.glb";
+export const COACH_MODEL_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_coach.glb";
+export const SPINNING_COACH_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/Spinning_coach_compressed.glb?v=12350"; 
+export const TECHNIQUE_MODEL_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_coach.glb";
+
+/**
+ * EXERCISE MODEL LIBRARY
+ * When you upload your DeepMotion animated files to S3, 
+ * put the new URLs here. The app will automatically 
+ * cache them for OFFLINE use.
+ */
+export const MODEL_LIBRARY: Record<string, string> = {
+    'default': COACH_MODEL_URL,
+    'pushups': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/pushups.glb', // Placeholder: Update when ready
+    'squats': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/squats.glb',   // Placeholder: Update when ready
+    'spinning': SPINNING_COACH_MODEL_URL,
+};
 
 export const DURATION_OPTIONS: DurationOption[] = [
   { months: 1, discount: 0 },
@@ -17,7 +26,6 @@ export const DURATION_OPTIONS: DurationOption[] = [
   { months: 12, discount: 15, gift: 'free_bracelet' },
 ];
 
-// Base structure for trainers with high-quality, non-placeholder images.
 export const TRAINER_STRUCTURE = [
   {
     id: 'abdel',
@@ -42,7 +50,6 @@ export const TRAINER_STRUCTURE = [
   },
 ];
 
-// Base structure for languages, name will be translated
 export const LANGUAGE_STRUCTURE: { code: Language; flag: string }[] = [
     { code: Language.EN, flag: '🇬🇧' },
     { code: Language.FR, flag: '🇫🇷' },

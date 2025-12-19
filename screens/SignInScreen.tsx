@@ -19,7 +19,7 @@ const SignInScreen: React.FC<SignInScreenProps> = ({ onBack }) => {
         // Simulate network delay for mock login
         setTimeout(() => {
             signIn({ 
-                full_name: 'El Habibullah', 
+                full_name: 'Abdelwahid', 
                 language: language,
                 email: email,
             });

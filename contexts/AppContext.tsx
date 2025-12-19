@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { DailyMacros, FastingPlan, Language, Meal, MealPlanSection, Screen, TrainerProfile, TranslatedConstants, UserProfile, WeightHistoryItem, WorkoutPlan, WorkoutHistoryItem, OnboardingStep, CurrencyInfo, AIProvider, WorkoutGenerationParams, ConnectedDevice, LiveBioMetrics } from '../types.ts';
@@ -68,12 +67,8 @@ interface AppContextType {
   setVoiceWorkoutParams: (params: WorkoutGenerationParams | null) => void;
   startWorkoutFromVoice: (params: WorkoutGenerationParams) => void;
   generateAndCacheDietPlan: () => Promise<{ macros: DailyMacros, meals: MealPlanSection[] } | null>;
-  
-  // Navigation Deep Links
   nutritionTab: string | null;
   setNutritionTab: (tab: string | null) => void;
-
-  // Device Stuff
   connectDevice: () => Promise<void>;
   disconnectDevice: () => void;
   deviceMetrics: LiveBioMetrics;
@@ -112,13 +107,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [userLocation, setUserLocation] = useState<{ currency: string; countryCode: string } | null>(null);
   const [voiceWorkoutParams, setVoiceWorkoutParams] = useState<WorkoutGenerationParams | null>(null);
   const [nutritionTab, setNutritionTab] = useState<string | null>(null);
-
-  // Device State
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
   const [deviceMetrics, setDeviceMetrics] = useState<LiveBioMetrics>({ heartRate: 0, caloriesBurned: 0, steps: 0, isActive: false });
   const metricsInterval = useRef<number | null>(null);
   
-  // Helper to update profile
   const updateUserProfile = useCallback((updates: Partial<UserProfile>) => {
     let finalizedProfileForEffect: UserProfile | null = null;
     setProfile(prev => {
@@ -150,14 +142,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [session]);
 
-  // Helper function to show status toast
   const showStatus = useCallback((message: string) => {
     setStatusMessage(message);
     setTimeout(() => setStatusMessage(null), 3000);
   }, []);
 
   const connectDevice = useCallback(async () => {
-      // Simulate connection delay
       await new Promise(resolve => setTimeout(resolve, 2500));
       const newDevice: ConnectedDevice = {
           id: 'device_001',
@@ -180,15 +170,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const startDeviceStream = useCallback(() => {
       if (!profile?.connected_device) return;
-      setDeviceMetrics(prev => ({ ...prev, isActive: true, heartRate: 75 })); // Initial resting HR
-      
+      setDeviceMetrics(prev => ({ ...prev, isActive: true, heartRate: 75 })); 
       if (metricsInterval.current) clearInterval(metricsInterval.current);
-      
       metricsInterval.current = window.setInterval(() => {
           setDeviceMetrics(prev => {
-              // Simulate realistic fluctuation
               const newHr = Math.min(185, Math.max(60, prev.heartRate + (Math.random() * 10 - 4))); 
-              const burned = prev.caloriesBurned + (newHr > 100 ? 0.15 : 0.02); // Burn more if HR is high
+              const burned = prev.caloriesBurned + (newHr > 100 ? 0.15 : 0.02);
               return {
                   ...prev,
                   heartRate: Math.floor(newHr),
@@ -259,7 +246,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
 
       if (isOwner) {
-        finalProfile.full_name = 'El Habibullah';
+        finalProfile.full_name = 'Abdelwahid';
         finalProfile.avatar_url = 'https://ai-webbuilder-prod.s3.us-east-1.amazonaws.com/public/images/ad85aead516242b9b73a5140f6db62a1/cc8f37e7e15f4533853e60c5f1ec1a24.Generated%20Image%20October%2018%2C%202025%20-%201_09PM%20%281%29.png';
       }
 
@@ -370,7 +357,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const openBookingScreen = (trainer: TrainerProfile) => setExpertToBook(trainer);
   const closeBookingScreen = () => setExpertToBook(null);
-  
   const clearInstallPrompt = () => setInstallPromptEvent(null);
 
   const logWorkout = (plan: WorkoutPlan) => {
@@ -442,43 +428,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const constants = useMemo(() => {
     const stableLanguage = profile?.language || language;
-    const stableTranslate = (key: string, replacements?: { [key: string]: string | number }) => {
-        let str = translations[stableLanguage]?.[key] || key;
-        if (replacements) {
-            Object.keys(replacements).forEach(rKey => {
-                str = str.replace(new RegExp(`{{${rKey}}}`, 'g'), String(replacements[rKey]));
-            });
-        }
-        return str;
-    };
-    return getTranslatedConstants(stableLanguage, stableTranslate);
-  }, [profile?.language, language]);
-
-  const workoutHistory = profile?.workout_history || [];
-  const savedWorkouts = profile?.saved_workouts || [];
-
-  const isSubscribed = profile?.subscription_status === 'active';
+    return getTranslatedConstants(stableLanguage, translate);
+  }, [profile?.language, language, translate]);
 
   const value = {
-    session, user, profile, loading, isSubscribed, planId, updateUserProfile, resetApp, signIn,
-    finalizeOnboarding, isSyncing, syncProfile, language, setLanguage, screen, setScreen,
-    expertToBook, openBookingScreen, closeBookingScreen, onboardingStep, setOnboardingStep,
-    showSignIn, setShowSignIn, statusMessage, showStatus, isCoachOpen, setIsCoachOpen, coachContext,
-    setCoachContext, selectedCoachPersona, setSelectedCoachPersona, installPromptEvent,
-    clearInstallPrompt, isStandalone, translate, constants, workoutHistory, logWorkout,
-    savedWorkouts, saveWorkoutPlan, selectedPlan, setSelectedPlan, nutritionHistory,
-    logMeal, dietPlan, setDietPlan, dailyMacros, setDailyMacros, updateFastingPlan,
-    addWeightLog, updateWeightGoal, updateUserMetrics, currencyInfo, setCurrency, userLocation,
-    voiceWorkoutParams, setVoiceWorkoutParams, startWorkoutFromVoice, generateAndCacheDietPlan,
-    nutritionTab, setNutritionTab,
-    // Device
-    connectDevice, disconnectDevice, deviceMetrics, isDeviceConnected, startDeviceStream, stopDeviceStream,
-    isDeviceModalOpen, openDeviceModal, closeDeviceModal
+    session, user, profile, loading, isSubscribed: profile?.subscription_status === 'active',
+    planId, updateUserProfile, resetApp, signIn, finalizeOnboarding, isSyncing, syncProfile,
+    language, setLanguage, screen, setScreen, expertToBook, openBookingScreen, closeBookingScreen,
+    onboardingStep, setOnboardingStep, showSignIn, setShowSignIn, statusMessage, showStatus,
+    isCoachOpen, setIsCoachOpen, coachContext, setCoachContext, selectedCoachPersona, setSelectedCoachPersona,
+    installPromptEvent, clearInstallPrompt, isStandalone, translate, constants,
+    workoutHistory: profile?.workout_history || [], logWorkout,
+    savedWorkouts: profile?.saved_workouts || [], saveWorkoutPlan,
+    selectedPlan, setSelectedPlan, nutritionHistory, logMeal, dietPlan, setDietPlan,
+    dailyMacros, setDailyMacros, updateFastingPlan, addWeightLog, updateWeightGoal, updateUserMetrics,
+    currencyInfo, setCurrency, userLocation, voiceWorkoutParams, setVoiceWorkoutParams, startWorkoutFromVoice,
+    generateAndCacheDietPlan, nutritionTab, setNutritionTab, connectDevice, disconnectDevice,
+    deviceMetrics, isDeviceConnected, startDeviceStream, stopDeviceStream, isDeviceModalOpen,
+    openDeviceModal, closeDeviceModal
   };
 
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

@@ -1,11 +1,16 @@
 
-const CACHE_NAME = 'fit-4rce-x-cache-v606';
+const CACHE_NAME = 'fit-4rce-x-cache-v612';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
   'https://cdn-icons-png.flaticon.com/512/3043/3043233.png',
-  'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap'
+  'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap',
+  // PRE-CACHE ALL 3D MODELS IN THE LIBRARY
+  'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_coach.glb',
+  'https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/Spinning_coach_compressed.glb?v=12350',
+  'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/pushups.glb',
+  'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/squats.glb'
 ];
 
 self.addEventListener('install', event => {
@@ -13,7 +18,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache v606');
+        console.log('Opened cache v612 - Storing 3D Library for Offline Use');
         return cache.addAll(urlsToCache);
       })
   );
@@ -39,6 +44,7 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
+        // Return from cache if found, otherwise fetch from network
         if (response) {
           return response;
         }

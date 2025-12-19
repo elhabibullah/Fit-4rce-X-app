@@ -12,6 +12,7 @@ import { generateWorkoutWithGemini } from '../services/aiService.ts';
 import Loader from '../components/common/Loader.tsx';
 import RunnerMap from '../components/common/RunnerMap.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
+import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
 
 type RunningView = 'config' | 'generating' | 'briefing' | 'environment_select' | 'countdown' | 'active';
 
@@ -512,6 +513,32 @@ const RunningScreen: React.FC = () => {
             </div>
         </div>
       </div>
+
+      {/* COACH OVERLAY */}
+      {view === 'active' && (
+          <div 
+            className={`
+                absolute z-40 overflow-hidden rounded-2xl border-2 border-orange-500/50 bg-black/40 backdrop-blur-sm shadow-[0_0_20px_rgba(249,115,22,0.2)]
+                transition-all duration-500
+                ${isTVMode 
+                    ? 'bottom-12 right-12 w-80 h-80 border-4'
+                    : 'bottom-24 right-4 w-40 h-48'
+                }
+            `}
+          >
+              <HolographicCoach 
+                isPaused={!isActive} 
+                state={isActive ? 'active' : 'idle'} 
+                modelUrl={COACH_MODEL_URL}
+                cameraOrbit="0deg 85deg 3m"
+                cameraTarget="0m 0.9m 0m"
+              />
+              
+              <div className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded animate-pulse z-50">
+                  {translate('live.badge')}
+              </div>
+          </div>
+      )}
 
       {/* 4. CONTROL DECK (Fixed at Bottom, always visible) */}
       {!isTVMode && (

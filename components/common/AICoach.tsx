@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { GoogleGenAI, LiveSession, LiveServerMessage, Modality, Blob, FunctionDeclaration, Type } from '@google/genai';
 import { X, Mic, MicOff, Heart, Flame } from 'lucide-react';
@@ -66,16 +65,17 @@ function createBlob(data: Float32Array): Blob {
 
 const startWorkoutGenerationDeclaration: FunctionDeclaration = {
     name: 'startWorkoutGeneration',
-    description: 'ONLY call this function if the user EXPLICITLY asks to "start a workout", "generate a plan", or "begin training". DO NOT call this if the user asks a question, asks for advice, or says hello.',
+    description: 'Call this function ONLY when the user has specified their desired INTENSITY and EQUIPMENT availability. Do NOT call this if either is missing.',
     parameters: {
         type: Type.OBJECT,
         properties: {
             workoutType: { type: Type.STRING, enum: ['calisthenics', 'fitness', 'powerlifting', 'pilates', 'yoga_stretching'], description: 'The type of workout.' },
-            equipment: { type: Type.ARRAY, items: { type: Type.STRING, enum: ['bodyweight', 'free_weights', 'full_gym'] }, description: 'The equipment available. Can be multiple.' },
+            equipment: { type: Type.ARRAY, items: { type: Type.STRING, enum: ['bodyweight', 'free_weights', 'full_gym'] }, description: 'The equipment available. Can be multiple. MANDATORY.' },
             targetArea: { type: Type.ARRAY, items: { type: Type.STRING, enum: ['upper_body', 'lower_body', 'core_planks', 'full_body'] }, description: 'The body area to target. Can be multiple.' },
-            intensity: { type: Type.STRING, enum: ['low', 'medium', 'high'], description: 'The intensity of the workout.' },
+            intensity: { type: Type.STRING, enum: ['low', 'medium', 'high'], description: 'The intensity of the workout. MANDATORY.' },
             customPrompt: { type: Type.STRING, description: 'Any other specific user requests mentioned in their prompt.' }
         },
+        required: ['intensity', 'equipment']
     }
 };
 
@@ -90,11 +90,15 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const sessionRef = useRef<LiveSession | null>(null);
   const audioResourcesRef = useRef<any>({});
   const isMutedRef = useRef(isMuted);
+  
+  // Ref to track navigation state to prevent duplicate triggers
+  const isNavigatingRef = useRef(false);
+
   useEffect(() => {
     isMutedRef.current = isMuted;
     if (audioResourcesRef.current.outputGainNode) {
-        // If muted, gain is 0, otherwise boosted to 3.0 for louder volume
-        audioResourcesRef.current.outputGainNode.gain.value = isMuted ? 0 : 3.0;
+        // Reduced volume to 1.0 (Standard)
+        audioResourcesRef.current.outputGainNode.gain.value = isMuted ? 0 : 1.0;
     }
   }, [isMuted]);
 
@@ -115,53 +119,25 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     };
     const languageName = languageMap[language || 'en'];
 
-    const personaMap: Record<AIProvider, string> = {
-        gemini: `You are Fit-4rce-X, an android humanoid AI coach named Noemie.`,
-        anthropic: `You are Fit-4rce-X, an android humanoid AI coach named Noor.`,
-        openai: `You are Fit-4rce-X, an android humanoid AI coach named Abdelwahid.`,
-        perplexity: `You are Fit-4rce-X, an android humanoid AI coach named Saudi.`,
-    };
-
-    let prompt = `${personaMap[selectedCoachPersona]} You are speaking directly to the user. Your voice should be clear, encouraging, and slightly futuristic, but not robotic. Your personality is that of a supportive and knowledgeable training partner. The user's name is ${profile?.full_name || 'user'}. They are ${profile?.age || 'an unknown age'} years old. Their stated fitness goals are: ${profile?.goal?.join(', ') || 'not specified'}. Their fitness level is ${profile?.fitness_level || 'not specified'}. You must reply *only* in ${languageName}. Do not use any other language under any circumstances.`;
+    let prompt = `You are Fit-4rce-X, an android humanoid AI coach. You are speaking directly to the user. Your voice should be clear, encouraging, and slightly futuristic, but not robotic. Your personality is that of a supportive and knowledgeable training partner. The user's name is ${profile?.full_name || 'user'}. You must reply *only* in ${languageName}. Do not use any other language under any circumstances.`;
     
     // --- LIVE METRICS INJECTION ---
     if (isDeviceConnected) {
         prompt += `\n\n[LIVE TELEMETRY]:
         - Heart Rate: ${deviceMetrics.heartRate} BPM
         - Calories Burned: ${Math.floor(deviceMetrics.caloriesBurned)} kcal
-        - Activity State: ${deviceMetrics.isActive ? 'Active' : 'Resting'}
-        
-        Use this data. If HR is > 160, advise pacing. If HR is < 100 during work, advise pushing harder.`;
+        - Activity State: ${deviceMetrics.isActive ? 'Active' : 'Resting'}`;
     }
 
-    // --- F4X NUTRITION INJECTION ---
-    prompt += `\n\n[F4X NUTRITION SYSTEM]:
-    You are integrated with the user's F4X NUTRITION supply chain.
-    - If the user mentions low energy, recommend "F4X NEURO-IGNITE" (Pre-workout).
-    - If the user asks about recovery or protein, recommend "F4X ISO-WHEY".
-    - If the user asks about joint pain or general health, recommend "F4X OMEGA-ARMOR".
-    Refer to these as "tactical supplies" or "fuel" to maintain the brand aesthetic.`;
-
-    if (dailyMacros) {
-        prompt += `\n\nBe aware of their nutrition today: They have consumed ${Math.round(dailyMacros.calories.current)} out of their ${dailyMacros.calories.goal} calorie goal. You can use this information to give holistic advice that connects their training with their diet.`
-    }
-
-    if (coachContext) {
-        prompt += `\nThe user is currently in a workout session, performing the "${coachContext}" exercise. Start the conversation by acknowledging this. You can offer specific tips on form for this exercise, ask how many reps they have left, or give them a motivational push to finish strong. Be direct and focused on the workout. For example: "Focus on your form for the ${coachContext}. Keep your core tight. You've got this!"`;
-    } else if (workoutHistory && workoutHistory.length > 0) {
-        const lastWorkout = workoutHistory[0];
-        prompt += `\nTheir last logged workout was "${lastWorkout.title}" on ${lastWorkout.date}. Start the conversation by greeting them warmly by name. You can reference their last workout and ask how they're feeling, or what their plan is for today. Keep your opening brief and conversational. For example: "Welcome back, ${profile?.full_name}. I see your last session was ${lastWorkout.title}. How are you feeling today?"`;
-    } else {
-        prompt += `\nThis is the user's first time activating you. Start the conversation by introducing yourself briefly and welcoming them to their personalized training experience. Ask them what they're excited to accomplish. For example: "Welcome, ${profile?.full_name}. I am your personal AI training partner. I'm ready to help you achieve your goals. What's our mission for today?"`;
-    }
-    
-    // --- UPDATED PROTOCOL TO FIX USER FRUSTRATION ---
-    prompt += `\n\n*** CRITICAL OVERRIDE PROTOCOL - READ CAREFULLY ***`;
-    prompt += `\n1. **Q&A PRIORITY**: If the user says "I have a question", "Can I ask something", or asks ANY question about fitness, nutrition, or life, YOU MUST ANSWER THE QUESTION. Do NOT start a workout. Do NOT call the "startWorkoutGeneration" tool. Just talk naturally.`;
-    prompt += `\n2. **WORKOUT TRIGGER**: ONLY call the \`startWorkoutGeneration\` tool if the user EXPLICITLY says "Start workout", "Generate plan", "I want to train", or similar COMMANDS.`;
-    prompt += `\n   - If the user input is vague, ASK FOR CLARIFICATION. Do not assume they want to start a workout.`;
-    prompt += `\n3. **NO CODE OUTPUT**: You are a voice assistant. Do NOT output code blocks, JSON, XML, or Markdown formatting (like bold, italics, lists). Speak in plain text only.`;
-    prompt += `\n\n**SUMMARY**: IF IN DOUBT, JUST TALK. DO NOT START A WORKOUT UNLESS COMMANDED. NO CODE.`;
+    // --- CRITICAL OVERRIDE PROTOCOL ---
+    prompt += `\n\n*** CRITICAL PROTOCOL - READ CAREFULLY ***`;
+    prompt += `\n1. **FITNESS LEVEL**: The user's profile level is **${profile?.fitness_level || 'Intermediate'}**. Use this value automatically. **NEVER ASK THE USER FOR THEIR LEVEL.**`;
+    prompt += `\n2. **MISSING INFO CHECK**: If the user says "I want to train" but is missing **INTENSITY** or **EQUIPMENT**, you MUST ask for them.`;
+    prompt += `\n   - Example: "What intensity and what equipment do you have available?"`;
+    prompt += `\n   - **DO NOT** call the tool until you have BOTH Intensity AND Equipment.`;
+    prompt += `\n3. **CONFIRMATION & EXECUTION**: Once you have all info:`;
+    prompt += `\n   - **Step A**: Speak exactly: "Let me prepare your exercises" (in ${languageName}).`;
+    prompt += `\n   - **Step B**: Call the \`startWorkoutGeneration\` tool immediately AFTER generating the speech.`;
     
     return prompt;
 
@@ -209,8 +185,8 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
             const outputGainNode = outputAudioContext.createGain();
             outputGainNode.connect(outputAudioContext.destination);
 
-            // Set initial volume boost to 3.0
-            outputGainNode.gain.value = isMutedRef.current ? 0 : 3.0;
+            // Reduced volume to 1.0 (Standard)
+            outputGainNode.gain.value = isMutedRef.current ? 0 : 1.0;
 
             const source = inputAudioContext.createMediaStreamSource(stream);
             const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
@@ -239,20 +215,36 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
                         if (message.toolCall) {
                             for (const fc of message.toolCall.functionCalls) {
-                                if (fc.name === 'startWorkoutGeneration') {
+                                if (fc.name === 'startWorkoutGeneration' && !isNavigatingRef.current) {
+                                    isNavigatingRef.current = true;
                                     const params = fc.args as WorkoutGenerationParams;
                                     
-                                    // Close the coach overlay so the user sees the generation screen
-                                    onClose();
+                                    // Ensure safe parameters
+                                    const safeParams = {
+                                        ...params,
+                                        intensity: params.intensity || 'medium',
+                                        equipment: params.equipment && params.equipment.length > 0 ? params.equipment : ['bodyweight'],
+                                        workoutType: params.workoutType || 'fitness'
+                                    };
 
-                                    startWorkoutFromVoice(params);
+                                    setStatus('Generating Exercises...');
+
+                                    // Trigger navigation after delay to allow speech to complete
+                                    // Using setTimeout without isMounted check to guarantee execution once committed
+                                    window.setTimeout(() => {
+                                        onClose(); // Close coach overlay
+                                        // Small buffer to let the overlay close animation start
+                                        window.setTimeout(() => {
+                                            startWorkoutFromVoice(safeParams);
+                                        }, 100);
+                                    }, 3000);
 
                                     sessionPromise.then((session) => {
                                         session.sendToolResponse({
                                             functionResponses: {
                                                 id : fc.id,
                                                 name: fc.name,
-                                                response: { result: "OK, workout generation initiated." },
+                                                response: { result: "OK, initiating sequence." },
                                             }
                                         })
                                     });
@@ -346,7 +338,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9999] flex flex-col items-center justify-end p-4 animate-fadeIn pointer-events-auto">
-      {/* Minimized / Non-intrusive Overlay allowing to see background 3D */}
+      {/* Minimized / Non-intrusive Overlay */}
       <div className="bg-black/90 border border-purple-500 rounded-3xl p-6 w-full max-w-lg shadow-[0_0_50px_rgba(138,43,226,0.3)] relative mb-24">
           <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-20">
             <X className="w-6 h-6" />
@@ -373,8 +365,9 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
              <div className="flex-grow">
                  <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1">{status}</p>
-                 <div className="h-10 overflow-hidden relative">
-                     <p className="text-sm text-white/90 leading-tight absolute w-full transition-all duration-500 transform" style={{ opacity: isAiSpeaking ? 1 : 0.5 }}>
+                 {/* Scrollable Text Bubble */}
+                 <div className="h-10 overflow-y-auto relative custom-scrollbar">
+                     <p className="text-sm text-white/90 leading-tight w-full transition-all duration-500" style={{ opacity: isAiSpeaking ? 1 : 0.5 }}>
                         {transcription.ai || (isUserSpeaking ? "Listening..." : "I'm with you.")}
                      </p>
                  </div>

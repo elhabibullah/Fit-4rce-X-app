@@ -23,6 +23,9 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
+    <!-- Google Model Viewer - OPTION C: External 3D Engine -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
     <style>
       body {
         font-family: 'Poppins', sans-serif;
@@ -140,6 +143,11 @@
         background-color: #000;
         z-index: -2; /* Layer 1: The very back */
       }
+      
+      /* Hide Model Viewer Progress Bar to look cleaner */
+      model-viewer::part(default-progress-bar) {
+        display: none;
+      }
     </style>
   <script type="importmap">
 {
@@ -174,8 +182,8 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // Updated to v14 to ensure fresh cache load
-          navigator.serviceWorker.register('sw.js?v=14', { scope: './' })
+          // Updated to v15 to ensure fresh cache load
+          navigator.serviceWorker.register('sw.js?v=15', { scope: './' })
             .then(registration => {
               console.log('ServiceWorker registration successful with scope: ', registration.scope);
             })

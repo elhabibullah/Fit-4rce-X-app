@@ -1,104 +1,126 @@
 
-import React, { Suspense, useEffect, useState } from 'react';
-import { Canvas, useLoader } from '@react-three/fiber';
-import { OrbitControls, Environment, useAnimations } from '@react-three/drei';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import React, { useEffect, useRef, useState } from 'react';
 import { COACH_MODEL_URL } from '../../constants.ts';
-import * as THREE from 'three';
 
-const Model = ({ url, isPaused }: { url: string; isPaused?: boolean }) => {
-  // CACHE BUSTING: Append timestamp to force fresh fetch, bypassing corrupted builder cache
-  const cacheBustedUrl = `${url}?t=${Date.now()}`;
-
-  const gltf = useLoader(GLTFLoader, cacheBustedUrl, (loader) => {
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
-    loader.setDRACOLoader(dracoLoader);
-    // CORS FORCE: Attempt to bypass strict sandbox restrictions
-    loader.crossOrigin = 'anonymous';
-  });
-
-  const { actions } = useAnimations(gltf.animations, gltf.scene);
-
-  useEffect(() => {
-    if (actions) {
-       const actionKeys = Object.keys(actions);
-       if (actionKeys.length > 0) {
-           const firstAction = actions[actionKeys[0]];
-           if (firstAction) {
-               firstAction.reset().fadeIn(0.5).play();
-           }
-       }
-    }
-  }, [actions]);
-
-  useEffect(() => {
-      if (actions) {
-          Object.values(actions).forEach((action: any) => {
-              if (action) action.paused = !!isPaused;
-          });
-      }
-  }, [actions, isPaused]);
-
-  // AUTO-SCALE: Force model to fit view regardless of unit scale
-  useEffect(() => {
-      const box = new THREE.Box3().setFromObject(gltf.scene);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const targetHeight = 2.5; 
-      const scale = targetHeight / maxDim;
-      gltf.scene.scale.setScalar(scale);
-      gltf.scene.position.y = -1.2;
-  }, [gltf.scene]);
-
-  return <primitive object={gltf.scene} />;
-};
-
-export const HolographicCoach: React.FC<{
+interface HolographicCoachProps {
   state?: 'idle' | 'active' | 'listening' | 'speaking';
   modelUrl?: string;
   isPaused?: boolean;
-}> = ({ modelUrl, isPaused }) => {
-  const url = modelUrl || COACH_MODEL_URL;
-  const [hasError, setHasError] = useState(false);
+  cameraOrbit?: string;
+  cameraTarget?: string;
+}
 
-  if (hasError) {
-      return (
-          <div className="w-full h-full flex items-center justify-center bg-transparent">
-              {/* Error state handled silently or with transparent background as requested */}
-          </div>
-      );
-  }
+export const HolographicCoach: React.FC<HolographicCoachProps> = ({ 
+  modelUrl, 
+  isPaused,
+  cameraOrbit = "0deg 90deg 2.5m", // Default close-up
+  cameraTarget = "0m 0.9m 0m"      // Default torso target
+}) => {
+  const url = modelUrl || COACH_MODEL_URL;
+  const modelViewerRef = useRef<HTMLElement>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const viewer = modelViewerRef.current as any;
+    let heartbeatInterval: any;
+
+    const handleLoad = () => {
+        console.log("3D Model Loaded");
+        setIsLoaded(true);
+        if (viewer) {
+            // Reset time scale to normal speed
+            viewer.timeScale = 1; 
+            
+            // REMOVED: Manual animation selection logic (viewer.animationName = ...)
+            // This was likely selecting a static 'bind' pose instead of the motion.
+            // We now rely purely on the 'autoplay' and 'animation-name="*"' props.
+            
+            // Force play if not paused
+            if (!isPaused) {
+                const playPromise = viewer.play();
+                if(playPromise) {
+                    playPromise.catch((e: any) => console.log("Play trigger failed", e));
+                }
+            }
+        }
+    };
+
+    if (viewer) {
+        viewer.addEventListener('load', handleLoad);
+        
+        // Imperative Play/Pause Control based on prop
+        if (!isPaused && isLoaded) {
+            viewer.timeScale = 1;
+            viewer.play();
+        } else if (isPaused) {
+            viewer.pause();
+        }
+
+        // ANIMATION HEARTBEAT:
+        // Forcefully checks every 1 second if the model should be moving but isn't.
+        // This defeats browser battery saving modes that freeze background tabs.
+        heartbeatInterval = setInterval(() => {
+            if (!isPaused && viewer.paused && isLoaded) {
+                console.log("Heartbeat: Restarting Animation");
+                viewer.play();
+            }
+        }, 1000);
+    }
+
+    return () => {
+        if (viewer) {
+            viewer.removeEventListener('load', handleLoad);
+        }
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+    };
+  }, [isPaused, url, isLoaded]);
 
   return (
-    <div className="w-full h-full relative bg-transparent">
-        <Canvas
-            camera={{ position: [0, 0, 4], fov: 45 }}
-            gl={{ 
-                alpha: true, 
-                antialias: true, 
-                preserveDrawingBuffer: true,
-                powerPreference: "high-performance"
-            }}
-            onCreated={({ gl }) => {
-                gl.setClearColor(0x000000, 0);
-            }}
-            onError={() => setHasError(true)}
-        >
-            <ambientLight intensity={2.5} />
-            <spotLight position={[5, 5, 5]} angle={0.3} penumbra={1} intensity={2} castShadow />
-            <directionalLight position={[-2, 4, 5]} intensity={1.5} />
-            <Environment preset="city" />
-            
-            {/* Removed Text Overlay from Fallback */}
-            <Suspense fallback={null}>
-                <Model url={url} isPaused={isPaused} />
-            </Suspense>
-
-            <OrbitControls enableZoom={true} enablePan={false} maxPolarAngle={Math.PI / 1.8} />
-        </Canvas>
+    <div className="w-full h-full relative flex items-center justify-center">
+      {/* @ts-ignore */}
+      <model-viewer
+        ref={modelViewerRef}
+        src={url}
+        alt="Holographic Coach"
+        
+        // --- ANIMATION CONFIG ---
+        autoplay
+        animation-name="*"
+        loop 
+        
+        // --- PERFORMANCE CONFIG ---
+        loading="eager" 
+        reveal="auto"
+        seamless-poster
+        power-preference="high-performance"
+        
+        // --- CAMERA CONFIG ---
+        camera-controls 
+        camera-orbit={cameraOrbit}
+        camera-target={cameraTarget}
+        field-of-view="30deg"
+        interpolation-decay="200"
+        
+        // --- UI CLEANUP ---
+        interaction-prompt="none" 
+        
+        // --- RENDERING QUALITY ---
+        shadow-intensity="1" 
+        shadow-softness="0.5"
+        exposure="1.2"
+        
+        style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
+      >
+        {/* Transparent Loading State */}
+        <div slot="poster" className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-transparent">
+           {!isLoaded && (
+               <div className="flex flex-col items-center">
+                <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+               </div>
+           )}
+        </div>
+      {/* @ts-ignore */}
+      </model-viewer>
     </div>
   );
 };

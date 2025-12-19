@@ -96,6 +96,7 @@ const VirtualEnvironment: React.FC<VirtualEnvironmentProps> = ({ type }) => {
                 src={thumbnailUrl}
                 alt="Background Base"
                 className="absolute top-1/2 left-1/2 min-w-full min-h-full object-cover transform -translate-x-1/2 -translate-y-1/2 z-0"
+                style={{ willChange: 'opacity' }}
             />
 
             {/* Dark overlay for text readability (applied to base image) */}
@@ -112,8 +113,9 @@ const VirtualEnvironment: React.FC<VirtualEnvironmentProps> = ({ type }) => {
                     loop
                     muted
                     playsInline
+                    preload="auto"
                     className={`absolute top-1/2 left-1/2 min-w-full min-h-full object-cover transform -translate-x-1/2 -translate-y-1/2 z-2 transition-opacity duration-1000 ${isVideoPlaying ? 'opacity-100' : 'opacity-0'}`}
-                    style={{ objectFit: 'cover' }}
+                    style={{ objectFit: 'cover', willChange: 'opacity, transform' }}
                 >
                     <source src={envData.url} type="video/mp4" />
                 </video>

@@ -319,7 +319,14 @@ export const SpinningScreen: React.FC = () => {
                 }
             `}
           >
-              <HolographicCoach isPaused={!isActive} state={isActive ? 'active' : 'idle'} modelUrl={SPINNING_COACH_MODEL_URL} />
+              {/* FIXED: Changed cameraTarget from "0m 0.8m 0m" to "0m 0.4m 0m" to move model HIGHER in frame */}
+              <HolographicCoach 
+                isPaused={!isActive} 
+                state={isActive ? 'active' : 'idle'} 
+                modelUrl={SPINNING_COACH_MODEL_URL}
+                cameraOrbit="0deg 80deg 4.5m"
+                cameraTarget="0m 0.4m 0m" 
+              />
               
               <div className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded animate-pulse z-50">
                   {translate('live.badge')}

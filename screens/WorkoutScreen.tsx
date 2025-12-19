@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, RotateCw, Pause, Play, Repeat, Zap, Share2, Check, Bookmark, Mic, Bot, Heart, Flame, Timer, Watch, ShoppingBag } from 'lucide-react';
 import Card from '../components/common/Card.tsx';
@@ -162,6 +161,7 @@ export const WorkoutScreen: React.FC = () => {
       return () => setCoachContext(null);
     }, [view, currentExercise, setCoachContext]);
 
+    // Handle Voice Activation or Pre-Selected Plan
     useEffect(() => {
         if (selectedPlan) {
             setWorkoutPlan(selectedPlan);
@@ -171,8 +171,9 @@ export const WorkoutScreen: React.FC = () => {
             setSessionTime(0);
             setSelectedPlan(null);
         } else if (voiceWorkoutParams) {
+            // Trigger generation immediately
             handleGenerateWorkout(voiceWorkoutParams);
-            setVoiceWorkoutParams(null);
+            setVoiceWorkoutParams(null); // Clear params to prevent re-trigger
         }
     }, [selectedPlan, voiceWorkoutParams]);
     
@@ -324,7 +325,8 @@ export const WorkoutScreen: React.FC = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[70vh]">
                 <Loader />
-                <p className="mt-4 text-purple-400 animate-pulse">{translate('workout.generating')}</p>
+                {/* Updated text as requested */}
+                <p className="mt-4 text-purple-400 animate-pulse">Generating Exercises...</p>
             </div>
         );
     }

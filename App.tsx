@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from './hooks/useApp.ts';
 import SplashScreen from './screens/SplashScreen.tsx';
@@ -12,7 +11,7 @@ import { ExpertAdviceScreen } from './screens/ExpertAdviceScreen.tsx';
 import TrainersScreen from './screens/TrainersScreen.tsx';
 import LanguageScreen from './screens/LanguageScreen.tsx';
 import { SelfDefenseScreen, DISCIPLINE_BACKGROUNDS } from './screens/SelfDefenseScreen.tsx';
-import IntroScreen from './IntroScreen.tsx';
+import IntroScreen from './screens/IntroScreen.tsx';
 import SubscriptionScreen from './screens/SubscriptionScreen.tsx';
 import ProfileSetupScreen from './screens/ProfileSetupScreen.tsx';
 import WorkoutHistoryScreen from './screens/WorkoutHistoryScreen.tsx';
@@ -26,10 +25,7 @@ import HolographicGearModal from './components/profile/HolographicGearModal.tsx'
 import { ENVIRONMENT_THUMBNAILS } from './components/common/VirtualEnvironment.tsx';
 import GlobalErrorBoundary from './components/common/GlobalErrorBoundary.tsx';
 
-// Optimized Main Content Switcher - Wrapped in Memo for Performance
-const MainContent: React.FC<{
-  screen: Screen;
-}> = React.memo(({ screen }) => {
+const MainContent: React.FC<{ screen: Screen }> = React.memo(({ screen }) => {
   switch (screen) {
     case Screen.Home: return <DashboardScreen />;
     case Screen.Workout: return <WorkoutScreen />;
@@ -50,22 +46,9 @@ const MainContent: React.FC<{
 const App: React.FC = () => {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const { 
-    session,
-    profile,
-    loading,
-    screen, 
-    expertToBook, 
-    closeBookingScreen, 
-    updateUserProfile,
-    onboardingStep,
-    setOnboardingStep,
-    showSignIn,
-    setShowSignIn,
-    statusMessage,
-    isCoachOpen,
-    setIsCoachOpen,
-    isDeviceModalOpen,
-    closeDeviceModal
+    session, profile, loading, screen, expertToBook, closeBookingScreen, 
+    updateUserProfile, onboardingStep, setOnboardingStep, showSignIn, setShowSignIn,
+    statusMessage, isCoachOpen, setIsCoachOpen, isDeviceModalOpen, closeDeviceModal
   } = useApp();
 
   useEffect(() => {
@@ -73,40 +56,21 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Stealth Preloader Logic - Optimized
   useEffect(() => {
-    const preloadImages = () => {
-      const imagesToPreload = [
-        ...Object.values(DISCIPLINE_BACKGROUNDS),
-        ...Object.values(ENVIRONMENT_THUMBNAILS),
-        "https://ai-webbuilder-prod.s3.us-east-1.amazonaws.com/public/images/ad85aead516242b9b73a5140f6db62a1/1d87d3f1227c4419aca5c972544ab725.Screenshot_20251114-091219_Chrome.jpg", // Coach
-        "https://ai-webbuilder-prod.s3.us-east-1.amazonaws.com/public/images/b41ca67767304c519a58cec7ad351092/788ced7328b0464cb7a81e01e3e45f68.Screenshot_20250429-140125_Samsung%20Notes.jpg" // Abdel
-      ];
-      
-      imagesToPreload.forEach(url => {
-        const img = new Image();
-        img.src = url;
-      });
-    };
-    
-    // Run after a short delay to prioritize initial render
-    const timer = setTimeout(preloadImages, 2000);
-    return () => clearTimeout(timer);
+    const imagesToPreload = [
+      ...Object.values(DISCIPLINE_BACKGROUNDS),
+      ...Object.values(ENVIRONMENT_THUMBNAILS),
+      "https://ai-webbuilder-prod.s3.us-east-1.amazonaws.com/public/images/ad85aead516242b9b73a5140f6db62a1/1d87d3f1227c4419aca5c972544ab725.Screenshot_20251114-091219_Chrome.jpg"
+    ];
+    imagesToPreload.forEach(url => { const img = new Image(); img.src = url; });
   }, []);
   
   const handleIntroComplete = () => setOnboardingStep('subscription');
-  const handleSubscriptionComplete = () => {
-    setOnboardingStep('profileSetup');
-  };
-  const handleProfileSetupComplete = async () => {
-    await updateUserProfile({ onboarding_complete: true });
-  };
+  const handleSubscriptionComplete = () => setOnboardingStep('profileSetup');
+  const handleProfileSetupComplete = async () => { await updateUserProfile({ onboarding_complete: true }); };
   
-  if (isSplashVisible || loading) {
-    return <SplashScreen />;
-  }
+  if (isSplashVisible || loading) return <SplashScreen />;
   
-  // This is the main router for the app.
   if (!session || (profile && !profile.onboarding_complete)) {
     return (
       <GlobalErrorBoundary>
@@ -127,49 +91,26 @@ const App: React.FC = () => {
     );
   }
 
-  // --- UNIFIED LAYOUT ARCHITECTURE ---
-  // Determines if the current screen requires full-screen immersion (no padding, no nav)
   const isImmersive = [Screen.Spinning, Screen.Running, Screen.Nutrition].includes(screen);
 
   return (
     <GlobalErrorBoundary>
       <div className="bg-black text-white min-h-screen font-sans relative">
-        
-        {/* Global Modals */}
         <HolographicGearModal isOpen={isDeviceModalOpen} onClose={closeDeviceModal} />
         {expertToBook && <ExpertAdviceScreen trainer={expertToBook} onClose={closeBookingScreen} />}
         
-        {/* Main Application Area */}
-        <main 
-          className={`
-            transition-all duration-500
-            ${isImmersive ? 'w-full h-screen overflow-hidden p-0' : 'p-4 max-w-2xl mx-auto pb-20'}
-          `}
-        >
+        <main className={`transition-all duration-500 ${isImmersive ? 'w-full h-screen overflow-hidden p-0' : 'p-4 max-w-2xl mx-auto pb-20'}`}>
           <MainContent screen={screen} />
         </main>
 
-        {/* Global AI Coach Overlay */}
         {isCoachOpen && <AICoach isVisible={isCoachOpen} onClose={() => setIsCoachOpen(false)} />}
-
-        {/* Bottom Navigation (Hidden in Immersive Mode) */}
         {!isImmersive && <BottomNav />}
 
-        {/* Global Status Toaster - FORCED VISIBILITY */}
         {statusMessage && (
-          <div 
-            id="status-toast"
-            key={statusMessage + Date.now()} 
-            className="fixed left-1/2 -translate-x-1/2 pointer-events-none w-full max-w-md px-4"
-            style={{ 
-              zIndex: '2147483647 !important' as any, 
-              top: '128px', // Approx 8rem / 128px to clear large headers
-              position: 'fixed' 
-            }} 
-          >
-            <div className="bg-gray-900/95 backdrop-blur-xl text-white px-6 py-4 rounded-xl shadow-[0_0_30px_rgba(34,197,94,0.6)] border border-green-500 flex items-center gap-3 animate-slideInUp pointer-events-auto">
-                <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
-                <span className="font-bold tracking-wide text-sm">{statusMessage}</span>
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-[9999] pointer-events-none">
+            <div className="bg-gray-900/95 backdrop-blur-xl text-white px-6 py-4 rounded-xl shadow-lg border border-green-500 flex items-center gap-3 animate-slideInUp pointer-events-auto">
+                <CheckCircle className="w-6 h-6 text-green-500" />
+                <span className="font-bold text-sm">{statusMessage}</span>
             </div>
           </div>
         )}
