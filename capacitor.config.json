@@ -1,0 +1,8 @@
+{
+  "appId": "com.fit4rcex.app",
+  "appName": "Fit-4rce-X",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
