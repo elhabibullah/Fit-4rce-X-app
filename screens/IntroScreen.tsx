@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useApp } from '../hooks/useApp.ts';
 import Button from '../components/common/Button.tsx';
@@ -13,55 +12,55 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
   const { translate } = useApp();
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Layer 1: Static Coach Image */}
+    <div className="relative w-full bg-black min-h-screen">
+      {/* BACKGROUND - FIXED */}
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center opacity-40"
+        className="fixed inset-0 z-0 bg-cover bg-center opacity-40 pointer-events-none"
         style={{ backgroundImage: `url(${coachImageUrl})` }}
       />
-
-      {/* Layer 2: Darkening overlay for text readability */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
+      <div className="fixed inset-0 z-10 bg-gradient-to-t from-black via-black/80 to-black/40 pointer-events-none" />
       
-      {/* Layer 3: The content */}
-      <div className="relative z-20 flex flex-col items-center justify-between h-full px-6 pt-16 pb-12 overflow-y-auto">
-        <main className="w-full max-w-3xl text-center animate-fadeIn">
-          
-          {/* Title Card */}
-          <div className="relative bg-[#8A2BE2]/10 backdrop-blur-lg border border-[#8A2BE2] rounded-2xl p-6 shadow-[0_0_30px_rgba(138,43,226,0.3)] mb-8 max-w-xl mx-auto">
-              {/* Decorative Pins */}
-              <div className="absolute left-6 -top-3 w-1.5 h-6 bg-gray-300 rounded-full border border-gray-900 shadow-md"></div>
-              <div className="absolute right-6 -top-3 w-1.5 h-6 bg-gray-300 rounded-full border border-gray-900 shadow-md"></div>
-              
-              <h1 
-                className="text-4xl md:text-5xl font-black text-white tracking-wider"
-                style={{ textShadow: '0 0 20px #8A2BE2, 0 2px 4px rgba(0,0,0,0.8)' }}
-              >
-                Fit-4rce-X
-              </h1>
-              <p className="mt-2 text-sm md:text-base text-purple-200 tracking-widest font-semibold drop-shadow-md uppercase">
-                {translate('intro.header')}
-              </p>
+      {/* CONTENT - FLOW */}
+      <div className="relative z-20 flex flex-col items-center w-full px-6 pt-16 pb-32">
+        <main className="w-full max-w-xl text-center animate-fadeIn mb-12">
+          <div className="relative bg-[#8A2BE2]/10 backdrop-blur-xl border border-[#8A2BE2]/40 rounded-[2.5rem] p-8 shadow-2xl mb-12">
+              <div className="space-y-4">
+                <h1 
+                  className="text-2xl font-black text-white tracking-[0.2em] uppercase"
+                  style={{ textShadow: '0 0 15px rgba(138, 43, 226, 0.5)' }}
+                >
+                  Fit-4rce-X
+                </h1>
+                <p className="text-[10px] text-purple-300 font-bold tracking-[0.5em] uppercase">
+                  {translate('intro.header')}
+                </p>
+              </div>
           </div>
           
-          <p className="text-white mt-6 text-xl md:text-2xl font-bold drop-shadow-lg tracking-wide">
-            {translate('intro.welcome')}
-          </p>
-
-          {/* Main Text - Restored Typography */}
-          <div className="my-8 px-4">
-              <p className="text-gray-200 whitespace-pre-line leading-relaxed text-lg font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                {translate('intro.main_text')}
+          <div className="space-y-10">
+              <p className="text-white text-base font-bold leading-relaxed tracking-wide uppercase px-2">
+                {translate('intro.welcome')}
               </p>
-          </div>
 
-          <p className="text-lg md:text-xl font-bold text-[#8A2BE2] uppercase tracking-widest max-w-md mx-auto drop-shadow-md">
-              {translate('intro.tagline')}
-          </p>
+              <div className="bg-black/60 backdrop-blur-md rounded-3xl p-8 border border-white/10 shadow-inner">
+                  <p className="text-gray-300 whitespace-pre-line leading-relaxed text-sm font-medium">
+                    {translate('intro.main_text')}
+                  </p>
+              </div>
+
+              <div className="pt-8 border-t border-white/10">
+                  <p className="text-sm font-black text-white uppercase tracking-[0.3em] mb-4">
+                      {translate('intro.tagline')}
+                  </p>
+                  <p className="text-[11px] font-black text-purple-400 uppercase tracking-[0.2em] animate-pulse">
+                      {translate('intro.mentor_awaits')}
+                  </p>
+              </div>
+          </div>
         </main>
 
-        <div className="mt-auto pt-8 w-full max-w-md">
-          <Button onClick={onComplete} className="w-full shadow-[0_0_20px_rgba(138,43,226,0.5)] font-bold text-lg tracking-widest">
+        <div className="w-full max-w-md mt-auto">
+          <Button onClick={onComplete} className="w-full py-6 text-sm font-black uppercase tracking-[0.3em] shadow-[0_0_30px_rgba(138,43,226,0.3)]">
               {translate('continue')}
           </Button>
         </div>

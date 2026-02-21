@@ -1,10 +1,10 @@
 import React, { createContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { DailyMacros, FastingPlan, Language, Meal, MealPlanSection, Screen, TrainerProfile, TranslatedConstants, UserProfile, WeightHistoryItem, WorkoutPlan, WorkoutHistoryItem, OnboardingStep, CurrencyInfo, AIProvider, WorkoutGenerationParams, ConnectedDevice, LiveBioMetrics } from '../types.ts';
-import { getTranslatedConstants } from '../lib/i18n.ts';
-import { TRANSLATIONS } from '../lib/translations.ts';
-import { CURRENCY_MAP, DEFAULT_CURRENCY_INFO } from '../screens/currency.ts';
-import { generateWorkoutWithGemini } from '../services/aiService.ts';
+import { DailyMacros, FastingPlan, Language, Meal, MealPlanSection, Screen, TrainerProfile, TranslatedConstants, UserProfile, WeightHistoryItem, WorkoutPlan, WorkoutHistoryItem, OnboardingStep, CurrencyInfo, AIProvider, WorkoutGenerationParams, ConnectedDevice, LiveBioMetrics } from './types.ts';
+import { getTranslatedConstants } from './lib/i18n.ts';
+import { TRANSLATIONS } from './lib/translations.ts';
+import { CURRENCY_MAP, DEFAULT_CURRENCY_INFO } from './screens/currency.ts';
+import { generateWorkoutWithGemini } from './services/aiService.ts';
 
 interface AppContextType {
   session: Session | null;
@@ -84,7 +84,7 @@ interface AppContextType {
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // CRITICAL: REMOVED ALL PERSISTENCE. APP STATE IS NOW VOLATILE.
+  // CRITICAL: REMOVED ALL LOCALSTORAGE READS. APP ALWAYS STARTS FRESH.
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [language, _setLanguage] = useState<Language>(Language.EN);
@@ -194,11 +194,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [language, showStatus, setScreen, setSelectedPlan, setIsGeneratingWorkout]);
 
-  // ON MOUNT: FORCE RESET
   useEffect(() => {
-    // Clear any existing legacy storage just in case
-    localStorage.clear();
-    sessionStorage.clear();
     const timer = setTimeout(() => setLoading(false), 2500);
     return () => clearTimeout(timer);
   }, []);

@@ -61,7 +61,7 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
                 <div className="flex-1 bg-gray-900/50 rounded-2xl border-2 border-dashed border-gray-700 relative overflow-hidden flex flex-col items-center justify-center p-4">
                     {localModelUrl ? (
                         <div className="w-full h-full relative">
-                            <HolographicCoach modelUrl={localModelUrl} cameraOrbit="0deg 90deg 3m" />
+                            <HolographicCoach modelUrl={localModelUrl} />
                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 flex items-center gap-2">
                                 <Info className="w-4 h-4 text-blue-400" />
                                 <span className="text-[10px] text-white font-bold uppercase tracking-widest">Model Rendering OK</span>

@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Shield, Camera, Lock, CheckCircle, Wifi, UserCheck, AlertTriangle } from 'lucide-react';
-import Card from '../common/Card.tsx';
-import Button from '../common/Button.tsx';
-import { useApp } from '../../hooks/useApp.ts';
+import Card from '../components/common/Card.tsx';
+import Button from '../components/common/Button.tsx';
+import { useApp } from './useApp.ts';
 
 interface SecureConnectionModalProps {
     isOpen: boolean;

@@ -64,35 +64,20 @@ const CastButton: React.FC<CastButtonProps> = ({ isTVMode, onToggleTVMode }) => 
                             <div className="flex bg-gray-900 p-1 rounded-lg mb-4">
                                 <button 
                                     onClick={() => setPlatform('ios')}
-                                    className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${platform === 'ios' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+                                    className="flex-1 py-2 text-sm font-bold rounded-md bg-white text-black"
                                 >
                                     {translate('tv.cast.ios.label')}
-                                </button>
-                                <button 
-                                    onClick={() => setPlatform('android')}
-                                    className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${platform === 'android' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
-                                >
-                                    {translate('tv.cast.android.label')}
                                 </button>
                             </div>
 
                             {/* Instructions */}
                             <div className="bg-gray-800/50 rounded-lg p-4 text-left mb-6 text-sm text-gray-300 space-y-3">
-                                {platform === 'ios' ? (
-                                    <ol className="list-decimal list-inside space-y-2">
-                                        <li>{translate('tv.cast.ios.step1')}</li>
-                                        <li>{translate('tv.cast.ios.step2')}</li>
-                                        <li>{translate('tv.cast.ios.step3')}</li>
-                                        <li>{translate('tv.cast.ios.step4')}</li>
-                                    </ol>
-                                ) : (
-                                    <ol className="list-decimal list-inside space-y-2">
-                                        <li>{translate('tv.cast.android.step1')}</li>
-                                        <li>{translate('tv.cast.android.step2')}</li>
-                                        <li>{translate('tv.cast.android.step3')}</li>
-                                        <li>{translate('tv.cast.android.step4')}</li>
-                                    </ol>
-                                )}
+                                <ol className="list-decimal list-inside space-y-2">
+                                    <li>{translate('tv.cast.ios.step1')}</li>
+                                    <li>{translate('tv.cast.ios.step2')}</li>
+                                    <li>{translate('tv.cast.ios.step3')}</li>
+                                    <li>{translate('tv.cast.ios.step4')}</li>
+                                </ol>
                             </div>
                             
                             <button 

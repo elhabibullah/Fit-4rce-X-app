@@ -1,34 +1,17 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+
+import React, { ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   children?: ReactNode;
 }
 
-interface ErrorBoundaryState {
-  hasError: boolean;
-}
-
-class GlobalErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = {
-    hasError: false
-  };
-
-  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Global Error Caught:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      // Return null to silently handle the error without disrupting the user flow with a popup
-      return null;
-    }
-    
-    return (this as any).props.children;
-  }
-}
+/**
+ * ABSOLUTE PASS-THROUGH
+ * This component contains zero logic and zero UI.
+ * It strictly renders children to prevent any custom error screens from appearing.
+ */
+const GlobalErrorBoundary: React.FC<ErrorBoundaryProps> = ({ children }) => {
+  return <>{children}</>;
+};
 
 export default GlobalErrorBoundary;

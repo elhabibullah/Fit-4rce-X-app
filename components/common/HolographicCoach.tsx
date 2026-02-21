@@ -1,126 +1,100 @@
+import React, { Suspense, useMemo } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { useGLTF, OrbitControls, Center, Environment, ContactShadows } from '@react-three/drei';
+import * as THREE from 'three';
+import { COACH_MODEL_URL } from '../../lib/constants.ts';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { COACH_MODEL_URL } from '../../constants.ts';
-
-interface HolographicCoachProps {
-  state?: 'idle' | 'active' | 'listening' | 'speaking';
-  modelUrl?: string;
-  isPaused?: boolean;
-  cameraOrbit?: string;
-  cameraTarget?: string;
-}
-
-export const HolographicCoach: React.FC<HolographicCoachProps> = ({ 
-  modelUrl, 
-  isPaused,
-  cameraOrbit = "0deg 90deg 2.5m", // Default close-up
-  cameraTarget = "0m 0.9m 0m"      // Default torso target
-}) => {
-  const url = modelUrl || COACH_MODEL_URL;
-  const modelViewerRef = useRef<HTMLElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    const viewer = modelViewerRef.current as any;
-    let heartbeatInterval: any;
-
-    const handleLoad = () => {
-        console.log("3D Model Loaded");
-        setIsLoaded(true);
-        if (viewer) {
-            // Reset time scale to normal speed
-            viewer.timeScale = 1; 
-            
-            // REMOVED: Manual animation selection logic (viewer.animationName = ...)
-            // This was likely selecting a static 'bind' pose instead of the motion.
-            // We now rely purely on the 'autoplay' and 'animation-name="*"' props.
-            
-            // Force play if not paused
-            if (!isPaused) {
-                const playPromise = viewer.play();
-                if(playPromise) {
-                    playPromise.catch((e: any) => console.log("Play trigger failed", e));
+const Model = ({ url }: { url: string }) => {
+    const { scene } = useGLTF(url);
+    
+    useMemo(() => {
+        scene.traverse((child) => {
+            if ((child as any).isMesh) {
+                const m = child as any;
+                if (m.material) {
+                    m.material.side = THREE.DoubleSide;
+                    m.material.needsUpdate = true;
+                    m.castShadow = true;
+                    m.receiveShadow = true;
+                    
+                    // Metallic Android Look
+                    m.material.roughness = 0.02;
+                    m.material.metalness = 1.0;
+                    
+                    // Intense glowing purple highlights
+                    const glowColor = new THREE.Color('#9D50FF');
+                    if (m.material.emissive) {
+                        m.material.emissive = glowColor;
+                        m.material.emissiveIntensity = 2.5; 
+                    }
                 }
             }
-        }
-    };
-
-    if (viewer) {
-        viewer.addEventListener('load', handleLoad);
+        });
         
-        // Imperative Play/Pause Control based on prop
-        if (!isPaused && isLoaded) {
-            viewer.timeScale = 1;
-            viewer.play();
-        } else if (isPaused) {
-            viewer.pause();
-        }
+        const box = new THREE.Box3().setFromObject(scene);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 1.4 / maxDim;
+        scene.scale.setScalar(scale);
+    }, [scene]);
 
-        // ANIMATION HEARTBEAT:
-        // Forcefully checks every 1 second if the model should be moving but isn't.
-        // This defeats browser battery saving modes that freeze background tabs.
-        heartbeatInterval = setInterval(() => {
-            if (!isPaused && viewer.paused && isLoaded) {
-                console.log("Heartbeat: Restarting Animation");
-                viewer.play();
-            }
-        }, 1000);
-    }
+    return <primitive object={scene} />;
+};
 
-    return () => {
-        if (viewer) {
-            viewer.removeEventListener('load', handleLoad);
-        }
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
-    };
-  }, [isPaused, url, isLoaded]);
+export const HolographicCoach: React.FC<{ modelUrl?: string; isPaused?: boolean }> = ({ modelUrl, isPaused }) => {
+  const finalUrl = modelUrl || COACH_MODEL_URL;
 
   return (
-    <div className="w-full h-full relative flex items-center justify-center">
-      {/* @ts-ignore */}
-      <model-viewer
-        ref={modelViewerRef}
-        src={url}
-        alt="Holographic Coach"
-        
-        // --- ANIMATION CONFIG ---
-        autoplay
-        animation-name="*"
-        loop 
-        
-        // --- PERFORMANCE CONFIG ---
-        loading="eager" 
-        reveal="auto"
-        seamless-poster
-        power-preference="high-performance"
-        
-        // --- CAMERA CONFIG ---
-        camera-controls 
-        camera-orbit={cameraOrbit}
-        camera-target={cameraTarget}
-        field-of-view="30deg"
-        interpolation-decay="200"
-        
-        // --- UI CLEANUP ---
-        interaction-prompt="none" 
-        
-        // --- RENDERING QUALITY ---
-        shadow-intensity="1" 
-        shadow-softness="0.5"
-        exposure="1.2"
-        
-        style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
-      >
-        {/* Transparent Loading State */}
-        <div slot="poster" className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-transparent">
-           {!isLoaded && (
-               <div className="flex flex-col items-center">
-                <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-               </div>
-           )}
-        </div>
-      {/* @ts-ignore */}
-      </model-viewer>
+    <div className="w-full h-full relative bg-[#F5F5F7]">
+        <Canvas 
+            gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+            camera={{ position: [0, 1.4, 4.0], fov: 32 }}
+            dpr={[1, 2]}
+            shadows
+        >
+            <color attach="background" args={['#F5F5F7']} />
+            
+            <Suspense fallback={null}>
+                <Environment preset="city" />
+                <ambientLight intensity={2.5} />
+                
+                {/* ULTIMATE VISIBILITY LIGHTING */}
+                <spotLight 
+                    position={[10, 20, 10]} 
+                    angle={0.5} 
+                    penumbra={1} 
+                    intensity={40} 
+                    castShadow 
+                    shadow-mapSize={[1024, 1024]}
+                />
+
+                <pointLight position={[0, 5, 12]} intensity={25.0} color="#ffffff" /> {/* Bright Front Fill */}
+                <pointLight position={[-8, 8, -8]} intensity={20.0} color="#BF00FF" /> {/* Side Rim */}
+                <pointLight position={[8, -2, 8]} intensity={12.0} color="#8A2BE2" />
+                
+                <Center top position={[0, -0.7, 0]}>
+                    <Model url={finalUrl} />
+                </Center>
+
+                <ContactShadows 
+                    position={[0, -0.7, 0]} 
+                    opacity={0.5} 
+                    scale={15} 
+                    blur={4} 
+                    far={5} 
+                    color="#000000" 
+                />
+            </Suspense>
+
+            <OrbitControls 
+                enableZoom={false} 
+                enablePan={false}
+                makeDefault 
+                target={[0, 0.7, 0]}
+                minPolarAngle={Math.PI / 4}
+                maxPolarAngle={Math.PI / 1.6}
+            />
+        </Canvas>
     </div>
   );
 };

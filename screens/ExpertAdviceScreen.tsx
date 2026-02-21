@@ -5,9 +5,9 @@ import Button from '../components/common/Button.tsx';
 import { X, Calendar, Clock, Check, ChevronLeft, ChevronRight, Globe, Activity } from 'lucide-react';
 import { TrainerProfile } from '../types.ts';
 import { useApp } from '../hooks/useApp.ts';
-import { CURRENCY_MAP } from '../lib/currency.ts';
+import { CURRENCY_MAP } from './currency.ts';
 import CoachDashboardModal from '../components/trainers/CoachDashboardModal.tsx';
-import SecureConnectionModal from '../components/trainers/SecureConnectionModal.tsx';
+import SecureConnectionModal from '../hooks/SecureConnectionModal.tsx';
 
 interface ExpertAdviceScreenProps {
     onClose: () => void;
@@ -37,14 +37,18 @@ export const ExpertAdviceScreen: React.FC<ExpertAdviceScreenProps> = ({ onClose,
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [isBooked, setIsBooked] = useState(false);
     const [isCurrencySelectorOpen, setIsCurrencySelectorOpen] = useState(false);
-    
-    // New States for Features
     const [isCoachDashboardOpen, setIsCoachDashboardOpen] = useState(false);
     const [isSecureConnectOpen, setIsSecureConnectOpen] = useState(false);
 
     useEffect(() => {
         setMonthlyAvailability(generateMockAvailability(currentDate.getFullYear(), currentDate.getMonth()));
     }, [currentDate]);
+
+    const handleDateSelect = (day: number) => {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        setSelectedDate(date);
+        setSelectedTime(null);
+    };
 
     const initiateBooking = () => {
         if(selectedTime && selectedDate) {
@@ -82,7 +86,6 @@ export const ExpertAdviceScreen: React.FC<ExpertAdviceScreenProps> = ({ onClose,
         );
     }
     
-    // --- Calendar Logic ---
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -97,14 +100,6 @@ export const ExpertAdviceScreen: React.FC<ExpertAdviceScreenProps> = ({ onClose,
             return newDate;
         });
         setSelectedDate(null);
-        setSelectedTime(null);
-    };
-
-    const handleDateSelect = (day: number) => {
-        const newSelectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-        if (newSelectedDate < today || !monthlyAvailability[day]) return;
-        
-        setSelectedDate(newSelectedDate);
         setSelectedTime(null);
     };
 
@@ -131,7 +126,7 @@ export const ExpertAdviceScreen: React.FC<ExpertAdviceScreenProps> = ({ onClose,
                         </button>
                         <h2 className="text-xl font-bold text-white mb-4">{translate('sub.selectCurrency')}</h2>
                         <div className="max-h-[60vh] overflow-y-auto space-y-2 pr-2">
-                            {Object.entries(CURRENCY_MAP).map(([code, { symbol }]) => (
+                            {(Object.entries(CURRENCY_MAP) as [string, any][]).map(([code, { symbol }]) => (
                                 <button
                                     key={code}
                                     onClick={() => {
@@ -162,37 +157,29 @@ export const ExpertAdviceScreen: React.FC<ExpertAdviceScreenProps> = ({ onClose,
                         <div>
                             <h2 className="text-2xl font-semibold text-white">{trainer.name}</h2>
                             <p className="text-purple-400 font-medium">{trainer.titles[0]}</p>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {trainer.languages.slice(0,4).map(lang => (
-                                    <span key={lang} className="px-2 py-1 text-xs bg-gray-700 text-gray-200 rounded">{lang}</span>
-                                ))}
-                            </div>
                         </div>
-                        
-                        {/* New Feature Button: Coach Dashboard View */}
                         <button 
                             onClick={() => setIsCoachDashboardOpen(true)}
                             className="absolute top-0 right-0 p-2 text-blue-400 hover:text-blue-300 flex flex-col items-center"
-                            title="Coach Insight Panel (Demo)"
                         >
                             <Activity className="w-6 h-6" />
-                            <span className="text-[10px] font-bold">INSIGHTS</span>
+                            <span className="text-[10px] font-bold uppercase">INFO</span>
                         </button>
                     </div>
-                    <p className="text-gray-300 mt-4">{trainer.bio}</p>
+                    <p className="text-gray-300 mt-4 text-sm leading-relaxed">{trainer.bio}</p>
                 </Card>
 
                 <Card>
                     <h3 className="text-xl font-bold text-white flex items-center mb-4"><Calendar className="w-5 h-5 mr-2 text-purple-400"/>{translate('expert.selectDate')}</h3>
                     
-                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                    <div className="bg-gray-800/30 p-4 rounded-lg">
                         <div className="flex justify-between items-center mb-4">
                             <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-gray-700"><ChevronLeft className="w-6 h-6"/></button>
                             <h4 className="font-bold text-lg text-white capitalize">{currentDate.toLocaleString(language, { month: 'long', year: 'numeric' })}</h4>
                             <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-gray-700"><ChevronRight className="w-6 h-6"/></button>
                         </div>
                         
-                        <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-400 mb-2">
+                        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black uppercase text-gray-500 mb-2">
                             {weekdays.map(day => <div key={day}>{day}</div>)}
                         </div>
                         <div className="grid grid-cols-7 gap-1">
@@ -204,21 +191,21 @@ export const ExpertAdviceScreen: React.FC<ExpertAdviceScreenProps> = ({ onClose,
                                 const isSelected = selectedDate && selectedDate.getDate() === day && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear();
                                 const isAvailable = monthlyAvailability[day] && !isPast;
                                 
-                                let dayClasses = 'h-10 w-10 flex items-center justify-center rounded-full font-semibold transition-colors duration-200';
+                                let dayClasses = 'h-10 w-10 flex items-center justify-center rounded-full font-bold text-sm transition-all';
                                 if (isPast || !monthlyAvailability[day]) {
-                                    dayClasses += ' text-gray-600 cursor-not-allowed';
+                                    dayClasses += ' text-gray-700 cursor-not-allowed';
                                 } else if (isSelected) {
-                                    dayClasses += ' bg-[#8A2BE2] text-white';
+                                    dayClasses += ' bg-[#8A2BE2] text-white shadow-[0_0_15px_#8A2BE2] scale-110';
                                 } else if (isAvailable) {
-                                    dayClasses += ' text-white hover:bg-gray-700';
+                                    dayClasses += ' text-white hover:bg-gray-800';
                                 }
 
                                 return (
-                                    <div key={day} className="relative">
+                                    <div key={day} className="relative flex justify-center">
                                         <button onClick={() => handleDateSelect(day)} className={dayClasses} disabled={isPast || !monthlyAvailability[day]}>
                                             {day}
                                         </button>
-                                        {isAvailable && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-purple-400 rounded-full"></div>}
+                                        {isAvailable && !isSelected && <div className="absolute bottom-1 w-1 h-1 bg-purple-500 rounded-full"></div>}
                                     </div>
                                 )
                             })}
@@ -228,12 +215,12 @@ export const ExpertAdviceScreen: React.FC<ExpertAdviceScreenProps> = ({ onClose,
                     {selectedDate && (
                         <div className="mt-6 animate-fadeIn">
                             <h3 className="text-xl font-bold text-white flex items-center mb-4"><Clock className="w-5 h-5 mr-2 text-purple-400"/>{translate('expert.selectTime')}</h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 {monthlyAvailability[selectedDate.getDate()].sort().map(time => (
                                     <button 
                                         key={time} 
                                         onClick={() => setSelectedTime(time)}
-                                        className={`p-3 rounded-lg font-bold text-sm transition-all duration-200 active:scale-95 ${selectedTime === time ? 'bg-purple-500 text-white' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
+                                        className={`p-3 rounded-lg font-black text-xs transition-all ${selectedTime === time ? 'bg-purple-600 text-white shadow-lg' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
                                     >
                                         {time}
                                     </button>
@@ -245,17 +232,20 @@ export const ExpertAdviceScreen: React.FC<ExpertAdviceScreenProps> = ({ onClose,
                 </Card>
                 
                 <div className="sticky bottom-0 mt-6 pb-4 bg-gradient-to-t from-black to-transparent">
-                    <Card>
+                    <Card className="border-[#8A2BE2]/30">
                         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                             <div>
-                                <p className="text-gray-400 text-sm">{translate('expert.sessionFee')}</p>
-                                <p className="text-2xl font-bold text-white">{currencyInfo.symbol}{sessionFee}</p>
-                                <button onClick={() => setIsCurrencySelectorOpen(true)} className="mt-1 inline-flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300">
+                                <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">{translate('expert.sessionFee')}</p>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[#8A2BE2] font-black">{currencyInfo.symbol}</span>
+                                    <span className="text-2xl font-black text-white">{sessionFee}</span>
+                                </div>
+                                <button onClick={() => setIsCurrencySelectorOpen(true)} className="mt-1 flex items-center gap-1 text-[10px] font-black text-purple-400 uppercase tracking-widest">
                                     <Globe className="w-3 h-3" />
                                     <span>{currencyInfo.code}</span>
                                 </button>
                             </div>
-                            <Button onClick={initiateBooking} disabled={!selectedTime} className="w-full sm:w-auto">
+                            <Button onClick={initiateBooking} disabled={!selectedTime} className="w-full sm:w-auto font-black uppercase tracking-widest">
                                 {selectedTime ? translate('expert.bookForTime', { time: selectedTime }) : translate('expert.selectTimePrompt')}
                             </Button>
                         </div>

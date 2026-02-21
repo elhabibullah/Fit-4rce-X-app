@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Button from '../common/Button.tsx';
 import { useApp } from '../../hooks/useApp.ts';
@@ -39,7 +38,7 @@ const AboutAppModal: React.FC<AboutAppModalProps> = ({ isOpen, onClose }) => {
                     >
                         <ChevronLeft className="w-6 h-6"/>
                     </button>
-                    <h2 className="text-xl font-bold text-white">{translate('profile.about.title')}</h2>
+                    <h2 className="text-xl font-bold text-white">{translate('about.title')}</h2>
                 </div>
 
                 {/* Scrollable Content Area */}
@@ -63,7 +62,7 @@ const AboutAppModal: React.FC<AboutAppModalProps> = ({ isOpen, onClose }) => {
                 {/* Footer (Fixed) */}
                 <div className="p-4 border-t border-gray-800 bg-black shrink-0">
                     <Button onClick={onClose} className="w-full">
-                        {translate('privacyModal.close')}
+                        {translate('about.close')}
                     </Button>
                 </div>
             </div>

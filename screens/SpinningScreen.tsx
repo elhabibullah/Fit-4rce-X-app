@@ -1,146 +1,85 @@
-
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../hooks/useApp.ts';
 import { Screen } from '../types.ts';
-import { ChevronLeft, Play, Pause, Activity, Timer, Bike, Mountain, Zap, Clock, Check } from 'lucide-react';
-import Card from '../components/common/Card.tsx';
-import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
-import { SPINNING_COACH_MODEL_URL } from '../constants.ts';
-import VirtualEnvironment, { EnvironmentType, ENVIRONMENT_THUMBNAILS } from '../components/common/VirtualEnvironment.tsx';
+import { ChevronLeft, Play, Pause, Bike, Mountain, X } from 'lucide-react';
+import VirtualEnvironment, { EnvironmentType } from '../components/common/VirtualEnvironment.tsx';
 import CastButton from '../components/common/CastButton.tsx';
-import Button from '../components/common/Button.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
+import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
+import Button from '../components/common/Button.tsx';
 
-type SpinningView = 'mode_select' | 'setup' | 'environment_select' | 'countdown' | 'active';
-type Phase = 'warmup' | 'work' | 'cooldown';
+type SpinningView = 'mode_select' | 'setup' | 'active';
+
+const SPINNING_VIDEO_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_spinning-video.mp4";
 
 export const SpinningScreen: React.FC = () => {
   const { setScreen, translate, isDeviceConnected, deviceMetrics } = useApp();
   const [view, setView] = useState<SpinningView>('mode_select');
   
-  // Setup State
-  const [selectedMode, setSelectedMode] = useState<'class' | 'scenic' | null>(null);
-  const [level, setLevel] = useState<string>('intermediate');
-  const [duration, setDuration] = useState<number>(50); // minutes
-  const [env, setEnv] = useState<EnvironmentType>('studio');
-
-  // Active Session State
   const [isActive, setIsActive] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0); // seconds
-  const [rpm, setRpm] = useState(0);
-  const [countdown, setCountdown] = useState(5);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [countdown, setCountdown] = useState(10);
+  const [isPrepPhase, setIsPrepPhase] = useState(false);
+  const [env, setEnv] = useState<EnvironmentType>('studio');
+  const [level, setLevel] = useState<string>('intermediate');
+  const [duration, setDuration] = useState<string>('50');
   const [isTVMode, setIsTVMode] = useState(false);
-
-  // Derived Phase Logic
-  const sessionPhase: Phase = useMemo(() => {
-      const warmupDuration = 5 * 60; // 5 mins
-      const cooldownDuration = 5 * 60; // 5 mins
-      const totalSeconds = duration * 60;
-      
-      if (elapsedTime < warmupDuration) return 'warmup';
-      if (elapsedTime >= totalSeconds - cooldownDuration) return 'cooldown';
-      return 'work';
-  }, [elapsedTime, duration]);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     let interval: number;
     if (view === 'active' && isActive) {
-      interval = window.setInterval(() => {
-        setElapsedTime(t => t + 1);
-        // Simulate RPM fluctuation
-        setRpm(prev => {
-           const target = sessionPhase === 'warmup' || sessionPhase === 'cooldown' ? 70 : 95; 
-           const noise = Math.random() * 10 - 5;
-           return Math.floor(Math.max(0, Math.min(120, target + noise)));
-        });
-      }, 1000);
+      if (isPrepPhase) {
+          interval = window.setInterval(() => {
+              setCountdown(c => {
+                  if (c <= 1) {
+                      setIsPrepPhase(false);
+                      return 10;
+                  }
+                  return c - 1;
+              });
+          }, 1000);
+      } else {
+          interval = window.setInterval(() => setElapsedTime(t => t + 1), 1000);
+      }
     }
     return () => clearInterval(interval);
-  }, [view, isActive, sessionPhase]);
+  }, [view, isActive, isPrepPhase]);
 
   useEffect(() => {
-      let timer: number;
-      if (view === 'countdown') {
-          if (countdown > 0) {
-              timer = window.setTimeout(() => setCountdown(c => c - 1), 1000);
-          } else {
-              setView('active');
-              setIsActive(true);
-          }
+      const v = videoRef.current;
+      if (v) {
+          if (isActive && !isPrepPhase) v.play().catch(() => {});
+          else v.pause();
       }
-      return () => clearTimeout(timer);
-  }, [view, countdown]);
+  }, [isActive, isPrepPhase]);
 
   const formatTime = (s: number) => {
       const m = Math.floor(s / 60);
       const sec = s % 60;
       return `${m}:${sec.toString().padStart(2, '0')}`;
   };
-  
-  const toggleTVMode = () => {
-      if (isTVMode) {
-          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-      }
-      setIsTVMode(!isTVMode);
-  };
-  
-  const handleModeSelect = (mode: 'class' | 'scenic') => {
-      setSelectedMode(mode);
-      // Determine default env
-      if (mode === 'class') {
-          setEnv('studio');
-      } else {
-          setEnv('mountains'); // Default scenic
-      }
-      setView('setup');
-  };
 
-  const handleStartSetup = () => {
-      if (selectedMode === 'scenic') {
-          setView('environment_select');
-      } else {
-          setCountdown(5);
-          setView('countdown');
-      }
-  };
-
-  const initiateCountdown = () => {
-      setCountdown(5);
-      setView('countdown');
-  };
-
-  // --- MODE SELECT VIEW ---
   if (view === 'mode_select') {
       return (
-          <div className="animate-fadeIn h-full bg-black flex flex-col overflow-hidden">
-              <div className="p-4 flex-none flex items-center justify-between border-b border-gray-800">
-                  <button onClick={() => setScreen(Screen.Home)} className="flex items-center text-gray-400 hover:text-white">
-                      <ChevronLeft className="w-6 h-6 mr-1" />
-                      {translate('back')}
+          <div className="animate-fadeIn h-full bg-black flex flex-col overflow-hidden font-['Poppins']">
+              <div className="p-4 flex-none flex items-center justify-between border-b border-gray-900">
+                  <button onClick={() => setScreen(Screen.Home)} className="flex items-center text-gray-400 hover:text-white font-normal uppercase text-[10px] tracking-widest">
+                      <ChevronLeft size={16} className="mr-1" />{translate('back')}
                   </button>
                   <DeviceStatusTrigger />
               </div>
-              
               <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                  <h1 className="text-3xl font-bold text-white text-center mb-8 uppercase tracking-widest">{translate('spinning.menu.title')}</h1>
-                  
-                  <div className="flex flex-col justify-center gap-6 max-w-md mx-auto w-full pb-10">
-                      <button onClick={() => handleModeSelect('class')} className="group relative overflow-hidden rounded-2xl border-2 border-purple-500/50 hover:border-purple-500 transition-all duration-300 h-48">
-                          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 to-black z-0"></div>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4 text-center">
-                              <Bike className="w-12 h-12 text-[#00FFFF] mb-3 group-hover:scale-110 transition-transform" />
-                              <h2 className="text-2xl font-bold text-white uppercase tracking-wider">{translate('spinning.menu.class')}</h2>
-                              <p className="text-gray-400 text-sm mt-1">{translate('spinning.menu.class.desc')}</p>
-                          </div>
+                  <h1 className="text-3xl font-black text-white text-center mb-10 uppercase tracking-tighter pt-8">{translate('spinning.menu.title')}</h1>
+                  <div className="flex flex-col gap-6 max-w-md mx-auto w-full pb-10">
+                      <button onClick={() => { setEnv('studio'); setView('setup'); }} className="h-44 bg-zinc-900/50 border border-gray-800 rounded-[2rem] flex flex-col items-center justify-center p-4 text-center transition-all active:scale-95">
+                          <Bike className="w-10 h-10 text-[#00FFFF] mb-3" />
+                          <h2 className="text-lg font-normal text-white uppercase tracking-widest">{translate('spinning.mode.studio')}</h2>
                       </button>
-
-                      <button onClick={() => handleModeSelect('scenic')} className="group relative overflow-hidden rounded-2xl border-2 border-green-500/50 hover:border-green-500 transition-all duration-300 h-48">
-                          <div className="absolute inset-0 bg-gradient-to-br from-green-900/40 to-black z-0"></div>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4 text-center">
-                              <Mountain className="w-12 h-12 text-green-400 mb-3 group-hover:scale-110 transition-transform" />
-                              <h2 className="text-2xl font-bold text-white uppercase tracking-wider">{translate('spinning.menu.scenic')}</h2>
-                              <p className="text-gray-400 text-sm mt-1">{translate('spinning.menu.scenic.desc')}</p>
-                          </div>
+                      <button onClick={() => { setEnv('mountains'); setView('setup'); }} className="h-44 bg-zinc-900/50 border border-gray-800 rounded-[2rem] flex flex-col items-center justify-center p-4 text-center transition-all active:scale-95">
+                          <Mountain className="w-10 h-10 text-purple-400 mb-3" />
+                          <h2 className="text-lg font-normal text-white uppercase tracking-widest">{translate('spinning.mode.scenic')}</h2>
                       </button>
                   </div>
               </div>
@@ -148,253 +87,110 @@ export const SpinningScreen: React.FC = () => {
       );
   }
 
-  // --- SETUP VIEW ---
   if (view === 'setup') {
       return (
-          <div className="animate-fadeIn h-full bg-black flex flex-col overflow-hidden">
-              <div className="p-4 flex-none flex items-center justify-between border-b border-gray-800">
-                  <button onClick={() => setView('mode_select')} className="flex items-center text-gray-400 hover:text-white">
-                      <ChevronLeft className="w-6 h-6 mr-1" />
-                      {translate('back')}
-                  </button>
-                  <DeviceStatusTrigger />
-              </div>
+          <div className="animate-fadeIn h-full bg-black flex flex-col overflow-hidden font-['Poppins'] p-4 pt-12 custom-scrollbar overflow-y-auto pb-10">
+                <header className="flex justify-between items-center mb-8">
+                    <button onClick={() => setView('mode_select')} className="text-gray-500 hover:text-white flex items-center gap-1 uppercase text-[10px] tracking-widest">
+                      <ChevronLeft size={20}/> {translate('back')}
+                    </button>
+                    <h1 className="text-xl font-black text-white uppercase tracking-[0.2em]">{translate('spinning.setup.title')}</h1>
+                    <div className="w-8" />
+                </header>
+                <div className="max-w-md mx-auto w-full space-y-12">
+                    <section>
+                        <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em] mb-4 text-center">{translate('spinning.setup.level')}</h3>
+                        <div className="grid grid-cols-1 gap-4">
+                            <button 
+                                onClick={() => setLevel('beginner')} 
+                                className={`h-16 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${level === 'beginner' ? 'text-[#00FFFF] bg-cyan-950/40 border-2 border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.2)]' : 'text-gray-500 bg-zinc-900/50 border border-gray-800'}`}
+                            >
+                                {translate('level.beginner')}
+                            </button>
+                            <button 
+                                onClick={() => setLevel('intermediate')} 
+                                className={`h-16 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${level === 'intermediate' ? 'text-[#FFBF00] bg-amber-950/40 border-2 border-[#FFBF00] shadow-[0_0_20px_rgba(255,191,0,0.2)]' : 'text-gray-500 bg-zinc-900/50 border border-gray-800'}`}
+                            >
+                                {translate('level.intermediate')}
+                            </button>
+                            <button 
+                                onClick={() => setLevel('advanced')} 
+                                className={`h-16 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${level === 'advanced' ? 'text-[#FF0000] bg-red-950/40 border-2 border-[#FF0000] shadow-[0_0_20px_rgba(255,0,0,0.2)]' : 'text-gray-500 bg-zinc-900/50 border border-gray-800'}`}
+                            >
+                                {translate('level.advanced')}
+                            </button>
+                        </div>
+                    </section>
 
-              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                  <h1 className="text-2xl font-bold text-white text-center mb-6 uppercase tracking-widest">{translate('spinning.setup.title')}</h1>
+                    <section>
+                        <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em] mb-4 text-center">{translate('spinning.setup.duration')}</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            {['30', '50', '60', '90'].map(d => (
+                              <button 
+                                  key={d}
+                                  onClick={() => setDuration(d)} 
+                                  className={`h-16 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${duration === d ? 'text-white bg-purple-900/40 border-2 border-purple-500 shadow-[0_0_20px_rgba(138,43,226,0.2)]' : 'text-gray-500 bg-zinc-900/50 border border-gray-800'}`}
+                              >
+                                  {translate(`spinning.duration.${d}`)}
+                              </button>
+                            ))}
+                        </div>
+                    </section>
 
-                  <div className="max-w-md mx-auto w-full space-y-6 pb-10">
-                      {/* Mode Indicator */}
-                      <div className="text-center mb-4">
-                          <span className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${selectedMode === 'class' ? 'border-[#00FFFF] text-[#00FFFF]' : 'border-green-500 text-green-500'}`}>
-                              {selectedMode === 'class' ? translate('spinning.menu.class') : translate('spinning.menu.scenic')}
-                          </span>
-                      </div>
-
-                      {/* Level Selection */}
-                      <Card>
-                          <h3 className="text-lg font-bold text-white mb-3 flex items-center"><Zap className="w-5 h-5 mr-2 text-yellow-500"/>{translate('spinning.setup.level')}</h3>
-                          <div className="grid grid-cols-1 gap-2">
-                              {['beginner', 'intermediate', 'advanced'].map(l => (
-                                  <button 
-                                    key={l} 
-                                    onClick={() => setLevel(l)}
-                                    className={`p-3 rounded-lg text-sm font-bold border transition-all flex justify-between items-center ${level === l ? 'bg-yellow-600 border-yellow-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
-                                  >
-                                      {translate(`level.${l}`)}
-                                      {level === l && <Check className="w-4 h-4"/>}
-                                  </button>
-                              ))}
-                          </div>
-                      </Card>
-
-                      {/* Duration Selection */}
-                      <Card>
-                          <h3 className="text-lg font-bold text-white mb-3 flex items-center"><Clock className="w-5 h-5 mr-2 text-blue-500"/>{translate('spinning.setup.duration')}</h3>
-                          <div className="grid grid-cols-2 gap-2">
-                              {[30, 50, 60, 90].map(d => (
-                                  <button 
-                                    key={d} 
-                                    onClick={() => setDuration(d)}
-                                    className={`p-3 rounded-lg text-sm font-bold border transition-all ${duration === d ? 'bg-blue-600 border-blue-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
-                                  >
-                                      {translate(`spinning.duration.${d}`)}
-                                  </button>
-                              ))}
-                          </div>
-                      </Card>
-
-                      <div className="pt-4">
-                          <Button onClick={handleStartSetup} className="w-full text-lg py-4">
-                              {selectedMode === 'scenic' ? translate('next') : translate('start_session')}
-                          </Button>
-                      </div>
-                  </div>
-              </div>
+                    <div className="pt-4">
+                        <Button onClick={() => { setView('active'); setIsActive(true); setIsPrepPhase(true); }} className="w-full py-6 text-sm font-black uppercase tracking-[0.4em] shadow-2xl">
+                            {translate('start_session')}
+                        </Button>
+                    </div>
+                </div>
           </div>
       );
   }
 
-  // --- ENVIRONMENT SELECT VIEW (SCENIC ONLY) ---
-  if (view === 'environment_select') {
-      const scenicEnvs = (['mountains', 'city'] as EnvironmentType[]); 
-
-      return (
-          <div className="animate-fadeIn h-full bg-black flex flex-col overflow-hidden">
-              <div className="p-4 flex-none flex items-center justify-between border-b border-gray-800">
-                  <button onClick={() => setView('setup')} className="flex items-center text-gray-400 hover:text-white">
-                      <ChevronLeft className="w-6 h-6 mr-1" />
-                      {translate('back')}
-                  </button>
-                  <DeviceStatusTrigger />
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                  <h1 className="text-3xl font-bold text-white text-center mb-6 uppercase tracking-widest">{translate('environment.choose')}</h1>
-                  
-                  <div className="grid grid-cols-2 gap-3 max-w-4xl mx-auto pb-20">
-                       {scenicEnvs.map((e) => (
-                          <button 
-                            key={e}
-                            onClick={() => setEnv(e)}
-                            className={`relative h-32 rounded-xl overflow-hidden border-2 transition-all duration-300 group ${env === e ? 'border-purple-500 scale-105 shadow-[0_0_20px_rgba(138,43,226,0.5)]' : 'border-gray-800 hover:border-gray-500'}`}
-                          >
-                              <div 
-                                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${env === e ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}
-                                style={{ backgroundImage: `url(${ENVIRONMENT_THUMBNAILS[e]})` }}
-                              ></div>
-                              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
-
-                              <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-                                  <span className="text-sm font-bold text-white uppercase shadow-black drop-shadow-md">{translate(`environment.${e}`)}</span>
-                                  {env === e && <span className="text-purple-400 text-[10px] font-bold mt-1 tracking-widest bg-black/60 px-2 py-0.5 rounded">{translate('env.selected')}</span>}
-                              </div>
-                          </button>
-                      ))}
-                  </div>
-
-                  <div className="fixed bottom-8 left-0 right-0 px-4">
-                       <div className="max-w-md mx-auto">
-                            <Button onClick={initiateCountdown} className="w-full text-lg py-4 shadow-[0_0_30px_rgba(138,43,226,0.4)]">
-                                <Play className="w-6 h-6 mr-2 inline-block"/>
-                                {translate('start_session')}
-                            </Button>
-                       </div>
-                  </div>
-              </div>
-          </div>
-      );
-  }
-
-  // --- ACTIVE & COUNTDOWN VIEW ---
   return (
-    <div className="animate-fadeIn h-screen w-screen flex flex-col bg-black overflow-hidden relative">
+    <div className="fixed inset-0 z-[2500] h-screen w-screen flex flex-col bg-black overflow-hidden font-['Poppins']">
+      <div className="absolute inset-0 z-0"><VirtualEnvironment type={env} isPaused={!isActive} /></div>
       
-      {/* BACKGROUND LAYER */}
-      <div className="absolute inset-0 z-0">
-         <VirtualEnvironment type={env} />
+      <header className="absolute top-0 left-0 right-0 p-6 flex items-center justify-between z-[100]">
+        <button onClick={() => setScreen(Screen.Home)} className="p-3 bg-black/60 rounded-full text-white backdrop-blur-xl border border-white/10 shadow-2xl active:scale-90 transition-all"><X size={20} /></button>
+        <div className="flex items-center gap-4">
+            <DeviceStatusTrigger />
+            <CastButton isTVMode={isTVMode} onToggleTVMode={() => setIsTVMode(!isTVMode)} />
+        </div>
+      </header>
+
+      <div className="absolute inset-x-6 top-24 bottom-40 z-40 rounded-[3rem] overflow-hidden border border-purple-500/40 bg-black shadow-[0_0_60px_rgba(138,43,226,0.4)]">
+          <video ref={videoRef} src={SPINNING_VIDEO_URL} loop muted autoPlay playsInline className="w-full h-full object-cover opacity-60 contrast-125" />
+          
+          <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+              <HolographicCoach isPaused={!isActive || isPrepPhase} modelUrl="https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/Spinning_coach_compressed.glb?v=12350" />
+          </div>
+
+          {isPrepPhase && (
+             <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center animate-fadeIn">
+                 <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.5em] mb-4 drop-shadow-[0_0_10px_#00FFFF]">ENGINE INITIALIZING</h4>
+                 <div className="text-[12rem] font-black text-white leading-none drop-shadow-[0_0_40px_rgba(0,255,255,0.7)]">{countdown}</div>
+             </div>
+          )}
       </div>
 
-       {/* COUNTDOWN OVERLAY */}
-      {view === 'countdown' && (
-          <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-               <div className="text-[12rem] font-black text-white animate-pulse" style={{ textShadow: '0 0 50px #8A2BE2' }}>
-                   {countdown}
-               </div>
-          </div>
-      )}
-
-      {/* Header */}
-      {!isTVMode && (
-          <header className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-[100] bg-gradient-to-b from-black via-black/60 to-transparent pointer-events-auto">
-            <button onClick={() => setView('setup')} className="p-2 bg-gray-900/50 rounded-full text-white backdrop-blur-md hover:bg-gray-800 border border-white/10 transition-colors">
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <h1 className="text-xl font-bold text-white uppercase tracking-widest drop-shadow-md">{translate(`environment.${env}`).toUpperCase()}</h1>
-            <div className="flex items-center gap-3">
-                <DeviceStatusTrigger />
-                <CastButton isTVMode={isTVMode} onToggleTVMode={toggleTVMode} />
-            </div>
-          </header>
-      )}
-      
-      {isTVMode && (
-          <button 
-            onClick={toggleTVMode}
-            className="fixed top-6 right-6 z-[100] bg-black/50 text-white px-6 py-2 rounded-full border border-white/30 hover:bg-black/80 backdrop-blur-md font-bold tracking-wider"
-          >
-              {translate('tv.cast.exit')}
-          </button>
-      )}
-
-      {/* COACH OVERLAY */}
-      {view === 'active' && (
-          <div 
-            className={`
-                absolute z-40 overflow-hidden rounded-2xl border-2 border-[#00FFFF]/50 bg-black/40 backdrop-blur-sm shadow-[0_0_20px_rgba(0,255,255,0.2)]
-                transition-all duration-500
-                ${isTVMode 
-                    ? 'bottom-12 right-12 w-80 h-80 border-4'
-                    : 'bottom-24 right-4 w-40 h-48'
-                }
-            `}
-          >
-              {/* FIXED: Changed cameraTarget from "0m 0.8m 0m" to "0m 0.4m 0m" to move model HIGHER in frame */}
-              <HolographicCoach 
-                isPaused={!isActive} 
-                state={isActive ? 'active' : 'idle'} 
-                modelUrl={SPINNING_COACH_MODEL_URL}
-                cameraOrbit="0deg 80deg 4.5m"
-                cameraTarget="0m 0.4m 0m" 
-              />
-              
-              <div className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded animate-pulse z-50">
-                  {translate('live.badge')}
-              </div>
-          </div>
-      )}
-
-      {/* PHASE INDICATOR (TOP) */}
-      {view === 'active' && (
-          <div className="absolute top-20 left-0 right-0 z-30 flex justify-center pointer-events-none">
-              <div className={`px-4 py-1 rounded-full border border-white/20 backdrop-blur-md shadow-lg text-xs font-bold uppercase tracking-widest ${
-                  sessionPhase === 'warmup' ? 'bg-yellow-500/80 text-black' :
-                  sessionPhase === 'cooldown' ? 'bg-blue-500/80 text-white' :
-                  'bg-red-500/80 text-white'
-              }`}>
-                  {translate(`spinning.phase.${sessionPhase}`)}
-              </div>
-          </div>
-      )}
-
-      {/* HUD Overlay */}
-      <div className="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between z-30">
-            {/* Timer */}
-            <div className={`mt-24 flex justify-center transition-all duration-300 ${isTVMode ? 'mt-16 transform scale-150' : ''}`}>
-                <div className={`backdrop-blur-md border border-[#00FFFF]/50 px-6 py-2 rounded-full flex items-center gap-3 shadow-lg ${isTVMode ? 'bg-black/40' : 'bg-black/60'}`}>
-                    <Timer className="w-5 h-5 text-[#00FFFF]" />
-                    <span className="text-2xl font-mono font-bold text-white">{formatTime(elapsedTime)}</span>
-                    <span className="text-xs text-gray-400 font-mono self-end mb-1">/ {duration}m</span>
+      <div className="absolute bottom-10 left-0 right-0 z-50 px-6">
+          <div className="flex justify-between items-center gap-4 max-w-xl mx-auto">
+                <div className="flex-1 bg-black/60 backdrop-blur-2xl border border-white/10 p-6 rounded-3xl text-center shadow-2xl">
+                    <p className="text-[9px] text-[#00FFFF] font-normal uppercase tracking-widest mb-1">ELAPSED</p>
+                    <p className="text-3xl font-black text-white font-mono tracking-tighter">{formatTime(elapsedTime)}</p>
                 </div>
-            </div>
-
-            {/* Bottom Controls / Stats */}
-            <div className={`flex justify-between items-end transition-all duration-300 ${isTVMode ? 'px-16 pb-8 scale-110' : ''}`}>
-                 {/* RPM */}
-                 <div className={`backdrop-blur-md border border-[#00FFFF]/30 p-4 rounded-2xl min-w-[100px] ${isTVMode ? 'bg-black/40' : 'bg-black/60'}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-gray-400 uppercase tracking-wider font-bold text-[#00FFFF]">{translate('spinning.rpm')}</span>
-                    </div>
-                    <span className="text-3xl font-bold text-white font-mono">{rpm}</span>
-                 </div>
-
-                 {/* HR */}
-                 <div className={`backdrop-blur-md border border-purple-500/30 p-4 rounded-2xl min-w-[100px] text-right ${isTVMode ? 'bg-black/40' : 'bg-black/60'}`}>
-                    <div className="flex items-center justify-end gap-2 mb-1">
-                        <span className="text-xs text-gray-400 uppercase tracking-wider">{translate('device.hud.hr')}</span>
-                        <Activity className="w-4 h-4 text-purple-400" />
-                    </div>
-                    <span className="text-3xl font-bold text-white font-mono">
-                        {isDeviceConnected ? deviceMetrics.heartRate : '--'}
-                    </span>
-                 </div>
-            </div>
+                <div className="w-24 h-24 bg-[#8A2BE2] rounded-full flex items-center justify-center shadow-[0_0_40px_#8A2BE2] active:scale-90 transition-all">
+                    <button onClick={() => setIsActive(!isActive)} className="text-white">
+                        {isActive ? <Pause size={40} fill="white" /> : <Play size={40} fill="white" className="ml-1.5" />}
+                    </button>
+                </div>
+                <div className="flex-1 bg-black/60 backdrop-blur-2xl border border-white/10 p-6 rounded-3xl text-center shadow-2xl">
+                    <p className="text-[9px] text-red-500 font-normal uppercase tracking-widest mb-1">HEART RATE</p>
+                    <p className="text-3xl font-black text-white font-mono tracking-tighter">{isDeviceConnected ? deviceMetrics.heartRate : '--'}</p>
+                </div>
+          </div>
       </div>
-
-      {/* Control Deck */}
-      {!isTVMode && (
-          <div className="px-4 relative z-50 bottom-4">
-            <Card className="border-[#00FFFF]/30 shadow-[0_0_20px_rgba(0,255,255,0.1)] bg-black/90 backdrop-blur-xl">
-                <div className="flex justify-center items-center px-4 py-2">
-                     <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 shadow-lg transform transition-transform active:scale-95 ${isActive ? 'border-red-500 bg-red-900/20' : 'border-green-500 bg-green-900/20'}`}>
-                         <button onClick={() => setIsActive(!isActive)} className="w-full h-full flex items-center justify-center">
-                            {isActive ? <Pause className="w-8 h-8 text-white" /> : <Play className="w-8 h-8 text-white ml-1" />}
-                         </button>
-                     </div>
-                </div>
-            </Card>
-          </div>
-      )}
     </div>
   );
 };

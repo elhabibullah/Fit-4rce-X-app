@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import Card from '../components/common/Card.tsx';
 import Button from '../components/common/Button.tsx';
@@ -15,14 +14,14 @@ type OptionCardProps = {
 };
 
 const OptionCard: React.FC<OptionCardProps> = ({ label, isSelected, onClick, multiSelect = false }) => (
-    <button onClick={onClick} className="w-full text-left relative">
-        <Card className={`text-center transition-all duration-300 ${isSelected ? '!scale-105 bg-gray-800 !border-[#8A2BE2]' : ''}`}>
+    <button onClick={onClick} className="w-full text-left relative transition-transform active:scale-95">
+        <Card className={`text-center transition-all duration-300 py-4 ${isSelected ? '!scale-105 bg-gray-800 !border-purple-500 shadow-[0_0_15px_rgba(138,43,226,0.2)]' : 'border-gray-700'}`}>
             {multiSelect && isSelected && (
-                <div className="absolute top-3 right-3 w-6 h-6 bg-[#8A2BE2] rounded-full flex items-center justify-center">
-                    <Check className="w-4 h-4 text-white" />
+                <div className="absolute top-2 right-2 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
                 </div>
             )}
-            <div className="text-lg font-bold text-white">{label}</div>
+            <div className="text-sm font-bold text-white uppercase tracking-widest">{label}</div>
         </Card>
     </button>
 );
@@ -40,9 +39,9 @@ const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({ onComplete }) =
         avatar_url: initialProfile?.avatar_url,
         age: initialProfile?.age || 25,
         gender: initialProfile?.gender || 'male',
-        height: initialProfile?.height || 175,
+        height: initialProfile?.height || 154,
         weight: initialProfile?.weight || 70,
-        fitness_level: initialProfile?.fitness_level,
+        fitness_level: initialProfile?.fitness_level || 'intermediate',
         goal: initialProfile?.goal || [],
     });
     const [avatarPreview, setAvatarPreview] = useState<string | null>(initialProfile?.avatar_url || null);
@@ -62,17 +61,11 @@ const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({ onComplete }) =
         });
     };
 
-    const handleAvatarClick = () => {
-        fileInputRef.current?.click();
-    };
-
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setImageToCrop(reader.result as string);
-            };
+            reader.onloadend = () => setImageToCrop(reader.result as string);
             reader.readAsDataURL(file);
         }
     };
@@ -92,106 +85,106 @@ const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({ onComplete }) =
 
     const renderStep = () => {
         switch (step) {
-            case 1: return ( // Name and Photo
+            case 1: return ( // Identity
                 <div className="animate-fadeIn w-full">
-                    <h2 className="text-2xl font-bold text-center mb-6">{translate('profileSetup.step1.title')}</h2>
+                    <h2 className="text-xl font-black text-center mb-8 uppercase tracking-[0.3em] text-white">{translate('profileSetup.step1.title')}</h2>
                     <input
                         type="text"
                         placeholder={translate('profileSetup.step1.fullName')}
                         value={profile.full_name}
                         onChange={(e) => setProfile(p => ({ ...p, full_name: e.target.value }))}
-                        className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-white text-center text-lg mb-6 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        className="w-full bg-gray-900 border border-gray-700 rounded-2xl p-5 text-white text-center text-lg mb-8 focus:ring-1 focus:ring-purple-500 focus:outline-none placeholder:text-gray-600"
                     />
-                    <div className="text-center mb-6">
-                        <button onClick={handleAvatarClick} className="relative w-32 h-32 rounded-full mx-auto border-4 border-dashed border-gray-600 flex items-center justify-center hover:border-purple-500 transition-colors">
+                    <div className="text-center mb-12">
+                        <button onClick={() => fileInputRef.current?.click()} className="relative w-40 h-40 rounded-full mx-auto border-4 border-dashed border-gray-800 flex items-center justify-center hover:border-purple-500 transition-all overflow-hidden group">
                             {avatarPreview ? (
-                                <img src={avatarPreview} alt="Avatar Preview" className="w-full h-full rounded-full object-cover" />
+                                <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                             ) : (
-                                <UserIcon className="w-12 h-12 text-gray-500" />
+                                <UserIcon className="w-12 h-12 text-gray-700 group-hover:text-purple-400" />
                             )}
-                            <div className="absolute bottom-0 right-0 p-2 bg-[#8A2BE2] rounded-full">
-                                <Camera className="w-5 h-5 text-white" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Camera className="w-8 h-8 text-white" />
                             </div>
                         </button>
                         <input type="file" accept="image/*" ref={fileInputRef} onChange={handleAvatarChange} className="hidden" />
                     </div>
-                    <Button onClick={handleNext} className="w-full" disabled={!profile.full_name}>{translate('next')}</Button>
+                    <Button onClick={handleNext} className="w-full py-5 uppercase font-black tracking-widest text-sm" disabled={!profile.full_name}>{translate('next')}</Button>
                 </div>
             );
-            case 2: return ( // Age and Gender
+            case 2: return ( // Specs
                 <div className="animate-fadeIn w-full">
-                    <h2 className="text-2xl font-bold text-center mb-6">{translate('profileSetup.step2.title')}</h2>
-                    <label className="block text-gray-400 mb-2">{translate('profileSetup.step2.age')}: {profile.age}</label>
-                    <input
-                        type="range"
-                        min="16" max="99"
-                        value={profile.age}
-                        onChange={(e) => setProfile(p => ({ ...p, age: parseInt(e.target.value, 10) }))}
-                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500 mb-6"
-                    />
-                     <label className="block text-gray-400 mb-2">{translate('profileSetup.step2.gender')}</label>
-                     <div className="grid grid-cols-2 gap-4 mb-6">
+                    <h2 className="text-xl font-black text-center mb-10 uppercase tracking-[0.3em] text-white">{translate('profileSetup.step2.title')}</h2>
+                    <div className="mb-10 bg-gray-900/50 p-6 rounded-3xl border border-gray-800">
+                        <label className="block text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-center">{translate('profileSetup.step2.age')}: <span className="text-white text-lg ml-2">{profile.age}</span></label>
+                        <input
+                            type="range" min="16" max="90" value={profile.age}
+                            onChange={(e) => setProfile(p => ({ ...p, age: parseInt(e.target.value) }))}
+                            className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                        />
+                    </div>
+                     <div className="grid grid-cols-2 gap-4 mb-10">
                         <OptionCard label={translate('gender.male')} isSelected={profile.gender === 'male'} onClick={() => setProfile(p => ({ ...p, gender: 'male' }))} />
                         <OptionCard label={translate('gender.female')} isSelected={profile.gender === 'female'} onClick={() => setProfile(p => ({ ...p, gender: 'female' }))} />
                      </div>
                      <div className="grid grid-cols-2 gap-4">
-                        <Button onClick={handleBack} variant="secondary">{translate('back')}</Button>
-                        <Button onClick={handleNext}>{translate('next')}</Button>
+                        <Button onClick={handleBack} variant="secondary" className="py-5 uppercase font-black tracking-widest text-xs">{translate('back')}</Button>
+                        <Button onClick={handleNext} className="py-5 uppercase font-black tracking-widest text-xs">{translate('next')}</Button>
                      </div>
                 </div>
             );
-            case 3: return ( // Height and Weight
+            case 3: return ( // Vitals
                  <div className="animate-fadeIn w-full">
-                    <h2 className="text-2xl font-bold text-center mb-6">{translate('profileSetup.step3.title')}</h2>
-                    <label className="block text-gray-400 mb-2">{translate('profileSetup.step3.height')}: {profile.height} cm</label>
-                    <input
-                        type="range"
-                        min="120" max="220"
-                        value={profile.height}
-                        onChange={(e) => setProfile(p => ({ ...p, height: parseInt(e.target.value, 10) }))}
-                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500 mb-6"
-                    />
-                    <label className="block text-gray-400 mb-2">{translate('profileSetup.step3.weight')}: {profile.weight} kg</label>
-                    <input
-                        type="range"
-                        min="40" max="150"
-                        value={profile.weight}
-                        onChange={(e) => setProfile(p => ({ ...p, weight: parseInt(e.target.value, 10) }))}
-                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500 mb-6"
-                    />
+                    <h2 className="text-xl font-black text-center mb-10 uppercase tracking-[0.3em] text-white">{translate('profileSetup.step3.title')}</h2>
+                    <div className="space-y-8 mb-12">
+                        <div className="bg-gray-900/50 p-6 rounded-3xl border border-gray-800">
+                            <label className="block text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-center">{translate('profileSetup.step3.height')}: <span className="text-white text-lg ml-2">{profile.height} cm</span></label>
+                            <input
+                                type="range" min="120" max="230" value={profile.height}
+                                onChange={(e) => setProfile(p => ({ ...p, height: parseInt(e.target.value) }))}
+                                className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                            />
+                        </div>
+                        <div className="bg-gray-900/50 p-6 rounded-3xl border border-gray-800">
+                            <label className="block text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-center">{translate('profileSetup.step3.weight')}: <span className="text-white text-lg ml-2">{profile.weight} kg</span></label>
+                            <input
+                                type="range" min="30" max="180" value={profile.weight}
+                                onChange={(e) => setProfile(p => ({ ...p, weight: parseInt(e.target.value) }))}
+                                className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                            />
+                        </div>
+                    </div>
                      <div className="grid grid-cols-2 gap-4">
-                        <Button onClick={handleBack} variant="secondary">{translate('back')}</Button>
-                        <Button onClick={handleNext}>{translate('next')}</Button>
+                        <Button onClick={handleBack} variant="secondary" className="py-5 uppercase font-black tracking-widest text-xs">{translate('back')}</Button>
+                        <Button onClick={handleNext} className="py-5 uppercase font-black tracking-widest text-xs">{translate('next')}</Button>
                      </div>
                 </div>
             );
-            case 4: return ( // Fitness Level
+            case 4: return ( // Level
                  <div className="animate-fadeIn w-full">
-                    <h2 className="text-2xl font-bold text-center mb-6">{translate('profileSetup.step4.title')}</h2>
-                     <div className="grid grid-cols-1 gap-4 mb-6">
-                        <OptionCard label={translate('level.beginner')} isSelected={profile.fitness_level === 'beginner'} onClick={() => setProfile(p => ({ ...p, fitness_level: 'beginner' }))} />
-                        <OptionCard label={translate('level.intermediate')} isSelected={profile.fitness_level === 'intermediate'} onClick={() => setProfile(p => ({ ...p, fitness_level: 'intermediate' }))} />
-                        <OptionCard label={translate('level.advanced')} isSelected={profile.fitness_level === 'advanced'} onClick={() => setProfile(p => ({ ...p, fitness_level: 'advanced' }))} />
+                    <h2 className="text-xl font-black text-center mb-10 uppercase tracking-[0.3em] text-white">{translate('profileSetup.step4.title')}</h2>
+                     <div className="grid grid-cols-1 gap-4 mb-12">
+                        {['beginner', 'intermediate', 'advanced', 'elite'].map(l => (
+                            <OptionCard key={l} label={translate(`level.${l}`)} isSelected={profile.fitness_level === l} onClick={() => setProfile(p => ({ ...p, fitness_level: l as any }))} />
+                        ))}
                      </div>
                      <div className="grid grid-cols-2 gap-4">
-                        <Button onClick={handleBack} variant="secondary">{translate('back')}</Button>
-                        <Button onClick={handleNext} disabled={!profile.fitness_level}>{translate('next')}</Button>
+                        <Button onClick={handleBack} variant="secondary" className="py-5 uppercase font-black tracking-widest text-xs">{translate('back')}</Button>
+                        <Button onClick={handleNext} className="py-5 uppercase font-black tracking-widest text-xs" disabled={!profile.fitness_level}>{translate('next')}</Button>
                      </div>
                 </div>
             );
-            case 5: return ( // Goal
+            case 5: return ( // Goals
                  <div className="animate-fadeIn w-full">
-                    <h2 className="text-2xl font-bold text-center mb-2">{translate('profileSetup.step5.title')}</h2>
-                    <p className="text-gray-400 text-center text-sm mb-6">{translate('profileSetup.step5.subtitle')}</p>
-                     <div className="grid grid-cols-2 gap-4 mb-6">
-                        <OptionCard label={translate('goal.lose_weight')} isSelected={profile.goal?.includes('lose_weight') || false} onClick={() => handleGoalSelection('lose_weight')} multiSelect />
-                        <OptionCard label={translate('goal.build_muscle')} isSelected={profile.goal?.includes('build_muscle') || false} onClick={() => handleGoalSelection('build_muscle')} multiSelect />
-                        <OptionCard label={translate('goal.improve_endurance')} isSelected={profile.goal?.includes('improve_endurance') || false} onClick={() => handleGoalSelection('improve_endurance')} multiSelect />
-                        <OptionCard label={translate('goal.learn_self_defense')} isSelected={profile.goal?.includes('learn_self_defense') || false} onClick={() => handleGoalSelection('learn_self_defense')} multiSelect />
+                    <h2 className="text-xl font-black text-center mb-2 uppercase tracking-[0.3em] text-white">{translate('profileSetup.step5.title')}</h2>
+                    <p className="text-gray-500 text-center text-[10px] font-black uppercase tracking-[0.4em] mb-12">{translate('profileSetup.step5.subtitle')}</p>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
+                        {['lose_weight', 'build_muscle', 'improve_endurance', 'learn_self_defense'].map(g => (
+                            <OptionCard key={g} label={translate(`goal.${g}`)} isSelected={profile.goal?.includes(g as any) || false} onClick={() => handleGoalSelection(g as any)} multiSelect />
+                        ))}
                      </div>
                      <div className="grid grid-cols-2 gap-4">
-                        <Button onClick={handleBack} variant="secondary">{translate('back')}</Button>
-                        <Button onClick={handleComplete} disabled={!profile.goal || profile.goal.length === 0 || isProcessing}>
+                        <Button onClick={handleBack} variant="secondary" className="py-5 uppercase font-black tracking-widest text-xs">{translate('back')}</Button>
+                        <Button onClick={handleComplete} className="py-5 uppercase font-black tracking-widest text-xs" disabled={!profile.goal || profile.goal.length === 0 || isProcessing}>
                             {isProcessing ? translate('processing') : translate('finish')}
                         </Button>
                      </div>
@@ -202,19 +195,13 @@ const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({ onComplete }) =
     };
 
     return (
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4" key={language}>
-            {imageToCrop && (
-                <ImageCropper 
-                    src={imageToCrop} 
-                    onSave={handleCropSave}
-                    onClose={() => setImageToCrop(null)}
-                />
-            )}
-            <div className="w-full max-w-md">
-                <div className="flex justify-center mb-8">
-                    <div className="flex gap-2">
+        <div className="min-h-screen w-full bg-black flex flex-col items-center pt-24 pb-32 px-6" key={language}>
+            {imageToCrop && <ImageCropper src={imageToCrop} onSave={handleCropSave} onClose={() => setImageToCrop(null)} />}
+            <div className="w-full max-w-lg">
+                <div className="flex justify-center mb-16">
+                    <div className="flex gap-3">
                         {[1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i <= step ? 'bg-[#8A2BE2]' : 'bg-gray-700'}`}></div>
+                            <div key={i} className={`h-1.5 rounded-full transition-all duration-700 ${i <= step ? 'bg-purple-500 w-10 shadow-[0_0_10px_#8A2BE2]' : 'bg-gray-800 w-3'}`}></div>
                         ))}
                     </div>
                 </div>

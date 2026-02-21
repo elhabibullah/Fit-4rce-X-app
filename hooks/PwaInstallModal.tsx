@@ -1,8 +1,7 @@
-
 import React from 'react';
-import Card from '../common/Card.tsx';
-import Button from '../common/Button.tsx';
-import { useApp } from '../../hooks/useApp.ts';
+import Card from '../components/common/Card.tsx';
+import Button from '../components/common/Button.tsx';
+import { useApp } from './useApp.ts';
 import { X, Share, MoreVertical } from 'lucide-react';
 
 interface PwaInstallModalProps {
@@ -13,12 +12,13 @@ interface PwaInstallModalProps {
 const TextWithIcon: React.FC<{ textKey: string; Icon: React.ElementType }> = ({ textKey, Icon }) => {
     const { translate } = useApp();
     const text = translate(textKey);
-    const parts = text.split('{{icon}}');
+    const parts = text.split('{{icon}}') as string[];
+    const IconComp = Icon as any;
 
     return (
         <span>
             {parts[0]}
-            <Icon className="w-4 h-4 mx-1 inline-block align-middle" />
+            <IconComp className="w-4 h-4 mx-1 inline-block align-middle" />
             {parts[1]}
         </span>
     );
@@ -47,15 +47,6 @@ const PwaInstallModal: React.FC<PwaInstallModalProps> = ({ isOpen, onClose }) =>
                             </li>
                             <li>{translate('pwa.modal.ios.step2')}</li>
                             <li>{translate('pwa.modal.ios.step3')}</li>
-                        </ol>
-                    </div>
-                     <div>
-                        <h3 className="text-lg font-bold text-purple-400 mb-2">{translate('pwa.modal.android.title')}</h3>
-                        <ol className="list-decimal list-inside text-gray-300 space-y-2 text-sm">
-                           <li>
-                               <TextWithIcon textKey="pwa.modal.android.step1" Icon={MoreVertical} />
-                           </li>
-                           <li>{translate('pwa.modal.android.step2')}</li>
                         </ol>
                     </div>
                 </div>

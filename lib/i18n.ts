@@ -1,51 +1,62 @@
-
-import { TranslatedConstants, Language, KungFuProgram, JujutsuProgram, NeoTaiChiProgram, KarateProgram, WrestlingProgram } from '../types.ts';
+import { TranslatedConstants, Language, KungFuProgram, NeoTaiChiProgram } from '../types.ts';
 import { 
     TRAINER_STRUCTURE, 
     LANGUAGE_STRUCTURE, 
     TECHNIQUE_MODEL_URL 
-} from '../constants.ts';
+} from './constants.ts';
 
 // --- TRANSLATION GENERATOR ---
 
 export const getTranslatedConstants = (lang: Language, t: (key: string) => string): TranslatedConstants => {
   
   const KUNG_FU_DATA: KungFuProgram = {
-    program_name: "Iron Buffalo Kung Fu", 
-    description: t('discipline.kung_fu.intro'),
+    program_name: t('kf.name'), 
+    description: t('kf.intro'),
     levels: [
         {
-            level_name: `Level 1: ${t('level.beginner')}`,
-            description: t('selfDefense.description'),
+            level_name: t('kf.l1.title'),
+            description: t('kf.l1.goal'),
             sections: [
                 { 
-                    section_name: "Stance & Rooting", 
+                    section_name: 'Techniques', 
                     movements: [
-                        { id: "ib-l1-s1-m1", name: "Horse Stance (Ma Bu)", description: "The mother of all stances.", application: "Stability.", modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l1-m1", name: t('kf.tech.l1.mabu'), description: t('kf.tech.l1.mabu.desc'), application: t('kf.app.l1.root'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l1-m2", name: t('kf.tech.l1.fist'), description: t('kf.tech.l1.fist.desc'), application: t('kf.app.l1.defense'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l1-m3", name: t('kf.tech.l1.palm'), description: t('kf.tech.l1.palm.desc'), application: t('kf.app.l1.defense'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l1-m4", name: t('kf.tech.l1.step'), description: t('kf.tech.l1.step.desc'), application: t('kf.app.l1.balance'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l1-m5", name: t('kf.tech.l1.form'), description: t('kf.tech.l1.form.desc'), application: t('kf.app.l1.root'), modelUrl: TECHNIQUE_MODEL_URL },
                     ] 
                 }
             ]
         },
         {
-            level_name: `Level 2: ${t('level.intermediate')}`,
-            description: t('selfDefense.trainMode'),
+            level_name: t('kf.l2.title'),
+            description: t('kf.l2.goal'),
             sections: [
                 {
-                    section_name: "Tiger Form",
+                    section_name: 'Techniques',
                     movements: [
-                        { id: "ib-l2-s1-m1", name: "Tiger Claw", description: "Finger conditioning.", application: "Gripping.", modelUrl: TECHNIQUE_MODEL_URL }
+                        { id: "kf-l2-m1", name: t('kf.tech.l2.chain'), description: t('kf.tech.l2.chain.desc'), application: t('kf.app.l2.control'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l2-m2", name: t('kf.tech.l2.redir'), description: t('kf.tech.l2.redir.desc'), application: t('kf.app.l2.redirect'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l2-m3", name: t('kf.tech.l2.kicks'), description: t('kf.tech.l2.kicks.desc'), application: t('kf.app.l2.control'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l2-m4", name: t('kf.tech.l2.flow'), description: t('kf.tech.l2.flow.desc'), application: t('kf.app.l2.transition'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l2-m5", name: t('kf.tech.l2.form'), description: t('kf.tech.l2.form.desc'), application: t('kf.app.l2.transition'), modelUrl: TECHNIQUE_MODEL_URL },
                     ]
                 }
             ]
         },
         {
-            level_name: `Level 3: ${t('level.advanced')}`,
-            description: t('selfDefense.applicationNotes'),
+            level_name: t('kf.l3.title'),
+            description: t('kf.l3.goal'),
             sections: [
                 {
-                    section_name: "Iron Shirt",
+                    section_name: 'Techniques',
                     movements: [
-                        { id: "ib-l3-s1-m1", name: "Dynamic Tension", description: "Isometrics.", application: "Protection.", modelUrl: TECHNIQUE_MODEL_URL }
+                        { id: "kf-l3-m1", name: t('kf.tech.l3.explosive'), description: t('kf.tech.l3.explosive.desc'), application: t('kf.app.l3.neutralize'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l3-m2", name: t('kf.tech.l3.spiral'), description: t('kf.tech.l3.spiral.desc'), application: t('kf.app.l3.neutralize'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l3-m3", name: t('kf.tech.l3.advkicks'), description: t('kf.tech.l3.advkicks.desc'), application: t('kf.app.l3.multi'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l3-m4", name: t('kf.tech.l3.flow'), description: t('kf.tech.l3.flow.desc'), application: t('kf.app.l3.multi'), modelUrl: TECHNIQUE_MODEL_URL },
+                        { id: "kf-l3-m5", name: t('kf.tech.l3.form'), description: t('kf.tech.l3.form.desc'), application: t('kf.app.l3.stability'), modelUrl: TECHNIQUE_MODEL_URL },
                     ]
                 }
             ]
@@ -54,63 +65,46 @@ export const getTranslatedConstants = (lang: Language, t: (key: string) => strin
   };
 
   const NEO_TAI_CHI_DATA: NeoTaiChiProgram = {
-    program_name: "Neo Tai Chi",
-    description: t('discipline.tai_chi.intro'),
+    program_name: t('ntc.name'),
+    description: t('ntc.intro'),
     levels: [
         {
-            level: "Level 1",
-            title: "Structure & Rooting",
-            objective: "Learn to stand before you learn to move.",
-            duration: "4 Weeks",
+            level: "1",
+            title: t('ntc.l1.title'),
+            objective: t('ntc.l1.goal'),
+            duration: "4-6 Weeks",
             techniques: [
-                { id: "ntc-l1-t1", name: "Wuji Stance", description: "The void stance.", application: "Baseline.", modelUrl: TECHNIQUE_MODEL_URL }
+                { id: "ntc-l1-t1", name: t('ntc.tech.l1.stance'), description: t('ntc.tech.l1.stance.desc'), application: t('ntc.app.l1.stability'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l1-t2", name: t('ntc.tech.l1.slow'), description: t('ntc.tech.l1.slow.desc'), application: t('ntc.app.l1.balance'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l1-t3", name: t('ntc.tech.l1.shift'), description: t('ntc.tech.l1.shift.desc'), application: t('ntc.app.l1.stability'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l1-t4", name: t('ntc.tech.l1.breath'), description: t('ntc.tech.l1.breath.desc'), application: t('ntc.app.l1.calm'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l1-t5", name: t('ntc.tech.l1.form'), description: t('ntc.tech.l1.form.desc'), application: t('ntc.app.l1.balance'), modelUrl: TECHNIQUE_MODEL_URL },
             ]
-        }
-    ]
-  };
-
-  const KARATE_DATA: KarateProgram = {
-    program_name: "Shotokan Karate",
-    description: t('discipline.karate.intro'),
-    levels: [
+        },
         {
-            level_name: "White Belt",
-            description: "Introduction to basic stances.",
-            modules: [
-                {
-                    module_name: "Kihon (Basics)",
-                    lessons: [
-                        { id: "kar-l1-m1-l1", name: "Choku Zuki", description: "Straight Punch", application: "Solar plexus.", drills: [], bunkai_examples: [], modelUrl: TECHNIQUE_MODEL_URL }
-                    ]
-                }
-            ]
-        }
-    ]
-  };
-
-  const JUJUTSU_DATA: JujutsuProgram = {
-    program_name: "Imperial Jujutsu",
-    description: t('discipline.jujutsu.intro'),
-    modules: [
-        {
-            module_name: "Level 1",
-            module_label: "The Foundation",
+            level: "2",
+            title: t('ntc.l2.title'),
+            objective: t('ntc.l2.goal'),
+            duration: "8-12 Weeks",
             techniques: [
-                { id: "imp-m1-t1", name_ja_kanji: "受身", name_romaji: "Ukemi", name: "Breakfalls", description: "The art of falling safely.", application: "Preventing injury.", difficulty: 1, modelUrl: TECHNIQUE_MODEL_URL }
+                { id: "ntc-l2-t1", name: t('ntc.tech.l2.flow'), description: t('ntc.tech.l2.flow.desc'), application: t('ntc.app.l2.connect'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l2-t2", name: t('ntc.tech.l2.spiral'), description: t('ntc.tech.l2.spiral.desc'), application: t('ntc.app.l2.redirect'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l2-t3", name: t('ntc.tech.l2.smooth'), description: t('ntc.tech.l2.smooth.desc'), application: t('ntc.app.l2.connect'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l2-t4", name: t('ntc.tech.l2.medium'), description: t('ntc.tech.l2.medium.desc'), application: t('ntc.app.l2.redirect'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l2-t5", name: t('ntc.tech.l2.form'), description: t('ntc.tech.l2.form.desc'), application: t('ntc.app.l2.sync'), modelUrl: TECHNIQUE_MODEL_URL },
             ]
-        }
-    ]
-  };
-
-  const WRESTLING_DATA: WrestlingProgram = {
-    program_name: "Combat Wrestling",
-    description: t('discipline.wrestling.intro'),
-    levels: [
+        },
         {
-            level_name: "Level 1",
-            description: "Stance & Motion",
-            movements: [
-                { id: "cw-l1-m1", name: "Stance", description: "Lead leg protection.", application: "Base.", modelUrl: TECHNIQUE_MODEL_URL }
+            level: "3",
+            title: t('ntc.l3.title'),
+            objective: t('ntc.l3.goal'),
+            duration: "Ongoing",
+            techniques: [
+                { id: "ntc-l3-t1", name: t('ntc.tech.l3.intent'), description: t('ntc.tech.l3.intent.desc'), application: t('ntc.app.l3.efficient'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l3-t2", name: t('ntc.tech.l3.fajin'), description: t('ntc.tech.l3.fajin.desc'), application: t('ntc.app.l3.power'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l3-t3", name: t('ntc.tech.l3.offbalance'), description: t('ntc.tech.l3.offbalance.desc'), application: t('ntc.app.l3.multi'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l3-t4", name: t('ntc.tech.l3.control'), description: t('ntc.tech.l3.control.desc'), application: t('ntc.app.l3.efficient'), modelUrl: TECHNIQUE_MODEL_URL },
+                { id: "ntc-l3-t5", name: t('ntc.tech.l3.form'), description: t('ntc.tech.l3.form.desc'), application: t('ntc.app.l3.power'), modelUrl: TECHNIQUE_MODEL_URL },
             ]
         }
     ]
@@ -120,25 +114,24 @@ export const getTranslatedConstants = (lang: Language, t: (key: string) => strin
     SUBSCRIPTION_PLANS: [
       {
         id: 'silver',
-        name: t('sub.plan.silver.name'),
+        name: 'SILVER PASS',
         monthlyPrice: 19.00,
-        specialHighlight: t('sub.special.trainers'),
         features: [
-          t('sub.feat.aiWorkout'),
-          t('sub.feat.3dModels'),
-          t('sub.feat.store')
+          'AI Personalized Workouts',
+          '3D Exercise Library',
+          'Standard Store Access'
         ]
       },
       {
         id: 'premium',
-        name: t('sub.plan.gold.name'),
+        name: 'GOLD ELITE',
         monthlyPrice: 25.00,
-        specialHighlight: t('sub.special.trainers'),
+        specialHighlight: 'Includes Direct Human Trainer Link',
         features: [
-          t('sub.feat.allSilver'),
-          t('sub.feat.nutriAI'),
-          t('sub.feat.holoCardio'),
-          t('sub.feat.defense')
+          'All Silver Features',
+          'DietAl™ Nutrition AI',
+          'Holographic Cardio Sessions',
+          'Combat Defense Curriculum'
         ]
       }
     ],
@@ -146,15 +139,12 @@ export const getTranslatedConstants = (lang: Language, t: (key: string) => strin
         ...tData,
         name: tData.id.charAt(0).toUpperCase() + tData.id.slice(1), 
         titles: ['Elite Personal Trainer'],
-        languages: ['English', 'French'],
+        languages: ['English', 'French', 'Arabic'],
         bio: 'Dedicated to helping you reach your peak performance through personalized coaching and motivation.',
         specializations: ['Functional Training', 'Strength']
     })),
     KUNG_FU_PROGRAM: KUNG_FU_DATA,
-    IMPERIAL_JUJUTSU_PROGRAM: JUJUTSU_DATA,
     NEO_TAI_CHI_PROGRAM: NEO_TAI_CHI_DATA,
-    KARATE_PROGRAM: KARATE_DATA,
-    WRESTLING_PROGRAM: WRESTLING_DATA,
-    LANGUAGES: LANGUAGE_STRUCTURE.map(l => ({ ...l, name: t(`language.name.${l.code}`) }))
+    LANGUAGES: LANGUAGE_STRUCTURE.map(l => ({ ...l, name: l.code.toUpperCase() }))
   };
 };

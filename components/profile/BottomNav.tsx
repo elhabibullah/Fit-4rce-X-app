@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Home, Dumbbell, Apple, User, Shield, Lock } from 'lucide-react';
 import { useApp } from '../../hooks/useApp.ts';
@@ -23,6 +24,8 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick,
     ? 'text-gray-600' 
     : isActive ? 'text-white' : 'text-gray-500';
 
+  const IconComp = Icon as any;
+
   return (
     <button 
       onClick={onClick} 
@@ -35,9 +38,9 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick,
             <Lock className="w-3 h-3 text-yellow-400" />
         </div>
       )}
-      <Icon 
+      <IconComp 
         className={`w-7 h-7 mb-1 transition-all duration-300 ${iconClasses}`} 
-        style={isActive && !isLocked ? { filter: 'drop-shadow(0 0 10px #8A2BE2)' } : {}}
+        style={isActive && !isLocked ? { filter: 'drop-shadow(0 0 10px #8A2BE2)' } : ({} as any)}
       />
       <span className={`text-xs font-medium transition-colors duration-300 ${labelClasses}`}>{label}</span>
     </button>
@@ -62,11 +65,11 @@ const BottomNav: React.FC = () => {
         {navItems.map((item) => {
           const isLocked = item.premium && planId !== 'premium';
           return (
+            /* Removed screen prop as it is not defined in NavItemProps */
             <NavItem 
               key={item.screen}
               icon={item.icon}
               label={item.label}
-              screen={item.screen}
               isActive={screen === item.screen}
               isLocked={isLocked}
               onClick={() => {

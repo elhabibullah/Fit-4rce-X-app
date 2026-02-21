@@ -1,6 +1,6 @@
 {
   "name": "Fit-4rce-X",
-  "description": "A premium, AI-powered mobile fitness application featuring personalized workout generation, interactive 3D exercise models, nutrition and fasting modules, self-defense training, and expert advice booking. Designed with a futuristic, holographic UI for a cutting-edge fitness experience.",
+  "description": "Premium AI Fitness App",
   "requestFramePermissions": [
     "camera",
     "microphone",

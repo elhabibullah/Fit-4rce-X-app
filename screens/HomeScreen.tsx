@@ -1,20 +1,19 @@
-
 import React, { useState } from 'react';
-import { Zap, Bot, Dumbbell, Mic, Shield, Lock, Bike, Footprints } from 'lucide-react';
+import { Zap, Bot, Dumbbell, Mic, Shield, Lock, Bike, Footprints, Activity, Loader2 } from 'lucide-react';
 import Card from '../components/common/Card.tsx';
-import Button from '../components/common/Button.tsx';
 import { useApp } from '../hooks/useApp.ts';
 import { Screen } from '../types.ts';
-import Chatbot from '../components/common/Chatbot.tsx';
+import Chatbot from '../components/nutrition/Chatbot.tsx';
+import { generateWorkoutWithGemini } from '../services/aiService.ts';
 
-// Renamed to DashboardScreen to force a fresh component mount
 const DashboardScreen: React.FC = () => {
-  const { setScreen, translate, setIsCoachOpen, planId, showStatus, setNutritionTab } = useApp();
+  const { setScreen, translate, setIsCoachOpen, planId, showStatus, setNutritionTab, language, setSelectedPlan, profile } = useApp();
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [isGeneratingWOTD, setIsGeneratingWOTD] = useState(false);
 
   const isPremium = planId === 'premium';
-  const ROBOT_IMAGE_URL = "https://ai-webbuilder-prod.s3.us-east-1.amazonaws.com/public/images/ad85aead516242b9b73a5140f6db62a1/1d87d3f1227c4419aca5c972544ab725.Screenshot_20251114-091219_Chrome.jpg";
   const F4X_LOGO_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/F4X_Nutrition_logo.png";
+  const ROBOT_IMAGE_URL = "https://ai-webbuilder-prod.s3.us-east-1.amazonaws.com/public/images/ad85aead516242b9b73a5140f6db62a1/1d87d3f1227c4419aca5c972544ab725.Screenshot_20251114-091219_Chrome.jpg";
 
   const handleCardioClick = (screen: Screen) => {
       if (isPremium) {
@@ -33,155 +32,170 @@ const DashboardScreen: React.FC = () => {
       }
   };
 
-  // Unique key forces re-render
-  return (
-    <div className="space-y-6 animate-fadeIn pb-28" key={`dashboard-${Date.now()}`}>
-      {/* HEADER - No Bell */}
-      <header className="flex justify-between items-center px-1 py-2">
-        <div>
-          <h1 
-            className="text-2xl font-bold text-white tracking-wide"
-            style={{ textShadow: '0 0 10px #8A2BE2' }}
-          >
-            {translate('home.welcome')}
-          </h1>
-          <p className="text-xs text-gray-400 uppercase tracking-widest">{translate('home.subtitle')}</p>
-        </div>
-      </header>
+  const handleGenerateWOTD = async () => {
+    if (isGeneratingWOTD) return;
+    setIsGeneratingWOTD(true);
+    try {
+      const plan = await generateWorkoutWithGemini("Full Body High Intensity 45m training protocol. Split into dynamic phases.", language);
+      if (plan) {
+        setSelectedPlan(plan);
+        setScreen(Screen.Workout);
+      } else {
+        showStatus("Neural Link unstable. Try again.");
+      }
+    } catch (e) {
+      showStatus("Connection error.");
+    } finally {
+      setIsGeneratingWOTD(false);
+    }
+  };
 
-      {/* --- UNIFIED 4-BUTTON GRID SYSTEM (2x2) --- */}
+  // Tactical display name: Force "ABDELW" if profile name matches or is default
+  const tacticalName = (profile?.full_name || 'ABDELW').toUpperCase().slice(0, 6);
+
+  return (
+    <div className="space-y-6 animate-fadeIn pb-28 font-['Poppins']">
+      
+      {/* TACTICAL STATUS HEADER */}
+      <div className="flex items-center justify-between px-1 py-4 border-b border-white/5">
+          <div className="flex items-center gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
+              <span className="text-[10px] font-light text-gray-400 uppercase tracking-[0.3em]">
+                {translate('home.system.active')} <span className="text-white ml-1">11% {translate('home.system.load')}</span>
+              </span>
+          </div>
+          <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-purple-400 tracking-[0.3em]">{tacticalName}</span>
+              <Activity size={12} className="text-purple-500" />
+          </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
-          
-          {/* 1. AI COACH (Top Left) */}
+          {/* AI COACH CARD */}
           <button 
             onClick={() => setIsCoachOpen(true)} 
-            className="w-full h-40 relative rounded-2xl overflow-hidden border border-purple-500/30 hover:border-purple-500 transition-all bg-black group text-center p-3 flex flex-col items-center justify-center gap-2 shadow-[0_0_20px_rgba(138,43,226,0.2)]"
+            className="w-full h-44 relative rounded-2xl overflow-hidden border border-purple-500/20 hover:border-purple-500/50 transition-all bg-black group text-center p-4 flex flex-col items-center justify-center gap-2 shadow-xl active:scale-95"
           >
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 to-black z-0"></div>
-              
-              <div className="relative z-10 w-12 h-12 rounded-full border-2 border-purple-500 overflow-hidden shadow-[0_0_15px_rgba(138,43,226,0.6)]">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-transparent z-0"></div>
+              <div className="relative z-10 w-14 h-14 rounded-full border-2 border-purple-500/40 overflow-hidden shadow-lg mb-1">
                   <img src={ROBOT_IMAGE_URL} alt="Coach" className="w-full h-full object-cover" />
               </div>
-              
               <div className="relative z-10">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider leading-none mb-1">{translate('home.coach_card.title')}</h3>
-                  <div className="flex items-center justify-center gap-1 text-[9px] text-purple-300 font-bold bg-purple-900/50 px-2 py-0.5 rounded-full border border-purple-500/30">
-                      <Mic className="w-3 h-3" />
-                      <span>{translate('home.coach_card.status')}</span>
+                  <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none mb-2">{translate('home.coach_card.title')}</h3>
+                  <div className="flex items-center justify-center gap-1.5 text-[8px] text-purple-300 font-bold bg-purple-900/30 px-3 py-1 rounded-full border border-purple-500/20">
+                      <Mic className="w-2.5 h-2.5" />
+                      <span className="uppercase tracking-widest">{translate('home.coach_card.status')}</span>
                   </div>
               </div>
           </button>
 
-          {/* 2. F4X NUTRITION (Top Right) */}
+          {/* STORE CARD */}
           <button 
             onClick={handleStoreClick}
-            className="w-full h-40 relative rounded-2xl overflow-hidden border border-red-600/50 hover:border-red-500 transition-all bg-gradient-to-br from-red-950 to-red-900 group text-center p-0 flex flex-col items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.2)]"
+            className="w-full h-44 relative rounded-2xl overflow-hidden border border-red-600/30 bg-black group text-center p-0 flex flex-col items-center justify-center shadow-lg active:scale-95 transition-all"
           >
+              <div className="absolute inset-0 bg-gradient-to-br from-red-900/30 to-transparent z-0"></div>
               <div 
                 className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10 transition-transform duration-500 transform group-hover:scale-105"
-                style={{ backgroundImage: `url(${F4X_LOGO_URL})` }}
+                style={{ backgroundImage: `url(${F4X_LOGO_URL})`, backgroundSize: '70%' }}
               ></div>
-              {/* No text overlay as requested */}
           </button>
 
-          {/* 3. CYBER CYCLE (Bottom Left) */}
+          {/* SPINNING CARD */}
           <button 
               onClick={() => handleCardioClick(Screen.Spinning)} 
-              className="w-full h-40 relative overflow-hidden group rounded-2xl border border-[#00FFFF]/30 hover:border-[#00FFFF] transition-all bg-black text-center p-3 flex flex-col items-center justify-center gap-2"
+              className="w-full h-40 relative overflow-hidden group rounded-2xl border border-[#00FFFF]/20 hover:border-[#00FFFF]/50 transition-all bg-black text-center p-3 flex flex-col items-center justify-center gap-2"
           >
-              {!isPremium && (
-                  <div className="absolute top-2 right-2 z-20 bg-black/60 rounded-full p-1">
-                      <Lock className="w-3 h-3 text-yellow-400" />
-                  </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-black z-0"></div>
-              
-              <Bike className={`w-10 h-10 relative z-10 transition-transform ${isPremium ? 'text-[#00FFFF] group-hover:scale-110' : 'text-gray-500'}`} />
+              {!isPremium && <Lock size={10} className="absolute top-3 right-3 z-20 text-yellow-500" />}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-black z-0"></div>
+              <Bike className={`w-10 h-10 relative z-10 transition-transform ${isPremium ? 'text-[#00FFFF] group-hover:scale-110' : 'text-gray-600'}`} />
               <div className="relative z-10">
-                  <span className={`text-xs font-bold uppercase tracking-wider block ${isPremium ? 'text-white' : 'text-gray-400'}`}>{translate('home.cardio.spinning')}</span>
-                  <span className="text-[9px] text-gray-400">{translate('home.cardio.spinning.desc')}</span>
+                  <span className={`text-[10px] font-black uppercase tracking-widest block ${isPremium ? 'text-white' : 'text-gray-500'}`}>{translate('home.cardio.spinning')}</span>
+                  <span className="text-[8px] text-gray-500 font-light uppercase tracking-tight mt-0.5 block">{translate('home.cardio.spinning.desc')}</span>
               </div>
           </button>
 
-           {/* 4. VELOCITY RUN (Bottom Right) */}
+           {/* RUNNING CARD */}
            <button 
               onClick={() => handleCardioClick(Screen.Running)} 
-              className="w-full h-40 relative overflow-hidden group rounded-2xl border border-green-500/30 hover:border-green-500 transition-all bg-black text-center p-3 flex flex-col items-center justify-center gap-2"
+              className="w-full h-40 relative overflow-hidden group rounded-2xl border border-green-500/20 hover:border-green-500/50 transition-all bg-black text-center p-3 flex flex-col items-center justify-center gap-2"
           >
-              {!isPremium && (
-                  <div className="absolute top-2 right-2 z-20 bg-black/60 rounded-full p-1">
-                      <Lock className="w-3 h-3 text-yellow-400" />
-                  </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-br from-green-900/40 to-black z-0"></div>
-              
-              <Footprints className={`w-10 h-10 relative z-10 transition-transform ${isPremium ? 'text-green-500 group-hover:scale-110' : 'text-gray-500'}`} />
+              {!isPremium && <Lock size={10} className="absolute top-3 right-3 z-20 text-yellow-500" />}
+              <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 to-black z-0"></div>
+              <Footprints className={`w-10 h-10 relative z-10 transition-transform ${isPremium ? 'text-green-500 group-hover:scale-110' : 'text-gray-600'}`} />
               <div className="relative z-10">
-                  <span className={`text-xs font-bold uppercase tracking-wider block ${isPremium ? 'text-white' : 'text-gray-400'}`}>{translate('home.cardio.running')}</span>
-                  <span className="text-[9px] text-gray-400">{translate('home.cardio.running.desc')}</span>
+                  <span className={`text-[10px] font-black uppercase tracking-widest block ${isPremium ? 'text-white' : 'text-gray-500'}`}>{translate('home.cardio.running')}</span>
+                  <span className="text-[8px] text-gray-500 font-light uppercase tracking-tight mt-0.5 block">{translate('home.cardio.running.desc')}</span>
               </div>
           </button>
       </div>
 
-      {/* FEATURED WORKOUT */}
-      <Card className="py-4 px-5 bg-gray-900/40 border-gray-800 rounded-xl mt-6">
-        <div className="flex justify-between items-center">
-            <div>
-                <span className="text-[10px] font-bold uppercase text-purple-400 tracking-widest">{translate('home.aiGenerated')}</span>
-                <h2 className="text-sm font-bold text-white mt-1">{translate('home.featuredWorkout.title')}</h2>
-                <p className="text-gray-500 text-[10px] mt-1">{translate('home.featuredWorkout.details')}</p>
+      {/* WORKOUT OF THE DAY CARD */}
+      <button 
+        onClick={handleGenerateWOTD}
+        className="w-full text-left transition-transform active:scale-[0.98] disabled:opacity-70 mt-4"
+        disabled={isGeneratingWOTD}
+      >
+        <Card className="py-6 px-6 bg-zinc-900/60 border border-white/5 rounded-3xl relative overflow-hidden group">
+            {isGeneratingWOTD && <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-20 flex items-center justify-center"><Loader2 className="w-6 h-6 text-purple-500 animate-spin" /></div>}
+            <div className="flex justify-between items-center relative z-10">
+                <div>
+                    <span className="text-[9px] font-bold uppercase text-purple-400 tracking-[0.3em]">{translate('home.aiGenerated')}</span>
+                    <h2 className="text-xl font-black text-white mt-1 uppercase tracking-tight leading-tight">{translate('home.featuredWorkout.title')}</h2>
+                    <p className="text-gray-500 text-[10px] font-light mt-1 uppercase tracking-widest">{translate('home.featuredWorkout.details')}</p>
+                </div>
+                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center border border-white/10 shadow-inner group-hover:scale-110 transition-transform">
+                  <Dumbbell className="w-6 h-6 text-purple-500" />
+                </div>
             </div>
-            <button 
-                onClick={() => setScreen(Screen.Workout)}
-                className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center border border-gray-700 hover:border-purple-500 hover:bg-black transition-all"
-            >
-              <Dumbbell className="w-5 h-5 text-[#8A2BE2]" />
-            </button>
-        </div>
-      </Card>
+        </Card>
+      </button>
       
-      {/* ACTION BUTTONS */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 pt-2">
+        {/* NEW WORKOUT ACTION */}
         <button 
             onClick={() => setScreen(Screen.Workout)}
-            className="bg-gray-900/60 border border-gray-700 hover:border-white rounded-xl p-4 text-left transition-all"
+            className="bg-zinc-900/40 border border-white/5 hover:border-purple-500/30 rounded-2xl p-5 flex flex-col items-start gap-3 transition-all active:scale-95 group shadow-xl"
         >
-            <Zap className="w-5 h-5 text-yellow-400 mb-2"/>
-            <h3 className="text-sm font-bold text-white">{translate('home.generateNewWorkout')}</h3>
-            <p className="text-[10px] text-gray-500 mt-1">{translate('home.generateNewWorkoutSubtitle')}</p>
+            <Zap className="w-6 h-6 text-yellow-500 group-hover:scale-110 transition-transform"/>
+            <div className="text-left">
+                <h3 className="text-xs font-black text-white uppercase tracking-widest">{translate('home.generateNewWorkout')}</h3>
+                <p className="text-[9px] text-gray-500 font-light uppercase tracking-tight mt-1">{translate('home.generateNewWorkoutSubtitle')}</p>
+            </div>
         </button>
 
+        {/* DEFENSE ACTION */}
         <button 
             onClick={() => isPremium ? setScreen(Screen.SelfDefense) : showStatus(translate('premiumFeature.locked'))}
-            className="bg-gray-900/60 border border-gray-700 hover:border-white rounded-xl p-4 text-left transition-all relative"
+            className="bg-zinc-900/40 border border-white/5 hover:border-blue-500/30 rounded-2xl p-5 flex flex-col items-start gap-3 transition-all active:scale-95 group shadow-xl"
         >
-            {!isPremium && <Lock className="absolute top-3 right-3 w-3 h-3 text-yellow-400" />}
-            <Shield className="w-5 h-5 text-blue-400 mb-2"/>
-            <h3 className="text-sm font-bold text-white">{translate('nav.defense')}</h3>
-            <p className="text-[10px] text-gray-500 mt-1">{translate('home.defense.subtitle')}</p>
+            <Shield className="w-6 h-6 text-blue-500 group-hover:scale-110 transition-transform"/>
+            <div className="text-left">
+                <h3 className="text-xs font-black text-white uppercase tracking-widest">{translate('nav.defense')}</h3>
+                <p className="text-[9px] text-gray-500 font-light uppercase tracking-tight mt-1">{translate('home.defense.subtitle')}</p>
+            </div>
         </button>
       </div>
 
-      {/* FLOATING ACTION BUTTONS */}
-      <div className="fixed bottom-24 right-4 z-40 flex flex-col gap-3">
+      {/* FLOAT BUTTONS */}
+      <div className="fixed bottom-24 right-6 z-40 flex flex-col gap-4">
         <button 
           onClick={() => setIsCoachOpen(true)}
-          className="w-14 h-14 bg-black border border-gray-700 rounded-full flex items-center justify-center shadow-lg transform transition-transform hover:scale-110 active:scale-95"
+          className="w-16 h-16 bg-[#8A2BE2] rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(138,43,226,0.5)] transform transition-all hover:scale-110 active:scale-90 border border-white/20"
           aria-label={translate('home.openAICoach')}
         >
-          <Mic className="w-6 h-6 text-[#8A2BE2]" />
+          <Mic className="w-7 h-7 text-white" />
         </button>
         <button 
           onClick={() => setIsChatbotOpen(true)}
-          className="w-14 h-14 bg-black border border-gray-700 rounded-full flex items-center justify-center shadow-lg transform transition-transform hover:scale-110 active:scale-95"
+          className="w-14 h-14 bg-zinc-900 rounded-full flex items-center justify-center shadow-2xl transform transition-all hover:scale-110 active:scale-90 border border-white/10"
           aria-label={translate('home.openAIAssistant')}
         >
-          <Bot className="w-6 h-6 text-[#8A2BE2]" />
+          <Bot className="w-6 h-6 text-purple-400" />
         </button>
       </div>
 
       <Chatbot isVisible={isChatbotOpen} onClose={() => setIsChatbotOpen(false)} />
-
     </div>
   );
 };

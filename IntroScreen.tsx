@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useApp } from './hooks/useApp.ts';
 import Button from './components/common/Button.tsx';
@@ -13,56 +12,56 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
   const { translate } = useApp();
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Layer 1: Static Coach Image */}
+    <div className="relative min-h-screen w-full bg-black flex flex-col">
+      {/* Background stays fixed behind content */}
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center opacity-40"
+        className="fixed inset-0 z-0 bg-cover bg-center opacity-40"
         style={{ backgroundImage: `url(${coachImageUrl})` }}
       />
-
-      {/* Layer 2: Darkening overlay for text readability */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
+      <div className="fixed inset-0 z-10 bg-gradient-to-t from-black via-black/70 to-black/30" />
       
-      {/* Layer 3: The content */}
-      <div className="relative z-20 flex flex-col items-center justify-between h-full px-6 pt-16 pb-12 overflow-y-auto">
-        <main className="w-full max-w-3xl text-center animate-fadeIn">
-          <div className="relative bg-[#8A2BE2]/10 backdrop-blur-lg border border-[#8A2BE2] rounded-2xl p-6 shadow-lg">
-              {/* Left Pin */}
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-8 bg-gray-900/80 rounded-sm border-2 border-gray-600"></div>
-              
-              <div>
+      {/* Content wrapper - Natural scrolling */}
+      <div className="relative z-20 flex flex-col items-center w-full px-6 pt-20 pb-24 flex-grow">
+        <main className="w-full max-w-xl text-center animate-fadeIn">
+          <div className="relative bg-[#8A2BE2]/10 backdrop-blur-xl border border-[#8A2BE2]/40 rounded-[2.5rem] p-8 shadow-2xl mb-12">
+              <div className="space-y-4">
                 <h1 
-                  className="text-2xl md:text-3xl font-bold text-white tracking-wider"
-                  style={{ textShadow: '0 0 15px #8A2BE2' }}
+                  className="text-2xl font-black text-white tracking-[0.2em] uppercase"
+                  style={{ textShadow: '0 0 15px rgba(138, 43, 226, 0.5)' }}
                 >
                   Fit-4rce-X
                 </h1>
-                <p className="mt-2 text-sm md:text-base text-purple-200 tracking-widest">
+                <p className="text-[10px] text-purple-300 font-bold tracking-[0.5em] uppercase">
                   {translate('intro.header')}
                 </p>
               </div>
-
-              {/* Right Pin */}
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-8 bg-gray-900/80 rounded-sm border-2 border-gray-600"></div>
           </div>
           
-          <p className="text-gray-300 mt-6 md:text-lg font-medium">
-            {translate('intro.welcome')}
-          </p>
-
-          <div className="my-8 border-t border-b border-gray-700/50 py-6 bg-black/20 backdrop-blur-sm rounded-lg px-4">
-              <p className="text-gray-300 whitespace-pre-line leading-relaxed md:text-lg font-medium">
-                {translate('intro.main_text')}
+          <div className="space-y-12">
+              <p className="text-white text-base font-bold leading-relaxed tracking-wide uppercase px-2">
+                {translate('intro.welcome')}
               </p>
-          </div>
 
-          <p className="text-sm md:text-base font-medium text-white uppercase tracking-widest max-w-md mx-auto opacity-90">
-              {translate('intro.tagline')}
-          </p>
+              <div className="bg-black/60 backdrop-blur-md rounded-3xl p-8 border border-white/10 shadow-inner">
+                  <p className="text-gray-300 whitespace-pre-line leading-relaxed text-sm font-medium">
+                    {translate('intro.main_text')}
+                  </p>
+              </div>
+
+              <div className="pt-8 border-t border-white/10">
+                  <p className="text-sm font-black text-white uppercase tracking-[0.3em] mb-4">
+                      {translate('intro.tagline')}
+                  </p>
+                  <p className="text-[11px] font-black text-purple-400 uppercase tracking-[0.2em] animate-pulse">
+                      {translate('intro.mentor_awaits')}
+                  </p>
+              </div>
+          </div>
         </main>
 
-        <div className="mt-auto pt-8 w-full max-w-md">
-          <Button onClick={onComplete} className="w-full">
+        {/* This margin-top auto pushes the button to the bottom if content is short, but allows it to scroll if content is long */}
+        <div className="mt-12 w-full max-w-md">
+          <Button onClick={onComplete} className="w-full py-6 text-sm font-black uppercase tracking-[0.3em] shadow-[0_0_30px_rgba(138,43,226,0.3)]">
               {translate('continue')}
           </Button>
         </div>

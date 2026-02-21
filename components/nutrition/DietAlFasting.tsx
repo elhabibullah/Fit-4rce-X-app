@@ -1,17 +1,16 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../../hooks/useApp.ts';
-import { Apple, Droplets, Flame, Recycle, Save, CheckCircle, Info, X, Loader as LoaderIcon, Wind, Play, Square, Zap } from 'lucide-react';
+import { Apple, Droplets, Flame, Recycle, Info, X, Loader as LoaderIcon, Wind, Play, Square, Zap, Radio } from 'lucide-react';
 import { FastingPlan } from '../../types.ts';
 import { getFastingPhaseExplanation } from '../../services/aiService.ts';
 
 const DietAlHeader: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
-  <div className="mb-6">
+  <div className="mb-6 font-['Poppins']">
     <div className="flex items-center justify-between">
-      <h1 className="text-2xl font-bold text-white">{title}</h1>
+      <h1 className="text-2xl font-bold text-white uppercase tracking-tighter">{title}</h1>
       <Apple className="w-8 h-8 text-green-500" style={{ filter: 'drop-shadow(0 0 8px #22c55e)' }} />
     </div>
-    <p className="text-gray-400">{subtitle}</p>
+    <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">{subtitle}</p>
   </div>
 );
 
@@ -40,7 +39,7 @@ const FastingCircle: React.FC<{
   };
 
   return (
-    <div className="relative w-64 h-64 mx-auto my-4">
+    <div className="relative w-64 h-64 mx-auto my-4 font-['Poppins']">
       <svg className="w-full h-full" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
         <circle className="text-gray-700" strokeWidth="8" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
         <circle
@@ -97,8 +96,7 @@ const PhaseModal: React.FC<{
     }, [phaseName]);
     const Icon = phaseIcon;
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-fadeIn">
-            {/* Added max-h and overflow-y-auto to allow scrolling */}
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-fadeIn font-['Poppins']">
             <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-sm border border-gray-700 shadow-lg text-center relative max-h-[80vh] overflow-y-auto custom-scrollbar">
                 <button onClick={onClose} className="absolute top-2 right-2 text-gray-400 hover:text-white p-2 sticky z-10 bg-gray-900/80 rounded-full">
                     <X size={24} />
@@ -109,7 +107,7 @@ const PhaseModal: React.FC<{
                 <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
                 <div className="min-h-[100px] text-left">
                     {explanation ? (
-                        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{explanation}</p>
+                        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-normal">{explanation}</p>
                     ) : (
                         <div className="flex flex-col items-center justify-center space-y-2 py-4">
                             <LoaderIcon className="w-6 h-6 animate-spin text-green-500" />
@@ -128,20 +126,26 @@ const PhaseModal: React.FC<{
 const HadithCard: React.FC = () => {
     const { translate } = useApp();
     return (
-        <div className="bg-black p-4 rounded-xl border border-gray-800">
-            <p className="text-center text-sm font-bold text-green-500 mb-2">{translate('nutrition.fasting.hadith.header')}</p>
-            <p className="text-center text-xl text-white font-serif whitespace-pre-line mb-2 italic">
-                {translate('nutrition.fasting.hadith.shield.text')}
+        <div className="bg-black/40 p-8 rounded-[2.5rem] border border-gray-800 shadow-2xl backdrop-blur-md font-['Poppins']">
+            <p className="text-center text-sm font-medium text-green-500 mb-6 uppercase tracking-widest">
+              {translate('nutrition.fasting.hadith.header')}
             </p>
-            <p className="text-center text-xs text-gray-500 mb-4">{translate('nutrition.fasting.hadith.source')}</p>
-            
-            <ul className="mt-3 text-xs text-gray-300 space-y-1 pl-4 list-disc marker:text-green-500">
-                <li>{translate('nutrition.fasting.hadith.shield.detail1')}</li>
-                <li>{translate('nutrition.fasting.hadith.shield.detail2')}</li>
-                <li>{translate('nutrition.fasting.hadith.shield.detail3')}</li>
-                <li>{translate('nutrition.fasting.hadith.shield.detail4')}</li>
-                <li>{translate('nutrition.fasting.hadith.shield.detail5')}</li>
-            </ul>
+            <div className="relative mb-6">
+               <p className="text-center text-2xl text-white leading-relaxed px-4 opacity-90 font-semibold italic">
+                   {translate('nutrition.fasting.hadith.shield.text')}
+               </p>
+            </div>
+            <p className="text-center text-[9px] font-bold text-gray-600 uppercase tracking-[0.2em] mb-8">
+              {translate('nutrition.fasting.hadith.source')}
+            </p>
+            <div className="space-y-3 px-2">
+                {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="flex items-center gap-3 py-0.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500/60 shrink-0 shadow-[0_0_5px_#22c55e]" />
+                        <p className="text-gray-300 text-xs font-normal tracking-wide">{translate(`nutrition.fasting.hadith.bullet${i}`)}</p>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
@@ -203,7 +207,7 @@ export const DietAlFasting: React.FC = () => {
   const hoursElapsed = manualTimer.elapsedSeconds / 3600;
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn pb-24 font-['Poppins']">
       <PhaseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -211,44 +215,47 @@ export const DietAlFasting: React.FC = () => {
       />
       <DietAlHeader title={translate('nutrition.fasting.title')} subtitle={translate('nutrition.fasting.subtitle')} />
 
-      <div className="bg-gray-800 p-1 rounded-lg grid grid-cols-2 gap-1">
-        <button onClick={() => setMode('plan')} className={`py-2 rounded-md font-bold text-sm ${mode === 'plan' ? 'bg-black text-white shadow-sm' : 'bg-transparent text-gray-400'}`}>{translate('nutrition.fasting.mode.plan')}</button>
-        <button onClick={() => setMode('manual')} className={`py-2 rounded-md font-bold text-sm ${mode === 'manual' ? 'bg-black text-white shadow-sm' : 'bg-transparent text-gray-400'}`}>{translate('nutrition.fasting.mode.manual')}</button>
-      </div>
+      <section>
+        <p className="text-[10px] font-black text-gray-500 mb-4 uppercase tracking-[0.2em] px-1">{translate('nutrition.fasting.mode.title')}</p>
+        <div className="bg-gray-900/30 p-1 rounded-2xl grid grid-cols-2 gap-1 border border-gray-800/50">
+            <button onClick={() => setMode('plan')} className={`py-3 rounded-xl font-semibold text-[10px] uppercase tracking-[0.2em] transition-all ${mode === 'plan' ? 'bg-green-600/20 text-green-400 border border-green-500/30 shadow-lg' : 'bg-transparent text-gray-600'}`}>{translate('nutrition.fasting.mode.plan')}</button>
+            <button onClick={() => setMode('manual')} className={`py-3 rounded-xl font-semibold text-[10px] uppercase tracking-[0.2em] transition-all ${mode === 'manual' ? 'bg-green-600/20 text-green-400 border border-green-500/30 shadow-lg' : 'bg-transparent text-gray-600'}`}>{translate('nutrition.fasting.mode.manual')}</button>
+        </div>
+      </section>
 
       {mode === 'plan' ? (
-        <div className="bg-black p-4 rounded-2xl border border-gray-800 shadow-sm">
-          <h3 className="text-lg font-bold text-white mb-4">{translate('nutrition.fasting.selectPlan')}</h3>
-          <div className="grid grid-cols-3 gap-2">
+        <div className="bg-black/40 p-8 rounded-[2.5rem] border border-gray-800/50 shadow-xl">
+          <h3 className="text-[10px] font-black text-gray-500 mb-8 uppercase tracking-[0.4em] text-center">{translate('nutrition.fasting.selectPlan')}</h3>
+          <div className="grid grid-cols-3 gap-4">
             {(['16:8', '18:6', '20:4'] as const).map(type => (
               <button
                 key={type}
                 onClick={() => setSelectedPlan({ type, fastingWindowHours: parseInt(type.split(':')[0]), eatingWindowHours: parseInt(type.split(':')[1]) })}
-                className={`py-4 rounded-lg font-bold ${selectedPlan.type === type ? 'bg-green-500 text-white' : 'bg-gray-800 text-white'}`}
+                className={`py-6 rounded-2xl font-light text-xl transition-all ${selectedPlan.type === type ? 'bg-green-600/20 text-white shadow-[0_0_20px_rgba(34,197,94,0.2)] scale-105 border border-green-500/50' : 'bg-gray-950 text-gray-700 border border-gray-900'}`}
               >
                 {type}
               </button>
             ))}
           </div>
-          <button onClick={handleSavePlan} disabled={isSaving} className="w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50 transition-opacity mt-4 flex items-center justify-center">
-            <Save size={16} className="mr-2" />
+          <button onClick={handleSavePlan} disabled={isSaving} className="w-full bg-green-600 text-white font-bold py-4 px-4 rounded-2xl disabled:opacity-50 transition-all mt-10 flex items-center justify-center uppercase tracking-[0.3em] shadow-2xl active:scale-95 text-xs">
+            <Radio size={16} className="mr-3" />
             {isSaving ? translate('processing') : translate('nutrition.fasting.savePlan')}
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="bg-black p-4 rounded-2xl border border-gray-800 shadow-sm text-center">
-              <h3 className="text-lg font-bold text-white">{translate('nutrition.fasting.timerTitle')}</h3>
+        <div className="space-y-10">
+          <div className="bg-black/40 p-8 rounded-[2.5rem] border border-gray-800/50 shadow-xl text-center">
+              <h3 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.5em] mb-4">{translate('nutrition.fasting.timerTitle')}</h3>
               <FastingCircle hoursElapsed={hoursElapsed} totalHours={0} onPhaseClick={handlePhaseClick} />
-              <p className="text-5xl font-bold font-mono text-white">{formatTime(manualTimer.elapsedSeconds)}</p>
-              <div className="mt-4 flex justify-center gap-2">
+              <p className="text-6xl font-light font-mono text-white tracking-tighter mt-6" style={{ textShadow: '0 0 30px rgba(34,197,94,0.15)' }}>{formatTime(manualTimer.elapsedSeconds)}</p>
+              <div className="mt-10 flex justify-center">
                   {!manualTimer.isRunning ? (
-                      <button onClick={handleStartManual} className="bg-green-500 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center transition-opacity hover:opacity-80 active:scale-95">
-                          <Play size={18} className="mr-2"/> {translate('nutrition.fasting.startFast')}
+                      <button onClick={handleStartManual} className="bg-green-600 text-white font-bold py-5 px-12 rounded-2xl flex items-center justify-center transition-all hover:bg-green-500 shadow-2xl active:scale-95 uppercase tracking-[0.2em] text-xs">
+                          <Play size={18} className="mr-3 fill-current"/> {translate('nutrition.fasting.startFast')}
                       </button>
                   ) : (
-                      <button onClick={handleStopManual} className="bg-red-500 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center transition-opacity hover:opacity-80 active:scale-95">
-                          <Square size={18} className="mr-2"/> {translate('nutrition.fasting.endFast')}
+                      <button onClick={handleStopManual} className="bg-red-600 text-white font-bold py-5 px-12 rounded-2xl flex items-center justify-center transition-all hover:bg-red-500 shadow-2xl active:scale-95 uppercase tracking-[0.2em] text-xs">
+                          <Square size={18} className="mr-3 fill-current"/> {translate('nutrition.fasting.endFast')}
                       </button>
                   )}
               </div>
@@ -259,3 +266,5 @@ export const DietAlFasting: React.FC = () => {
     </div>
   );
 };
+
+export default DietAlFasting;
