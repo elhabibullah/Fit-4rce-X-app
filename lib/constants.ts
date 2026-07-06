@@ -1,21 +1,12 @@
 import { DurationOption, Language } from '../types.ts';
 
-export const COACH_MODEL_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/android_workout_coach_rigged-v1.glb";
+export const COACH_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/android_workout_coach_rigged-v1.glb";
 export const SPINNING_COACH_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/Spinning_coach_compressed.glb?v=12350"; 
-export const TECHNIQUE_MODEL_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/android_workout_coach_rigged-v1.glb";
+export const TECHNIQUE_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/android_workout_coach_rigged-v1.glb";
 
 export const MODEL_LIBRARY: Record<string, string> = {
     'default': COACH_MODEL_URL,
     'bodyweight': COACH_MODEL_URL,
-    'single_weight': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_single_weight.glb',
-    'dual_weights': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_dual_weights.glb',
-    'kettlebell': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_kettlebell.glb',
-    'barbell': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_barbell.glb',
-    'seated': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_seated.glb',
-    'bench': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_bench.glb',
-    'swiss_ball': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_swiss_ball.glb',
-    'trx': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_trx.glb',
-    'ropes': 'https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_ropes.glb',
     'spinning': SPINNING_COACH_MODEL_URL,
 };
 

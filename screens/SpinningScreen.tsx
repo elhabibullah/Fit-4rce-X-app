@@ -3,6 +3,7 @@ import { useApp } from '../hooks/useApp.ts';
 import { Screen } from '../types.ts';
 import { ChevronLeft, Play, Pause, Bike, Mountain, X } from 'lucide-react';
 import VirtualEnvironment, { EnvironmentType } from '../components/common/VirtualEnvironment.tsx';
+import { SPINNING_COACH_MODEL_URL } from '../lib/constants.ts';
 import CastButton from '../components/common/CastButton.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
 import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
@@ -160,10 +161,14 @@ export const SpinningScreen: React.FC = () => {
       </header>
 
       <div className="absolute inset-x-6 top-24 bottom-40 z-40 rounded-[3rem] overflow-hidden border border-purple-500/40 bg-black shadow-[0_0_60px_rgba(138,43,226,0.4)]">
-          <video ref={videoRef} src={SPINNING_VIDEO_URL} loop muted autoPlay playsInline className="w-full h-full object-cover opacity-60 contrast-125" />
+          <img 
+            src="https://www.dropbox.com/scl/fi/jryp732ar5tl7eqydrcee/spinning-room.jpg?rlkey=i18o66uec35kej86ztaxjx7mg&st=8s9umlh6&raw=1" 
+            className="w-full h-full object-cover opacity-40 contrast-125" 
+            alt="Spinning Studio"
+          />
           
           <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
-              <HolographicCoach isPaused={!isActive || isPrepPhase} modelUrl="https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/Spinning_coach_compressed.glb?v=12350" />
+              <HolographicCoach isPaused={!isActive || isPrepPhase} modelUrl={SPINNING_COACH_MODEL_URL} background="transparent" />
           </div>
 
           {isPrepPhase && (

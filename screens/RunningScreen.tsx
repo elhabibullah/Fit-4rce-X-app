@@ -6,11 +6,13 @@ import Card from '../components/common/Card.tsx';
 import Button from '../components/common/Button.tsx';
 import VirtualEnvironment, { EnvironmentType, ENVIRONMENT_THUMBNAILS } from '../components/common/VirtualEnvironment.tsx';
 import CastButton from '../components/common/CastButton.tsx';
-import { generateWorkoutWithGemini } from '../services/aiService.ts';
+import { generateWorkoutWithGemini, translateSprintPlan } from '../services/aiService.ts';
 import Loader from '../components/common/Loader.tsx';
 import RunnerMap from '../components/common/RunnerMap.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
 import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
+import { getSprintWorkout } from '../lib/sprintPlans.ts';
+import { SprintDashboard } from '../components/running/SprintDashboard.tsx';
 
 type RunningView = 'config' | 'generating' | 'briefing' | 'environment_select' | 'active';
 
@@ -19,6 +21,7 @@ const RunningScreen: React.FC = () => {
   const [view, setView] = useState<RunningView>('config');
   const [event, setEvent] = useState<string>('5km');
   const [level, setLevel] = useState<string>('intermediate');
+  const [sprintOption, setSprintOption] = useState<'running' | 'plyo' | 'power' | 'combination'>('combination');
   const [generatedPlan, setGeneratedPlan] = useState<any | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [isPrepPhase, setIsPrepPhase] = useState(false);
@@ -52,7 +55,18 @@ const RunningScreen: React.FC = () => {
       setView('generating');
       setIsGeneratingWorkout(true);
       try {
-          const prompt = `Generate a comprehensive high-performance running protocol for a ${level} level athlete targeting a ${event} run. 
+          const isSprint = ['100m', '200m', '400m', '800m'].includes(event);
+          if (isSprint) {
+              const basePlan = getSprintWorkout(event, level, sprintOption, language);
+              const translatedPlan = await translateSprintPlan(basePlan, language);
+              setGeneratedPlan(translatedPlan);
+              setSelectedPlan(translatedPlan as any);
+              setView('briefing');
+              setIsGeneratingWorkout(false);
+              return;
+          }
+
+          const prompt = `Generate a comprehensive high-performance running protocol for a ${level} level runner targeting a ${event} run. 
           The output must be in ${language}. 
           Return a JSON object with sections: 'briefing', 'warmup', 'drills', and 'main'. 
           Each section should contain a summary of the plan for that phase.`;
@@ -87,7 +101,7 @@ const RunningScreen: React.FC = () => {
                       <section>
                           <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4 px-1 text-center">{translate('running.track.distance')}</h3>
                           <div className="grid grid-cols-2 gap-3">
-                              {['100m', '200m', '400m', '5km', '10km'].map(d => (
+                              {['100m', '200m', '400m', '800m', '5km', '10km'].map(d => (
                                   <button 
                                     key={d} 
                                     onClick={() => setEvent(d)} 
@@ -98,6 +112,30 @@ const RunningScreen: React.FC = () => {
                               ))}
                           </div>
                       </section>
+
+                      {['100m', '200m', '400m', '800m'].includes(event) && (
+                          <section className="animate-fadeIn">
+                              <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4 px-1 text-center">
+                                  {language === 'fr' ? "Composants de l'Entraînement" : 'Training Components'}
+                              </h3>
+                              <div className="grid grid-cols-2 gap-3">
+                                  {[
+                                      { id: 'combination', labelFr: 'Combinaison (Elite)', labelEn: 'Complete Combination' },
+                                      { id: 'running', labelFr: 'Sprints seuls', labelEn: 'Only Sprints' },
+                                      { id: 'plyo', labelFr: 'Pliométrie seule', labelEn: 'Only Plyometrics' },
+                                      { id: 'power', labelFr: 'Force / Power seul', labelEn: 'Only Power' }
+                                  ].map(opt => (
+                                      <button
+                                          key={opt.id}
+                                          onClick={() => setSprintOption(opt.id as any)}
+                                          className={`p-4 rounded-xl text-[10px] font-bold uppercase border transition-all ${sprintOption === opt.id ? 'bg-purple-900/20 border-purple-500 text-white shadow-[0_0_15px_rgba(138,43,226,0.2)]' : 'bg-gray-900 border-gray-800 text-gray-500'}`}
+                                      >
+                                          {language === 'fr' ? opt.labelFr : opt.labelEn}
+                                      </button>
+                                  ))}
+                              </div>
+                          </section>
+                      )}
 
                       <section>
                         <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4 px-1 text-center">{translate('running.track.skill_level')}</h3>
@@ -131,7 +169,64 @@ const RunningScreen: React.FC = () => {
               <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
                   <div className="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/10 shadow-2xl space-y-8">
                     
-                    {typeof generatedPlan?.description === 'string' ? (
+                    {['100m', '200m', '400m', '800m'].includes(event) ? (
+                        <div className="space-y-6">
+                            <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-line font-medium italic border-l-2 border-purple-500 pl-3">
+                                {language === 'fr' ? generatedPlan?.descriptionFr : generatedPlan?.descriptionEn}
+                            </p>
+                            
+                            <section>
+                                <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">
+                                    {language === 'fr' ? "1. Échauffement Dynamique" : "1. Dynamic Warm-up"}
+                                </h4>
+                                <ul className="list-disc list-inside text-gray-300 text-xs space-y-1 pl-1">
+                                    {(language === 'fr' ? generatedPlan?.warmupFr : generatedPlan?.warmupEn)?.map((w: string, idx: number) => (
+                                        <li key={idx}>{w}</li>
+                                    ))}
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">
+                                    {language === 'fr' ? "2. Éducatifs Techniques" : "2. Stride Drills"}
+                                </h4>
+                                <ul className="list-disc list-inside text-gray-300 text-xs space-y-1 pl-1">
+                                    {(language === 'fr' ? generatedPlan?.drillsFr : generatedPlan?.drillsEn)?.map((d: string, idx: number) => (
+                                        <li key={idx}>{d}</li>
+                                    ))}
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">
+                                    {language === 'fr' ? "3. Corps de Séance (Feuille de Route)" : "3. Core Sprint Protocol (Roadmap)"}
+                                </h4>
+                                <div className="space-y-2 border border-neutral-800 rounded-xl p-3 bg-black/40">
+                                    {generatedPlan?.mainExercises?.map((ex: any, idx: number) => (
+                                        <div key={idx} className="flex justify-between items-start text-xs border-b border-neutral-900/40 pb-1.5 last:border-0 last:pb-0">
+                                            <div>
+                                                <span className="font-bold text-white block">
+                                                    {language === 'fr' ? ex.nameFr : ex.nameEn}
+                                                </span>
+                                                <span className="text-[10px] text-neutral-400">
+                                                    {ex.distance && <span className="bg-neutral-900 px-1 py-0.2 rounded font-mono font-black text-[9px] border border-neutral-800 text-purple-400">{ex.distance}</span>}
+                                                    {ex.isHillWork && <span className="text-orange-400 text-[8px] font-bold ml-1">▲ CÔTE / HILL</span>}
+                                                </span>
+                                            </div>
+                                            <div className="text-right font-mono text-[10px]">
+                                                <span className="text-amber-500 font-bold block">
+                                                    {language === 'fr' ? ex.targetTimeFr : ex.targetTimeEn}
+                                                </span>
+                                                <span className="text-neutral-500 text-[9px]">
+                                                    {language === 'fr' ? "Récup : " + ex.recoveryFr : "Rest: " + ex.recoveryEn}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+                    ) : typeof generatedPlan?.description === 'string' ? (
                         <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-line font-medium">
                             {generatedPlan.description}
                         </p>
@@ -172,8 +267,21 @@ const RunningScreen: React.FC = () => {
                   </div>
               </div>
               <div className="mt-8 shrink-0">
-                <Button onClick={() => setView('environment_select')} className="w-full py-6 font-black uppercase tracking-widest shadow-[0_0_30px_rgba(138,43,226,0.2)]">
-                    INITIALIZE ENVIRONMENT
+                <Button 
+                    onClick={() => {
+                        if (['100m', '200m', '400m', '800m'].includes(event)) {
+                            setEnv('track');
+                            setShowMap(false);
+                            setView('active');
+                            setIsActive(true);
+                            setIsPrepPhase(true);
+                        } else {
+                            setView('environment_select');
+                        }
+                    }} 
+                    className="w-full py-6 font-black uppercase tracking-widest shadow-[0_0_30px_rgba(138,43,226,0.2)]"
+                >
+                    {['100m', '200m', '400m', '800m'].includes(event) ? (language === 'fr' ? "DÉMARRER LA SESSION DE SPRINT" : "START SPRINT SESSION") : "INITIALIZE ENVIRONMENT"}
                 </Button>
               </div>
           </div>
@@ -193,7 +301,7 @@ const RunningScreen: React.FC = () => {
                       <ChevronLeft className="w-5 h-5 mr-1" />{translate('back')}
                   </button>
                </header>
-               <h1 className="text-3xl font-black text-white uppercase tracking-tighter mb-12 text-center"># {translate('running.env.title')}</h1>
+               <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight sm:tracking-tighter mb-12 text-center"># {translate('running.env.title')}</h1>
                <div className="flex-1 grid grid-cols-1 gap-6 max-w-md mx-auto w-full mb-12">
                     {availableEnvs.map((envItem) => (
                         <button key={envItem.type} onClick={() => { setEnv(envItem.type); setView('active'); setIsActive(true); setIsPrepPhase(true); }} className="h-44 relative overflow-hidden rounded-[2.5rem] border border-white/5 group active:scale-95 transition-all shadow-2xl">
@@ -208,6 +316,25 @@ const RunningScreen: React.FC = () => {
                         {translate('start_session')}
                     </Button>
                </div>
+          </div>
+      );
+  }
+
+  const isSprint = ['100m', '200m', '400m', '800m'].includes(event);
+  if (view === 'active' && isSprint && generatedPlan) {
+      return (
+          <div className="fixed inset-0 z-[2500] h-screen w-screen flex flex-col bg-black overflow-hidden">
+              <SprintDashboard 
+                  plan={generatedPlan}
+                  event={event}
+                  level={level}
+                  language={language}
+                  onClose={() => {
+                      setIsActive(false);
+                      setView('config');
+                  }}
+                  showStatus={showStatus}
+              />
           </div>
       );
   }
@@ -227,12 +354,29 @@ const RunningScreen: React.FC = () => {
         <header className="flex-none p-6 flex items-center justify-between z-[100] bg-gradient-to-b from-black/90 to-transparent">
             <button onClick={() => setScreen(Screen.Home)} className="p-3 bg-black/60 backdrop-blur-xl rounded-full text-white border border-white/10 shadow-2xl active:scale-90 transition-all"><X size={20}/></button>
             <div className="flex items-center gap-4">
-                <button 
-                    onClick={() => setShowMap(!showMap)} 
-                    className={`p-3 rounded-full border transition-all ${showMap ? 'bg-cyan-600 border-cyan-400 text-white shadow-[0_0_15px_rgba(0,255,255,0.4)]' : 'bg-black/60 border-white/10 text-gray-400'}`}
-                >
-                    <MapIcon size={20} />
-                </button>
+                {['100m', '200m', '400m', '800m'].includes(event) ? (
+                    <div className="flex bg-black/60 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-2xl">
+                        <button
+                            onClick={() => setEnv('track')}
+                            className={`px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all ${env === 'track' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(138,43,226,0.4)]' : 'text-gray-400'}`}
+                        >
+                            {language === 'fr' ? 'Photo' : 'Photo'}
+                        </button>
+                        <button
+                            onClick={() => setEnv('field')}
+                            className={`px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all ${env === 'field' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(138,43,226,0.4)]' : 'text-gray-400'}`}
+                        >
+                            {language === 'fr' ? 'Vidéo' : 'Video'}
+                        </button>
+                    </div>
+                ) : (
+                    <button 
+                        onClick={() => setShowMap(!showMap)} 
+                        className={`p-3 rounded-full border transition-all ${showMap ? 'bg-cyan-600 border-cyan-400 text-white shadow-[0_0_15px_rgba(0,255,255,0.4)]' : 'bg-black/60 border-white/10 text-gray-400'}`}
+                    >
+                        <MapIcon size={20} />
+                    </button>
+                )}
                 <DeviceStatusTrigger />
                 <CastButton isTVMode={isTVMode} onToggleTVMode={() => setIsTVMode(!isTVMode)} />
             </div>
@@ -240,9 +384,6 @@ const RunningScreen: React.FC = () => {
 
         <div className="flex-1 relative z-10 flex flex-col justify-center px-6">
              <div className={`transition-all duration-700 h-[50vh] w-full rounded-[4rem] border ${showMap ? 'border-cyan-500/40 bg-black/30' : 'border-orange-500/40 bg-black/40'} overflow-hidden backdrop-blur-md relative shadow-[0_0_60px_rgba(255,140,0,0.1)]`}>
-                 <div className="absolute inset-0 z-20 pointer-events-none">
-                    <HolographicCoach isPaused={!isActive || isPrepPhase} modelUrl="https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_coach.glb" />
-                 </div>
                  
                  {isPrepPhase && (
                     <div className="absolute inset-0 z-[120] bg-black/90 backdrop-blur-3xl flex flex-col items-center justify-center animate-fadeIn">

@@ -21,19 +21,12 @@ const mapToVideoUrl = (name: string): string | undefined => {
 };
 
 const mapToModel = (eq: string): string => {
-    const k = normalize(eq || '');
-    if (k.includes('kettle')) return MODEL_LIBRARY.kettlebell;
-    if (k.includes('barbell')) return MODEL_LIBRARY.barbell;
-    if (k.includes('trx')) return MODEL_LIBRARY.trx;
-    if (k.includes('ball')) return MODEL_LIBRARY.swiss_ball;
-    if (k.includes('bench') || k.includes('seated')) return MODEL_LIBRARY.bench;
-    if (k.includes('dumb') || k.includes('weight')) return MODEL_LIBRARY.dual_weights;
     return MODEL_LIBRARY.bodyweight;
 };
 
 export const generateWorkout = async (prompt: string, language: Language): Promise<WorkoutPlan | null> => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `As an elite fitness trainer, generate a professional training session in ${language} for: ${prompt}.
@@ -71,7 +64,7 @@ export const generateWorkoutWithPerplexity = generateWorkout;
 
 export const getChatbotResponse = async (msg: string) => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const res = await ai.models.generateContent({ 
             model: 'gemini-3-flash-preview', 
             contents: msg,
@@ -83,9 +76,9 @@ export const getChatbotResponse = async (msg: string) => {
 
 export const generateDietPlan = async (profile: UserProfile, language: Language) => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const res = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-3-flash-preview', 
             contents: `Generate a high-performance daily nutrition plan for ${profile.full_name} in ${language}. Goal: 3200 kcal. Return JSON only.`,
             config: { responseMimeType: 'application/json' }
         });
@@ -94,7 +87,7 @@ export const generateDietPlan = async (profile: UserProfile, language: Language)
 };
 
 export const getDietAlResponse = async (msg: string, profile: any, language: string) => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: msg });
     return res.text || "Analyzing...";
 };
@@ -103,3 +96,21 @@ export const analyzeMealFromText = async (text: string) => null;
 export const analyzeMealFromImage = async (base64: string, mimeType: string) => null;
 export const generateTrainerCV = async (name: string, bio: string, language: string) => "Profile data loaded...";
 export const getFastingPhaseExplanation = async (phaseName: string, language: string) => "Analyzing physiological state...";
+
+export const translateSprintPlan = async (plan: any, language: string): Promise<any> => {
+    try {
+        const response = await fetch('/api/translate-sprint-plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan, language })
+        });
+        if (response.ok) {
+            return await response.json();
+        }
+        throw new Error('Translation API failed');
+    } catch (e) {
+        console.error("Sprint plan translation client-side helper fail:", e);
+        return plan;
+    }
+};
+

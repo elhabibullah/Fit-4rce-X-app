@@ -50,8 +50,7 @@ function createBlob(data: Float32Array): Blob {
   const l = data.length;
   const int16 = new Int16Array(l);
   for (let i = 0; i < l; i++) {
-    let sample = data[i] * 5.0;
-    sample = Math.max(-1, Math.min(1, sample));
+    const sample = Math.max(-1, Math.min(1, data[i]));
     int16[i] = sample < 0 ? sample * 32768 : sample * 32767;
   }
   return {
@@ -80,6 +79,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const [transcription, setTranscription] = useState<{ user: string; ai: string }>({ user: '', ai: '' });
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [status, setStatus] = useState('Initializing...');
+  const [volume, setVolume] = useState(0);
 
   const sessionRef = useRef<any>(null);
   const audioResourcesRef = useRef<any>({});
@@ -110,7 +110,6 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
     const startSession = async () => {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             if (!isMounted) { stream.getTracks().forEach(t => t.stop()); return; }
 
@@ -124,81 +123,115 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
             
             audioResourcesRef.current = { stream, inputAudioContext, outputAudioContext, scriptProcessor, source, outputGainNode };
 
-            const sessionPromise = ai.live.connect({
-                model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-                callbacks: {
-                    onopen: () => {
-                        if (!isMounted) return;
-                        setStatus('Connected');
-                        scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-                            if (isMutedRef.current) return;
-                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                            const pcmBlob = createBlob(inputData);
-                            sessionPromise.then(s => {
-                              if (s && s.sendRealtimeInput) s.sendRealtimeInput({ media: pcmBlob });
-                            }).catch(() => {});
-                        };
-                        source.connect(scriptProcessor);
-                        scriptProcessor.connect(inputAudioContext.destination);
-                    },
-                    onmessage: async (message: LiveServerMessage) => {
-                        if (!isMounted) return;
-                        
-                        if (message.toolCall && message.toolCall.functionCalls) {
-                            for (const fc of message.toolCall.functionCalls) {
-                                if (fc.name === 'startWorkoutGeneration') {
-                                    setIsGeneratingWorkout(true);
-                                    onClose();
-                                    startWorkoutFromVoice(fc.args as any);
-                                    return;
-                                }
-                            }
-                        }
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/api/live-coach`;
+            const ws = new WebSocket(wsUrl);
+            sessionRef.current = ws;
 
-                        const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
-                        if (base64Audio) {
-                            if (outputAudioContext.state === 'suspended') await outputAudioContext.resume();
-                            setIsAiSpeaking(true);
-                            nextStartTime = Math.max(nextStartTime, outputAudioContext.currentTime);
-                            const audioBuffer = await decodeAudioData(decode(base64Audio), outputAudioContext, 24000, 1);
-                            const sourceNode = outputAudioContext.createBufferSource();
-                            sourceNode.buffer = audioBuffer;
-                            sourceNode.connect(outputGainNode);
-                            sourceNode.addEventListener('ended', () => {
-                                sources.delete(sourceNode);
-                                if (sources.size === 0) setIsAiSpeaking(false);
-                            });
-                            sourceNode.start(nextStartTime);
-                            nextStartTime += audioBuffer.duration;
-                            sources.add(sourceNode);
+            ws.onopen = async () => {
+                if (!isMounted) return;
+                if (inputAudioContext.state === 'suspended') await inputAudioContext.resume();
+                setStatus('Listening...');
+
+                // Send the setup packet to configure the Gemini session securely on the server
+                ws.send(JSON.stringify({
+                    type: 'setup',
+                    systemPrompt,
+                    voiceName
+                }));
+
+                scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
+                    if (isMutedRef.current) return;
+                    const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                    
+                    // Calculate volume for visual feedback
+                    let sum = 0;
+                    for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
+                    const rms = Math.sqrt(sum / inputData.length);
+                    setVolume(Math.min(100, rms * 500));
+
+                    const pcmBlob = createBlob(inputData);
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ audio: pcmBlob.data }));
+                    }
+                };
+                source.connect(scriptProcessor);
+                scriptProcessor.connect(inputAudioContext.destination);
+            };
+
+            ws.onmessage = async (event) => {
+                if (!isMounted) return;
+                const message = JSON.parse(event.data);
+
+                if (message.type === 'status') {
+                    setStatus(message.status);
+                    return;
+                }
+                
+                if (message.toolCall && message.toolCall.functionCalls) {
+                    for (const fc of message.toolCall.functionCalls) {
+                        if (fc.name === 'startWorkoutGeneration') {
+                            setIsGeneratingWorkout(true);
+                            onClose();
+                            startWorkoutFromVoice(fc.args as any);
+                            return;
                         }
-                        
-                        if (message.serverContent?.outputTranscription) {
-                            setTranscription(prev => ({...prev, ai: prev.ai + (message.serverContent?.outputTranscription?.text || '')}));
-                        }
-                        if (message.serverContent?.turnComplete) {
-                            setTranscription({ user: '', ai: '' });
-                        }
-                    },
-                    onerror: () => setStatus('Connection error'),
-                    onclose: () => setStatus('Link closed'),
-                },
-                config: {
-                    responseModalities: [Modality.AUDIO],
-                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } } },
-                    systemInstruction: systemPrompt,
-                    inputAudioTranscription: {},
-                    outputAudioTranscription: {},
-                    tools: [{ functionDeclarations: [startWorkoutGenerationDeclaration] }],
-                },
-            });
-            sessionPromise.then(s => { if (isMounted) sessionRef.current = s; else s.close(); });
+                    }
+                }
+
+                const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
+                if (base64Audio) {
+                    if (outputAudioContext.state === 'suspended') await outputAudioContext.resume();
+                    setIsAiSpeaking(true);
+                    setStatus('Coach Speaking...');
+                    nextStartTime = Math.max(nextStartTime, outputAudioContext.currentTime);
+                    const audioBuffer = await decodeAudioData(decode(base64Audio), outputAudioContext, 24000, 1);
+                    const sourceNode = outputAudioContext.createBufferSource();
+                    sourceNode.buffer = audioBuffer;
+                    sourceNode.connect(outputGainNode);
+                    sourceNode.addEventListener('ended', () => {
+                        sources.delete(sourceNode);
+                        if (sources.size === 0) setIsAiSpeaking(false);
+                    });
+                    sourceNode.start(nextStartTime);
+                    nextStartTime += audioBuffer.duration;
+                    sources.add(sourceNode);
+                }
+                
+                if (message.serverContent?.interrupted) {
+                    sources.forEach(s => s.stop());
+                    sources.clear();
+                    setIsAiSpeaking(false);
+                    nextStartTime = outputAudioContext.currentTime;
+                }
+
+                if (message.serverContent?.inputTranscription) {
+                    setTranscription(prev => ({...prev, user: prev.user + (message.serverContent?.inputTranscription?.text || '')}));
+                }
+
+                if (message.serverContent?.outputTranscription) {
+                    setTranscription(prev => ({...prev, ai: prev.ai + (message.serverContent?.outputTranscription?.text || '')}));
+                }
+                if (message.serverContent?.turnComplete) {
+                    setTranscription({ user: '', ai: '' });
+                    setStatus('Listening...');
+                }
+            };
+
+            ws.onerror = () => setStatus('Connection error');
+            ws.onclose = () => setStatus('Link closed');
         } catch (error) { setStatus('Mic restricted'); }
     };
     startSession();
     return () => {
       isMounted = false;
-      if (sessionRef.current) sessionRef.current.close();
+      if (sessionRef.current) {
+        if (sessionRef.current instanceof WebSocket) {
+          sessionRef.current.close();
+        } else {
+          sessionRef.current.close();
+        }
+      }
       const res = audioResourcesRef.current;
       if (res.stream) res.stream.getTracks().forEach((t: any) => t.stop());
       if (res.inputAudioContext) res.inputAudioContext.close().catch(() => {});
@@ -206,26 +239,40 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     };
   }, [isVisible, systemPrompt, voiceName]);
 
+  const handleInteraction = async () => {
+    const res = audioResourcesRef.current;
+    if (res.inputAudioContext?.state === 'suspended') await res.inputAudioContext.resume();
+    if (res.outputAudioContext?.state === 'suspended') await res.outputAudioContext.resume();
+  };
+
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[9999] flex flex-col items-center justify-end p-4 animate-fadeIn">
-      <div className="bg-gray-950 border border-purple-500/40 rounded-[3rem] p-8 w-full max-w-lg shadow-[0_0_80px_rgba(138,43,226,0.3)] relative mb-24">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[9999] flex flex-col items-center justify-end p-4 animate-fadeIn" onClick={handleInteraction}>
+      <div className="bg-gray-950 border border-purple-500/40 rounded-[3rem] p-8 w-full max-w-lg shadow-[0_0_80px_rgba(138,43,226,0.3)] relative mb-24" onClick={e => e.stopPropagation()}>
           <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white"><X size={24} /></button>
           
           <div className="flex items-center gap-6">
-             <div className={`w-20 h-20 rounded-full flex items-center justify-center border-2 border-purple-500/30 transition-all ${isAiSpeaking ? 'bg-purple-600 scale-110 shadow-[0_0_30px_rgba(138,43,226,0.5)]' : 'bg-gray-900'}`}>
-                {isAiSpeaking ? (
-                  <div className="flex gap-1 h-6 items-end">
-                    <div className="w-1 h-3 bg-white animate-bounce"></div>
-                    <div className="w-1 h-5 bg-white animate-bounce [animation-delay:0.1s]"></div>
-                    <div className="w-1 h-2 bg-white animate-bounce [animation-delay:0.2s]"></div>
-                  </div>
-                ) : <Mic className="text-gray-600" size={32} />}
+             <div className="relative">
+                {/* Volume Ring */}
+                <div 
+                  className="absolute inset-0 rounded-full border-2 border-purple-500/50 transition-all duration-75"
+                  style={{ transform: `scale(${1 + (volume / 100) * 0.5})`, opacity: volume > 5 ? 0.8 : 0 }}
+                />
+                
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center border-2 border-purple-500/30 transition-all relative z-10 ${isAiSpeaking ? 'bg-purple-600 scale-110 shadow-[0_0_30px_rgba(138,43,226,0.5)]' : 'bg-gray-900'}`}>
+                    {isAiSpeaking ? (
+                      <div className="flex gap-1 h-6 items-end">
+                        <div className="w-1 h-3 bg-white animate-bounce"></div>
+                        <div className="w-1 h-5 bg-white animate-bounce [animation-delay:0.1s]"></div>
+                        <div className="w-1 h-2 bg-white animate-bounce [animation-delay:0.2s]"></div>
+                      </div>
+                    ) : <Mic className={`${volume > 10 ? 'text-purple-400' : 'text-gray-600'} transition-colors`} size={32} />}
+                </div>
              </div>
              <div>
                 <p className="text-[10px] text-purple-400 font-black uppercase tracking-[0.3em] mb-1">{status}</p>
-                <p className="text-sm text-white font-medium line-clamp-2 italic">{transcription.ai || "Ready for voice instruction..."}</p>
+                <p className="text-sm text-white font-medium line-clamp-2 italic">{transcription.ai || transcription.user || (status === 'Listening...' ? "I'm listening..." : "Ready for voice instruction...")}</p>
              </div>
           </div>
 

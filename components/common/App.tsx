@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../hooks/useApp.ts';
 import SplashScreen from '../../screens/SplashScreen.tsx';
 import DashboardScreen from '../../screens/HomeScreen.tsx';
-import { WorkoutScreen } from '../../screens/WorkoutScreen.tsx';
+import WorkoutScreen from '../../screens/WorkoutScreen.tsx';
 import NutritionScreen from '../../screens/NutritionScreen.tsx';
 import ProfileScreen from '../../screens/ProfileScreen.tsx';
 import BottomNav from '../profile/BottomNav.tsx';
