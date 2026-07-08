@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from '@google/genai';
+// Using secure backend API proxy endpoints instead of client-side SDK to prevent API key exposure
 import { WorkoutPlan, Exercise, Language, UserProfile, Meal, MealPlanSection, DailyMacros } from '../types.ts';
 import { MODEL_LIBRARY, VIDEO_LIBRARY } from '../lib/constants.ts';
 
@@ -26,17 +26,13 @@ const mapToModel = (eq: string): string => {
 
 export const generateWorkout = async (prompt: string, language: Language): Promise<WorkoutPlan | null> => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `As an elite fitness trainer, generate a professional training session in ${language} for: ${prompt}.
-            Format requirement: { "title": "String", "description": "String", "exercises": [{ "name": "String", "description": "String", "equipment": "String" }] }`,
-            config: {
-                responseMimeType: 'application/json'
-            }
+        const response = await fetch('/api/generate-workout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, language })
         });
-
-        const data = JSON.parse(response.text || "{}");
+        if (!response.ok) throw new Error('Failed to generate workout');
+        const data = await response.json();
         const exercises = (data.exercises || []).map((ex: any) => ({
             name: ex.name,
             description: ex.description,
@@ -64,38 +60,70 @@ export const generateWorkoutWithPerplexity = generateWorkout;
 
 export const getChatbotResponse = async (msg: string) => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const res = await ai.models.generateContent({ 
-            model: 'gemini-3-flash-preview', 
-            contents: msg,
-            config: { systemInstruction: "You are the Fit-4rce X Assistant. Helpful, concise, and focused on fitness performance." }
+        const response = await fetch('/api/chatbot-response', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ msg })
         });
-        return res.text || "Connection active.";
+        if (!response.ok) throw new Error('Chatbot response failed');
+        const data = await response.json();
+        return data.text || "Connection active.";
     } catch (e) { return "System ready."; }
 };
 
 export const generateDietPlan = async (profile: UserProfile, language: Language) => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const res = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview', 
-            contents: `Generate a high-performance daily nutrition plan for ${profile.full_name} in ${language}. Goal: 3200 kcal. Return JSON only.`,
-            config: { responseMimeType: 'application/json' }
+        const response = await fetch('/api/diet-plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profile, language })
         });
-        return JSON.parse(res.text || '{}');
+        if (!response.ok) throw new Error('Diet plan generation failed');
+        return await response.json();
     } catch { return null; }
 };
 
 export const getDietAlResponse = async (msg: string, profile: any, language: string) => {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: msg });
-    return res.text || "Analyzing...";
+    try {
+        const response = await fetch('/api/diet-al-response', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ msg, profile, language })
+        });
+        if (!response.ok) throw new Error('Diet response failed');
+        const data = await response.json();
+        return data.text || "Analyzing...";
+    } catch { return "Analyzing..."; }
 };
 
 export const analyzeMealFromText = async (text: string) => null;
 export const analyzeMealFromImage = async (base64: string, mimeType: string) => null;
-export const generateTrainerCV = async (name: string, bio: string, language: string) => "Profile data loaded...";
-export const getFastingPhaseExplanation = async (phaseName: string, language: string) => "Analyzing physiological state...";
+
+export const generateTrainerCV = async (name: string, bio: string, language: string) => {
+    try {
+        const response = await fetch('/api/trainer-cv', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, bio, language })
+        });
+        if (!response.ok) throw new Error('Trainer CV failed');
+        const data = await response.json();
+        return data.text || "Profile data loaded...";
+    } catch { return "Profile data loaded..."; }
+};
+
+export const getFastingPhaseExplanation = async (phaseName: string, language: string) => {
+    try {
+        const response = await fetch('/api/fasting-phase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phaseName, language })
+        });
+        if (!response.ok) throw new Error('Fasting explanation failed');
+        const data = await response.json();
+        return data.text || "Analyzing physiological state...";
+    } catch { return "Analyzing physiological state..."; }
+};
 
 export const translateSprintPlan = async (plan: any, language: string): Promise<any> => {
     try {

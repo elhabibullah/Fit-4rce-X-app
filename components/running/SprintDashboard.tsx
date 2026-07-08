@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, Pause, RotateCcw, Check, CheckSquare, Square, 
   Volume2, Award, Trophy, Dumbbell, Flame, ChevronRight, HelpCircle,
-  TrendingUp, Clock, AlertTriangle
+  TrendingUp, Clock, AlertTriangle, ChevronLeft, X
 } from 'lucide-react';
 import { SprintWorkoutPlan, SprintExercise } from '../../lib/sprintPlans.ts';
+import { useApp } from '../../hooks/useApp.ts';
+import { Screen } from '../../types.ts';
 
 const SPRINT_TRANSLATIONS: Record<string, Record<string, string>> = {
   en: {
@@ -370,6 +372,8 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
   onClose,
   showStatus
 }) => {
+  const { setScreen, logWorkout } = useApp();
+
   const t = (key: string) => {
     const dict = SPRINT_TRANSLATIONS[language] || SPRINT_TRANSLATIONS['en'];
     return dict[key] || SPRINT_TRANSLATIONS['en'][key] || key;
@@ -386,11 +390,11 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
   // Core Sprints logging states
   const [reps, setReps] = useState<SprintExercise[]>(() => {
     // Make sure we have flat list of exercises to track individually
-    return plan.mainExercises.map(ex => ({ ...ex }));
+    return (plan?.mainExercises || []).map(ex => ({ ...ex }));
   });
   
   const [selectedRepId, setSelectedRepId] = useState<string>(() => {
-    return plan.mainExercises[0]?.id || '';
+    return plan?.mainExercises?.[0]?.id || '';
   });
 
   const [repLogs, setRepLogs] = useState<Record<string, string>>({});
@@ -408,6 +412,74 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
   const [recoveryTimer, setRecoveryTimer] = useState<number>(0); // in seconds
   const [recoveryTotal, setRecoveryTotal] = useState<number>(180);
   const [isRecoveryActive, setIsRecoveryActive] = useState(false);
+
+  const [isTimerPanelCollapsed, setIsTimerPanelCollapsed] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showEarlyCompleteConfirm, setShowEarlyCompleteConfirm] = useState(false);
+
+  // Load session state from localStorage
+  useEffect(() => {
+    try {
+      const key = `sprint_session_${event}_${level}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.completedWarmup) setCompletedWarmup(data.completedWarmup);
+        if (data.completedDrills) setCompletedDrills(data.completedDrills);
+        if (data.completedCooldown) setCompletedCooldown(data.completedCooldown);
+        if (data.repLogs) setRepLogs(data.repLogs);
+        if (data.selectedRepId) setSelectedRepId(data.selectedRepId);
+        if (data.stopwatchTime !== undefined) {
+          setStopwatchTime(data.stopwatchTime);
+          stopwatchElapsedRef.current = data.stopwatchTime;
+        }
+        if (data.recoveryTimer !== undefined) setRecoveryTimer(data.recoveryTimer);
+        if (data.isRecoveryActive !== undefined) setIsRecoveryActive(data.isRecoveryActive);
+        if (data.recoveryTotal !== undefined) setRecoveryTotal(data.recoveryTotal);
+        if (data.activeTab) setActiveTab(data.activeTab);
+        if (data.isTimerPanelCollapsed !== undefined) setIsTimerPanelCollapsed(data.isTimerPanelCollapsed);
+      }
+    } catch (e) {
+      console.warn("Could not load sprint session from localStorage", e);
+    }
+  }, [event, level]);
+
+  // Save session state to localStorage
+  useEffect(() => {
+    try {
+      const key = `sprint_session_${event}_${level}`;
+      const data = {
+        completedWarmup,
+        completedDrills,
+        completedCooldown,
+        repLogs,
+        selectedRepId,
+        stopwatchTime,
+        recoveryTimer,
+        isRecoveryActive,
+        recoveryTotal,
+        activeTab,
+        isTimerPanelCollapsed
+      };
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+      console.warn("Could not save sprint session to localStorage", e);
+    }
+  }, [
+    event,
+    level,
+    completedWarmup,
+    completedDrills,
+    completedCooldown,
+    repLogs,
+    selectedRepId,
+    stopwatchTime,
+    recoveryTimer,
+    isRecoveryActive,
+    recoveryTotal,
+    activeTab,
+    isTimerPanelCollapsed
+  ]);
 
   // Sound and Haptic helpers
   const playWhistle = () => {
@@ -535,7 +607,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
   };
 
   // Mark the selected rep as complete and log the stopwatch split
-  const handleLogActiveRep = (repId: string, durationMs?: number) => {
+  const handleLogActiveRep = (repId: string, durationMs?: number, fallbackTime?: string) => {
     let finalLoggedTime = "";
     
     if (durationMs !== undefined) {
@@ -544,6 +616,9 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
       finalLoggedTime = totalSecs.toFixed(2) + "s";
       // Pause stopwatch
       setIsStopwatchRunning(false);
+    } else if (fallbackTime !== undefined) {
+      // Use direct quick check-off / tick value
+      finalLoggedTime = fallbackTime;
     } else {
       // Manual trigger from textbox
       finalLoggedTime = manualTimeVal.trim();
@@ -607,12 +682,55 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
     showStatus(t('toast_recovery_skipped'));
   };
 
+  const handleCompleteWorkout = () => {
+    // 1. Format the logged info
+    const numLogged = Object.keys(repLogs).length;
+    const totalReps = reps.length;
+    const workoutTitle = language === 'fr' 
+      ? `Séance Athlé Sprint (${event})` 
+      : `Athletics Sprint Session (${event})`;
+    
+    const workoutDesc = language === 'fr'
+      ? `Sprints complétés : ${numLogged}/${totalReps} répétitions avec récupération de repli actif (Niveau: ${level.toUpperCase()}).`
+      : `Sprints completed: ${numLogged}/${totalReps} reps with active recovery guidelines (Level: ${level.toUpperCase()}).`;
+
+    // Formulate exercises structure for App history logging
+    const exercisesForHistory = reps.map(r => ({
+      name: language === 'fr' ? r.nameFr : r.nameEn,
+      description: `${language === 'fr' ? r.notesFr : r.notesEn} - Chrono: ${repLogs[r.id] || "Non complété / Not completed"}`,
+      muscleGroups: ['Quadriceps', 'Hamstrings', 'Calves', 'Core'],
+      modelUrl: '',
+      difficulty: level as any
+    }));
+
+    // 2. Log workout to App history state (the user's profile history!)
+    logWorkout({
+      title: workoutTitle,
+      description: workoutDesc,
+      exercises: exercisesForHistory
+    });
+
+    // 3. Play whistle & notify user
+    playWhistle();
+    showStatus(language === 'fr' ? "Séance enregistrée sur votre profil !" : "Session logged to your profile!");
+    
+    // 3b. Clear session state from localStorage
+    try {
+      localStorage.removeItem(`sprint_session_${event}_${level}`);
+    } catch (err) {
+      console.warn("Could not clear sprint session storage", err);
+    }
+
+    // 4. Close
+    onClose();
+  };
+
   const activeRepIndex = reps.findIndex(r => r.id === selectedRepId);
   const activeRep = activeRepIndex !== -1 ? reps[activeRepIndex] : null;
   const nextRep = activeRepIndex !== -1 && activeRepIndex + 1 < reps.length ? reps[activeRepIndex + 1] : null;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-neutral-950 font-['Poppins']">
+    <div className="flex-1 flex flex-col h-full bg-neutral-950 font-['Poppins'] overflow-y-auto max-h-screen">
       
       {/* PROFESSIONAL CLIPBOARD TOP FLAP */}
       <div className="flex-none pt-2 pb-1 bg-neutral-900 border-b border-neutral-800">
@@ -621,6 +739,27 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
           <div className="absolute top-1 right-3 w-2 h-2 rounded-full bg-neutral-950 border border-neutral-500 shadow-inner"></div>
           <span className="text-[9px] font-black tracking-[0.25em] text-neutral-400 uppercase">{t('coach_clipboard')}</span>
         </div>
+      </div>
+
+      {/* HEADER NAVIGATION/EXIT BAR */}
+      <div className="flex-none bg-neutral-900 px-5 py-3.5 flex items-center justify-between border-b border-neutral-850">
+        <button 
+          onClick={onClose} 
+          className="flex items-center text-gray-400 hover:text-white font-bold uppercase text-[10px] tracking-widest transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1.5" />
+          {language === 'fr' ? 'Configuration' : 'Configure'}
+        </button>
+        <button 
+          onClick={() => {
+            playClickSound(800, 0.05);
+            setShowExitConfirm(true);
+          }} 
+          className="flex items-center text-red-500 hover:text-red-400 font-bold uppercase text-[10px] tracking-widest transition-colors bg-red-950/10 border border-red-900/20 px-3 py-1.5 rounded-lg"
+        >
+          <X className="w-4 h-4 mr-1.5" />
+          {language === 'fr' ? 'Quitter' : 'Exit'}
+        </button>
       </div>
 
       {/* METRICS HUD HEADER */}
@@ -652,7 +791,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
           <div>
             <p className="text-[8px] text-neutral-500 font-bold uppercase tracking-wider">{t('focus')}</p>
             <p className="text-xs font-black text-white truncate max-w-[100px] uppercase">
-              {plan.titleFr && language === 'fr' ? plan.titleFr.split(' ')[0] : plan.titleEn.split(' ')[0]}
+              {plan?.titleFr && language === 'fr' ? plan.titleFr.split(' ')[0] : (plan?.titleEn || plan?.titleFr || "Sprint").split(' ')[0]}
             </p>
           </div>
         </div>
@@ -668,144 +807,226 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
         </div>
       </div>
 
-      {/* TRACK CHRONOMETER SCREEN & RECOVERY OVERLAY */}
-      <div className="flex-none p-5 bg-black border-b border-neutral-900 relative overflow-hidden flex flex-col md:flex-row gap-5 items-center justify-between">
-        
-        {/* Dynamic Track Graphic Lane Background */}
-        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 opacity-20"></div>
-
-        {/* Stopwatch Readout Container */}
-        <div className="flex flex-col items-center md:items-start z-10">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock size={12} className="text-neutral-500 animate-pulse" />
-            <span className="text-[9px] font-black text-neutral-500 uppercase tracking-[0.2em] font-mono">
-              {t('chrono_title')}
+      {/* TIMERS PANEL HEADER CONTROL & MINI INLINE READOUT */}
+      <div className="flex-none bg-neutral-900/80 px-4 py-2 flex items-center justify-between border-b border-neutral-850">
+        <div className="flex items-center gap-2">
+          <Clock size={13} className="text-purple-400 animate-pulse" />
+          <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">
+            {language === 'fr' ? 'Chronomètre & Étape Active' : 'Stopwatch & Active Step'}
+          </span>
+          {isTimerPanelCollapsed && (
+            <span className="ml-2 font-mono text-[10px] bg-purple-950/40 text-purple-400 px-2 py-0.5 border border-purple-900/30 rounded font-black shadow-inner">
+              ⏱️ {formatStopwatch(stopwatchTime)}
             </span>
-          </div>
-          <div className="text-5xl md:text-6xl font-black text-white font-mono tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] select-none">
-            {formatStopwatch(stopwatchTime)}
-          </div>
-          <div className="flex gap-2 mt-3">
-            <button 
-              onClick={handleStartStopwatch}
-              className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95 ${isStopwatchRunning ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-emerald-500 text-neutral-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'}`}
-            >
-              {isStopwatchRunning ? <Pause size={12} fill="white" /> : <Play size={12} fill="black" />}
-              {isStopwatchRunning ? t('stop') : t('start')}
-            </button>
-            <button 
-              onClick={handleResetStopwatch}
-              className="px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-neutral-400 hover:text-white transition-all flex items-center gap-1 active:scale-95"
-            >
-              <RotateCcw size={12} />
-              {t('reset')}
-            </button>
-            {stopwatchTime > 0 && selectedRepId && (
-              <button 
-                onClick={() => handleLogActiveRep(selectedRepId, stopwatchTime)}
-                className="px-4 py-2 bg-amber-500 text-neutral-950 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all flex items-center gap-1.5 active:scale-95 animate-fadeIn"
-              >
-                <Check size={12} strokeWidth={3} />
-                {t('log_rep')}
-              </button>
-            )}
-          </div>
+          )}
         </div>
+        <button 
+          onClick={() => {
+            playClickSound(800, 0.02);
+            setIsTimerPanelCollapsed(!isTimerPanelCollapsed);
+          }}
+          className="text-purple-400 hover:text-white text-[9px] font-black uppercase tracking-widest bg-purple-950/20 px-2.5 py-1 rounded-lg border border-purple-900/30 transition-all active:scale-95 flex items-center gap-1 shadow-sm"
+        >
+          {isTimerPanelCollapsed ? (
+            <>
+              {language === 'fr' ? 'AFFICHER ▲' : 'EXPAND ▲'}
+            </>
+          ) : (
+            <>
+              {language === 'fr' ? 'MASQUER ▼' : 'COLLAPSE ▼'}
+            </>
+          )}
+        </button>
+      </div>
 
-        {/* Dynamic Road Book Active Step HUD */}
-        {activeRep && (
-          <div className="flex-1 w-full md:max-w-md p-4 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 text-left relative z-10 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[8px] font-black uppercase text-purple-400 tracking-[0.2em] flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse shadow-[0_0_8px_#a855f7]"></span>
-                  {language === 'fr' ? 'FEUILLE DE ROUTE ACTIVE' : 'ACTIVE ROADMAP STEP'}
-                </span>
-                <span className="text-[8px] font-black font-mono text-neutral-400 bg-neutral-950 px-1.5 py-0.5 rounded border border-neutral-800">
-                  REP {activeRepIndex + 1} / {reps.length}
-                </span>
-              </div>
-              
-              <h4 className="text-xs font-black text-white uppercase tracking-wider leading-tight">
-                {language === 'fr' ? activeRep.nameFr : activeRep.nameEn}
-              </h4>
-              
-              <p className="text-[9px] text-neutral-400 mt-1.5 leading-relaxed bg-neutral-950/40 p-2 rounded-xl border border-neutral-900">
-                <span className="text-[8px] font-bold uppercase text-neutral-500 tracking-wider block mb-0.5">Focus technique / Coaching :</span>
-                {language === 'fr' ? activeRep.notesFr : activeRep.notesEn}
-              </p>
+      {/* TRACK CHRONOMETER SCREEN & RECOVERY OVERLAY */}
+      {!isTimerPanelCollapsed && (
+        <div className="flex-none p-5 bg-black border-b border-neutral-900 relative overflow-hidden flex flex-col lg:flex-row gap-5 items-stretch justify-between animate-fadeIn">
+          
+          {/* Dynamic Track Graphic Lane Background */}
+          <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 opacity-20"></div>
+
+          {/* Stopwatch Readout Container */}
+          <div className="flex flex-col items-center lg:items-start justify-center z-10 p-2 min-w-[200px]">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock size={12} className="text-neutral-500 animate-pulse" />
+              <span className="text-[9px] font-black text-neutral-500 uppercase tracking-[0.2em] font-mono">
+                {t('chrono_title')}
+              </span>
             </div>
-
-            <div className="mt-2.5 pt-2 border-t border-neutral-900/80 flex items-center justify-between gap-4">
-              <div className="flex gap-3 text-[9px] text-neutral-500 font-bold uppercase">
-                <span>CIBLE : <span className="font-mono text-amber-500 font-black">{language === 'fr' ? activeRep.targetTimeFr : activeRep.targetTimeEn}</span></span>
-                <span>RÉCUP : <span className="font-mono text-purple-400 font-black">{language === 'fr' ? activeRep.recoveryFr : activeRep.recoveryEn}</span></span>
-              </div>
-              
-              {nextRep && (
-                <div className="text-[8px] text-neutral-500 font-black tracking-wider uppercase truncate max-w-[150px] text-right">
-                  {language === 'fr' ? '👉 SUIVANT : ' : '👉 NEXT: '}
-                  <span className="text-neutral-400">
-                    {language === 'fr' ? nextRep.nameFr : nextRep.nameEn}
-                  </span>
-                </div>
+            <div className="text-5xl md:text-6xl font-black text-white font-mono tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] select-none">
+              {formatStopwatch(stopwatchTime)}
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button 
+                onClick={handleStartStopwatch}
+                className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95 ${isStopwatchRunning ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-emerald-500 text-neutral-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'}`}
+              >
+                {isStopwatchRunning ? <Pause size={12} fill="white" /> : <Play size={12} fill="black" />}
+                {isStopwatchRunning ? t('stop') : t('start')}
+              </button>
+              <button 
+                onClick={handleResetStopwatch}
+                className="px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-neutral-400 hover:text-white transition-all flex items-center gap-1 active:scale-95"
+              >
+                <RotateCcw size={12} />
+                {t('reset')}
+              </button>
+              {stopwatchTime > 0 && selectedRepId && (
+                <button 
+                  onClick={() => handleLogActiveRep(selectedRepId, stopwatchTime)}
+                  className="px-4 py-2 bg-amber-500 text-neutral-950 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all flex items-center gap-1.5 active:scale-95 animate-fadeIn"
+                >
+                  <Check size={12} strokeWidth={3} />
+                  {t('log_rep')}
+                </button>
               )}
             </div>
           </div>
-        )}
 
-        {/* Dynamic Recovery Timer Board */}
-        <div className={`w-full md:w-80 p-4 rounded-2xl border transition-all duration-500 z-10 flex flex-col justify-center relative overflow-hidden ${isRecoveryActive ? 'bg-red-950/20 border-red-800/60 shadow-[0_0_30px_rgba(239,68,68,0.1)]' : 'bg-neutral-900/30 border-neutral-800/40'}`}>
-          {isRecoveryActive ? (
-            <div className="space-y-2 animate-fadeIn">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-1.5">
-                  <Volume2 size={14} className="text-red-500 animate-bounce" />
-                  <span className="text-[9px] font-bold text-red-500 uppercase tracking-wider">
-                    {t('active_rest')}
+          {/* Dynamic Road Book Active Step HUD */}
+          {activeRep && (
+            <div className="flex-1 w-full p-4 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 text-left relative z-10 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-1.5 gap-2">
+                  <span className="text-[8px] font-black uppercase text-purple-400 tracking-[0.2em] flex items-center gap-1 whitespace-nowrap">
+                    <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse shadow-[0_0_8px_#a855f7]"></span>
+                    {language === 'fr' ? 'FEUILLE DE ROUTE ACTIVE' : 'ACTIVE ROADMAP STEP'}
                   </span>
+                  
+                  {/* PREVIOUS / NEXT BROWSING BUTTONS */}
+                  <div className="flex items-center gap-1 flex-none">
+                    <button 
+                      disabled={activeRepIndex === 0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playClickSound(800, 0.03);
+                        setSelectedRepId(reps[activeRepIndex - 1].id);
+                      }}
+                      className="p-1 rounded bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                      title={language === 'fr' ? 'Précédent' : 'Previous'}
+                    >
+                      <ChevronLeft size={10} strokeWidth={3} />
+                    </button>
+                    <span className="text-[8px] font-black font-mono text-neutral-300 bg-neutral-950 px-1.5 py-0.5 rounded border border-neutral-800">
+                      {activeRepIndex + 1} / {reps.length}
+                    </span>
+                    <button 
+                      disabled={activeRepIndex === reps.length - 1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playClickSound(800, 0.03);
+                        setSelectedRepId(reps[activeRepIndex + 1].id);
+                      }}
+                      className="p-1 rounded bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                      title={language === 'fr' ? 'Suivant' : 'Next'}
+                    >
+                      <ChevronRight size={10} strokeWidth={3} />
+                    </button>
+                  </div>
                 </div>
-                <button onClick={skipRecovery} className="text-[9px] font-black text-neutral-400 hover:text-white uppercase tracking-widest border border-neutral-800 px-2 py-0.5 rounded bg-black/40">
-                  {t('skip')}
+                
+                <h4 className="text-xs font-black text-white uppercase tracking-wider leading-tight">
+                  {language === 'fr' ? activeRep.nameFr : activeRep.nameEn}
+                </h4>
+                
+                <p className="text-[9px] text-neutral-400 mt-1.5 leading-relaxed bg-neutral-950/40 p-2 rounded-xl border border-neutral-900">
+                  <span className="text-[8px] font-bold uppercase text-neutral-500 tracking-wider block mb-0.5">Focus technique / Coaching :</span>
+                  {language === 'fr' ? activeRep.notesFr : activeRep.notesEn}
+                </p>
+              </div>
+
+              <div className="mt-2.5 pt-2 border-t border-neutral-900/80 flex items-center justify-between gap-4">
+                <div className="flex flex-col">
+                  <div className="flex gap-2 text-[9px] text-neutral-500 font-bold uppercase">
+                    <span>CIBLE : <span className="font-mono text-amber-500 font-black">{language === 'fr' ? activeRep.targetTimeFr : activeRep.targetTimeEn}</span></span>
+                    <span>RÉCUP : <span className="font-mono text-purple-400 font-black">{language === 'fr' ? activeRep.recoveryFr : activeRep.recoveryEn}</span></span>
+                  </div>
+                  {repLogs[activeRep.id] && (
+                    <span className="text-[8px] text-emerald-400 font-black uppercase mt-1.5 font-mono">
+                      ✓ {language === 'fr' ? 'COMPLÉTÉ : ' : 'LOGGED: '} {repLogs[activeRep.id]}
+                    </span>
+                  )}
+                </div>
+                
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playClickSound(800, 0.05);
+                    const target = language === 'fr' ? activeRep.targetTimeFr : activeRep.targetTimeEn;
+                    if (repLogs[activeRep.id]) {
+                      setRepLogs(prev => {
+                        const next = { ...prev };
+                        delete next[activeRep.id];
+                        return next;
+                      });
+                      showStatus(language === 'fr' ? "Sprint réinitialisé" : "Sprint reset");
+                    } else {
+                      handleLogActiveRep(activeRep.id, undefined, target);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition-all ${repLogs[activeRep.id] ? 'bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-purple-600 text-white hover:bg-purple-500 shadow-md'}`}
+                >
+                  <Check size={11} strokeWidth={4} />
+                  {repLogs[activeRep.id] ? (language === 'fr' ? 'Annuler' : 'Reset') : (language === 'fr' ? 'Valider' : 'Confirm')}
                 </button>
               </div>
-              <div className="text-3xl font-black text-red-500 font-mono tracking-tight text-center md:text-left">
-                {formatRecovery(recoveryTimer)}
-              </div>
-              {/* Rest Progress Bar */}
-              <div className="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden border border-neutral-800">
-                <div 
-                  className="bg-red-500 h-1.5 transition-all duration-1000 rounded-full" 
-                  style={{ width: `${(recoveryTimer / recoveryTotal) * 100}%` }}
-                ></div>
-              </div>
-              <p className="text-[8px] text-neutral-500 font-semibold italic text-center md:text-left">
-                {t('rest_recommendation')}
-              </p>
-            </div>
-          ) : (
-            <div className="text-center py-4 text-neutral-600 flex flex-col items-center justify-center space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-widest">
-                {t('no_active_rest')}
-              </span>
-              <p className="text-[9px] text-neutral-500 max-w-[200px]">
-                {t('complete_rep_trigger')}
-              </p>
             </div>
           )}
+
+          {/* Dynamic Recovery Timer Board */}
+          <div className={`w-full lg:w-80 p-4 rounded-2xl border transition-all duration-500 z-10 flex flex-col justify-center relative overflow-hidden ${isRecoveryActive ? 'bg-red-950/20 border-red-800/60 shadow-[0_0_30px_rgba(239,68,68,0.1)]' : 'bg-neutral-900/30 border-neutral-800/40'}`}>
+            {isRecoveryActive ? (
+              <div className="space-y-2 animate-fadeIn">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <Volume2 size={14} className="text-red-500 animate-bounce" />
+                    <span className="text-[9px] font-bold text-red-500 uppercase tracking-wider">
+                      {t('active_rest')}
+                    </span>
+                  </div>
+                  <button onClick={skipRecovery} className="text-[9px] font-black text-neutral-400 hover:text-white uppercase tracking-widest border border-neutral-800 px-2 py-0.5 rounded bg-black/40">
+                    {t('skip')}
+                  </button>
+                </div>
+                <div className="text-3xl font-black text-red-500 font-mono tracking-tight text-center lg:text-left">
+                  {formatRecovery(recoveryTimer)}
+                </div>
+                {/* Rest Progress Bar */}
+                <div className="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden border border-neutral-800">
+                  <div 
+                    className="bg-red-500 h-1.5 transition-all duration-1000 rounded-full" 
+                    style={{ width: `${(recoveryTimer / recoveryTotal) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-[8px] text-neutral-500 font-semibold italic text-center lg:text-left">
+                  {t('rest_recommendation')}
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-neutral-600 flex flex-col items-center justify-center space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {t('no_active_rest')}
+                </span>
+                <p className="text-[9px] text-neutral-500 max-w-[200px]">
+                  {t('complete_rep_trigger')}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ROADMAP ROAD BOOK - WORKOUT LIST SECTIONS */}
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-none flex flex-col">
         
         {/* TAB SWITCHER */}
         <div className="flex-none bg-neutral-900/60 p-1 flex border-b border-neutral-900 overflow-x-auto">
           {[
-            { id: 'warmup', label: t('tab_warmup'), count: plan.warmupFr.length },
-            { id: 'drills', label: t('tab_drills'), count: plan.drillsFr.length },
-            { id: 'main', label: t('tab_sprints'), count: reps.length },
-            { id: 'cooldown', label: t('tab_cooldown'), count: plan.cooldownEn.length }
+            { id: 'warmup', label: t('tab_warmup'), count: (language === 'fr' ? plan?.warmupFr : plan?.warmupEn)?.length || plan?.warmupFr?.length || plan?.warmupEn?.length || 0 },
+            { id: 'drills', label: t('tab_drills'), count: (language === 'fr' ? plan?.drillsFr : plan?.drillsEn)?.length || plan?.drillsFr?.length || plan?.drillsEn?.length || 0 },
+            { id: 'main', label: t('tab_sprints'), count: reps?.length || 0 },
+            { id: 'cooldown', label: t('tab_cooldown'), count: (language === 'fr' ? plan?.cooldownFr : plan?.cooldownEn)?.length || plan?.cooldownFr?.length || plan?.cooldownEn?.length || 0 }
           ].map(tab => (
             <button
               key={tab.id}
@@ -824,7 +1045,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
         </div>
 
         {/* WORKOUT TAB CONTENTS */}
-        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar bg-neutral-950/40">
+        <div className="p-5 bg-neutral-950/40">
           
           {/* TAB 1: WARMUP */}
           {activeTab === 'warmup' && (
@@ -836,7 +1057,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                 </h3>
               </div>
               <div className="space-y-2.5">
-                {(language === 'fr' ? plan.warmupFr : plan.warmupEn).map((item, idx) => (
+                {((language === 'fr' ? plan?.warmupFr : plan?.warmupEn) || plan?.warmupFr || plan?.warmupEn || []).map((item, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
@@ -865,7 +1086,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                 </h3>
               </div>
               <div className="space-y-2.5">
-                {(language === 'fr' ? plan.drillsFr : plan.drillsEn).map((item, idx) => (
+                {((language === 'fr' ? plan?.drillsFr : plan?.drillsEn) || plan?.drillsFr || plan?.drillsEn || []).map((item, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
@@ -934,15 +1155,29 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                       >
                         {/* Core Data Row */}
                         <div className="grid grid-cols-12 gap-1 items-center p-3 text-xs">
-                          {/* Checked index status */}
-                          <div className="col-span-1 text-center font-mono font-black text-neutral-500 flex justify-center items-center">
-                            {loggedTime ? (
-                              <div className="w-4 h-4 bg-emerald-500/10 border border-emerald-500 text-emerald-400 rounded-full flex items-center justify-center font-sans font-black text-[9px]">
-                                ✓
-                              </div>
-                            ) : (
-                              <span>{idx + 1}</span>
-                            )}
+                          {/* Checked/Vink status checkbox */}
+                          <div 
+                            className="col-span-1 text-center flex justify-center items-center"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playClickSound(800, 0.05);
+                              if (loggedTime) {
+                                // Toggle back to unlogged
+                                setRepLogs(prev => {
+                                  const next = { ...prev };
+                                  delete next[rep.id];
+                                  return next;
+                                });
+                                showStatus(language === 'fr' ? "Sprint réinitialisé" : "Sprint reset");
+                              } else {
+                                // Fast check-off (vink/tick) using the target time!
+                                handleLogActiveRep(rep.id, undefined, target); 
+                              }
+                            }}
+                          >
+                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all cursor-pointer ${loggedTime ? 'bg-emerald-500 border-emerald-400 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'border-neutral-700 hover:border-purple-500 bg-neutral-950/80 text-transparent'}`}>
+                              <Check size={11} strokeWidth={4} />
+                            </div>
                           </div>
 
                           {/* Exercise name and details */}
@@ -1068,7 +1303,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                 </h3>
               </div>
               <div className="space-y-2.5">
-                {(language === 'fr' ? plan.cooldownFr : plan.cooldownEn).map((item, idx) => (
+                {((language === 'fr' ? plan?.cooldownFr : plan?.cooldownEn) || plan?.cooldownFr || plan?.cooldownEn || []).map((item, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
@@ -1102,9 +1337,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
         {Object.keys(repLogs).length === reps.length ? (
           <button
             onClick={() => {
-              playWhistle();
-              showStatus(t('toast_workout_finished'));
-              onClose();
+              handleCompleteWorkout();
             }}
             className="bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_15px_rgba(138,43,226,0.4)] transition-all font-black uppercase tracking-widest text-[10px] px-6 py-3 rounded-xl animate-bounce"
           >
@@ -1113,10 +1346,8 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
         ) : (
           <button
             onClick={() => {
-              const confirmComplete = window.confirm(t('confirm_early_complete'));
-              if (confirmComplete) {
-                onClose();
-              }
+              playClickSound(800, 0.05);
+              setShowEarlyCompleteConfirm(true);
             }}
             className="text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-white transition-colors bg-neutral-800 border border-neutral-700 px-5 py-3 rounded-xl active:scale-95"
           >
@@ -1124,6 +1355,88 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
           </button>
         )}
       </div>
+
+      {/* BEAUTIFUL CUSTOM EXIT CONFIRMATION DIALOG */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[5000] flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-red-950/40 text-red-500 flex items-center justify-center mx-auto border border-red-900/30">
+              <AlertTriangle size={24} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                {language === 'fr' ? "Quitter la Séance ?" : "Quit Workout Session?"}
+              </h3>
+              <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+                {language === 'fr' 
+                  ? "Votre progression actuelle ne sera pas enregistrée si vous quittez maintenant." 
+                  : "Your current progress will not be logged if you quit now."}
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button 
+                onClick={() => {
+                  playClickSound(600, 0.05);
+                  setShowExitConfirm(false);
+                }}
+                className="flex-1 py-2.5 bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-neutral-400 transition-all active:scale-95"
+              >
+                {language === 'fr' ? 'Annuler' : 'Cancel'}
+              </button>
+              <button 
+                onClick={() => {
+                  playClickSound(600, 0.05);
+                  setShowExitConfirm(false);
+                  setScreen(Screen.Home);
+                }}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg shadow-red-900/20"
+              >
+                {language === 'fr' ? 'Quitter' : 'Quit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BEAUTIFUL CUSTOM EARLY COMPLETE DIALOG */}
+      {showEarlyCompleteConfirm && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[5000] flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-purple-950/40 text-purple-400 flex items-center justify-center mx-auto border border-purple-900/30">
+              <HelpCircle size={24} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                {language === 'fr' ? "Finaliser la séance ?" : "Complete Session?"}
+              </h3>
+              <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+                {t('confirm_early_complete')}
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button 
+                onClick={() => {
+                  playClickSound(600, 0.05);
+                  setShowEarlyCompleteConfirm(false);
+                }}
+                className="flex-1 py-2.5 bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-neutral-400 transition-all active:scale-95"
+              >
+                {language === 'fr' ? 'Reprendre' : 'Resume'}
+              </button>
+              <button 
+                onClick={() => {
+                  playClickSound(600, 0.05);
+                  setShowEarlyCompleteConfirm(false);
+                  handleCompleteWorkout();
+                }}
+                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg shadow-purple-900/20"
+              >
+                {language === 'fr' ? 'Valider' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

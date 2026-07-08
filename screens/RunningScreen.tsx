@@ -17,7 +17,7 @@ import { SprintDashboard } from '../components/running/SprintDashboard.tsx';
 type RunningView = 'config' | 'generating' | 'briefing' | 'environment_select' | 'active';
 
 const RunningScreen: React.FC = () => {
-  const { translate, isDeviceConnected, deviceMetrics, language, setScreen, setIsGeneratingWorkout, setSelectedPlan, showStatus } = useApp();
+  const { translate, isDeviceConnected, deviceMetrics, language, setScreen, setIsGeneratingWorkout, setSelectedPlan, showStatus, logWorkout } = useApp();
   const [view, setView] = useState<RunningView>('config');
   const [event, setEvent] = useState<string>('5km');
   const [level, setLevel] = useState<string>('intermediate');
@@ -30,6 +30,7 @@ const RunningScreen: React.FC = () => {
   const [env, setEnv] = useState<EnvironmentType>('track');
   const [isTVMode, setIsTVMode] = useState(false);
   const [showMap, setShowMap] = useState(true);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   useEffect(() => {
     let interval: number;
@@ -163,6 +164,16 @@ const RunningScreen: React.FC = () => {
   if (view === 'briefing') {
       return (
           <div className="animate-fadeIn h-full flex flex-col bg-black p-6 font-['Poppins'] pb-12">
+              {/* EXIT / NAVIGATION BAR */}
+              <div className="flex-none flex items-center justify-between mb-6 border-b border-gray-900 pb-3">
+                  <button onClick={() => setView('config')} className="flex items-center text-gray-400 hover:text-white font-normal uppercase text-[10px] tracking-widest">
+                      <ChevronLeft className="w-5 h-5 mr-1" />{language === 'fr' ? 'Configuration' : 'Configure'}
+                  </button>
+                  <button onClick={() => setScreen(Screen.Home)} className="flex items-center text-red-500 hover:text-red-400 font-normal uppercase text-[10px] tracking-widest">
+                      <X className="w-4 h-4 mr-1" />{language === 'fr' ? 'Quitter' : 'Exit'}
+                  </button>
+              </div>
+
               <h1 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{translate('running.briefing.title')}</h1>
               <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-6">Distance: {translate(`running.dist.${event}`)} // Level: {translate(`level.${level}`)}</p>
               
@@ -296,9 +307,12 @@ const RunningScreen: React.FC = () => {
 
       return (
           <div className="animate-fadeIn h-full bg-black p-6 font-['Poppins'] pb-12 flex flex-col overflow-y-auto custom-scrollbar">
-               <header className="flex-none p-2 flex items-center mb-8 pt-4">
+               <header className="flex-none p-2 flex items-center justify-between mb-8 pt-4">
                   <button onClick={() => setView('briefing')} className="flex items-center text-gray-400 hover:text-white font-normal uppercase text-[10px] tracking-widest">
                       <ChevronLeft className="w-5 h-5 mr-1" />{translate('back')}
+                  </button>
+                  <button onClick={() => setScreen(Screen.Home)} className="flex items-center text-red-500 hover:text-red-400 font-normal uppercase text-[10px] tracking-widest">
+                      <X className="w-4 h-4 mr-1" />{language === 'fr' ? 'Quitter' : 'Exit'}
                   </button>
                </header>
                <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight sm:tracking-tighter mb-12 text-center"># {translate('running.env.title')}</h1>
@@ -352,7 +366,14 @@ const RunningScreen: React.FC = () => {
         </div>
         
         <header className="flex-none p-6 flex items-center justify-between z-[100] bg-gradient-to-b from-black/90 to-transparent">
-            <button onClick={() => setScreen(Screen.Home)} className="p-3 bg-black/60 backdrop-blur-xl rounded-full text-white border border-white/10 shadow-2xl active:scale-90 transition-all"><X size={20}/></button>
+            <button 
+                onClick={() => {
+                    setShowExitConfirm(true);
+                }} 
+                className="p-3 bg-black/60 backdrop-blur-xl rounded-full text-red-500 border border-white/10 shadow-2xl active:scale-90 transition-all flex items-center gap-1.5 px-4 font-bold text-[10px] tracking-widest uppercase"
+            >
+                <X size={14}/> {language === 'fr' ? 'QUITTER / ENREGISTRER' : 'EXIT / SAVE'}
+            </button>
             <div className="flex items-center gap-4">
                 {['100m', '200m', '400m', '800m'].includes(event) ? (
                     <div className="flex bg-black/60 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-2xl">
@@ -428,6 +449,64 @@ const RunningScreen: React.FC = () => {
                 </div>
             </div>
         </div>
+
+        {/* CUSTOM EXIT CONFIRMATION MODAL */}
+        {showExitConfirm && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[5000] flex items-center justify-center p-4 animate-fadeIn font-['Poppins']">
+            <div className="bg-zinc-950 border border-white/10 rounded-[2.5rem] p-8 max-w-sm w-full text-center space-y-6 shadow-2xl">
+              <div className="w-16 h-16 rounded-full bg-red-950/40 text-red-500 flex items-center justify-center mx-auto border border-red-500/20">
+                <Activity size={28} className="animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white uppercase tracking-tight">
+                  {language === 'fr' ? "Enregistrer & Quitter ?" : "Save & Exit Run?"}
+                </h3>
+                <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                  {language === 'fr' 
+                    ? "Voulez-vous enregistrer cette séance de course à pied de " + event + " dans votre historique d'entraînement ?" 
+                    : "Would you like to save this " + event + " running session to your training history?"}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 pt-2">
+                <button 
+                  onClick={() => {
+                    setShowExitConfirm(false);
+                    logWorkout({
+                        title: language === 'fr' ? `Course à pied (${event})` : `Running Session (${event})`,
+                        description: language === 'fr' 
+                            ? `Course de ${event} complétée en ${Math.floor(time/60)}m ${time%60}s.`
+                            : `Course of ${event} completed in ${Math.floor(time/60)}m ${time%60}s.`,
+                        exercises: []
+                    });
+                    showStatus(language === 'fr' ? "Course enregistrée !" : "Run saved!");
+                    setScreen(Screen.Home);
+                  }}
+                  className="w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg shadow-purple-900/20"
+                >
+                  {language === 'fr' ? 'ENREGISTRER & QUITTER' : 'SAVE & EXIT'}
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowExitConfirm(false);
+                    setScreen(Screen.Home);
+                  }}
+                  className="w-full py-3 bg-neutral-900 hover:bg-neutral-850 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-red-500 transition-all active:scale-95"
+                >
+                  {language === 'fr' ? 'QUITTER SANS ENREGISTRER' : 'QUIT WITHOUT SAVING'}
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowExitConfirm(false);
+                  }}
+                  className="w-full py-3 bg-black hover:bg-neutral-950 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-400 transition-all active:scale-95 text-center"
+                >
+                  {language === 'fr' ? 'REPRENDRE LA COURSE' : 'RESUME RUN'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
     </div>
   );
 };

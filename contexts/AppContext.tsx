@@ -84,10 +84,24 @@ interface AppContextType {
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // CRITICAL: REMOVED ALL PERSISTENCE. APP STATE IS NOW VOLATILE.
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  // Restore robust LocalStorage persistence
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    try {
+      const saved = localStorage.getItem('f4x_profile');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [session, setSession] = useState<Session | null>(null);
-  const [language, _setLanguage] = useState<Language>(Language.EN);
+  const [language, _setLanguage] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('f4x_language');
+      return (saved as Language) || Language.EN;
+    } catch {
+      return Language.EN;
+    }
+  });
   const [screen, setScreen] = useState<Screen>(Screen.Home);
   const [currencyInfo, setCurrencyInfo] = useState<CurrencyInfo>(DEFAULT_CURRENCY_INFO);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -101,11 +115,76 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState(true);
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
 
-  const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistoryItem[]>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistoryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('f4x_workoutHistory');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [savedWorkouts] = useState<WorkoutPlan[]>([]);
-  const [nutritionHistory, setNutritionHistory] = useState<Meal[]>([]);
-  const [dietPlan, setDietPlan] = useState<MealPlanSection[] | null>(null);
-  const [dailyMacros, setDailyMacros] = useState<DailyMacros | null>(null);
+  const [nutritionHistory, setNutritionHistory] = useState<Meal[]>(() => {
+    try {
+      const saved = localStorage.getItem('f4x_nutritionHistory');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [dietPlan, setDietPlan] = useState<MealPlanSection[] | null>(() => {
+    try {
+      const saved = localStorage.getItem('f4x_dietPlan');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [dailyMacros, setDailyMacros] = useState<DailyMacros | null>(() => {
+    try {
+      const saved = localStorage.getItem('f4x_dailyMacros');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Effects to synchronize states to LocalStorage
+  useEffect(() => {
+    if (profile) {
+      localStorage.setItem('f4x_profile', JSON.stringify(profile));
+    } else {
+      localStorage.removeItem('f4x_profile');
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    localStorage.setItem('f4x_language', language);
+  }, [language]);
+
+  useEffect(() => {
+    localStorage.setItem('f4x_workoutHistory', JSON.stringify(workoutHistory));
+  }, [workoutHistory]);
+
+  useEffect(() => {
+    localStorage.setItem('f4x_nutritionHistory', JSON.stringify(nutritionHistory));
+  }, [nutritionHistory]);
+
+  useEffect(() => {
+    if (dietPlan) {
+      localStorage.setItem('f4x_dietPlan', JSON.stringify(dietPlan));
+    } else {
+      localStorage.removeItem('f4x_dietPlan');
+    }
+  }, [dietPlan]);
+
+  useEffect(() => {
+    if (dailyMacros) {
+      localStorage.setItem('f4x_dailyMacros', JSON.stringify(dailyMacros));
+    } else {
+      localStorage.removeItem('f4x_dailyMacros');
+    }
+  }, [dailyMacros]);
 
   const translate = useCallback((key: string, replacements?: { [key:string]: string | number }) => {
     const dict = TRANSLATIONS[language] || TRANSLATIONS[Language.EN];
@@ -194,11 +273,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [language, showStatus, setScreen, setSelectedPlan, setIsGeneratingWorkout]);
 
-  // ON MOUNT: FORCE RESET
+  // ON MOUNT: LOADING STATUS ONLY
   useEffect(() => {
-    // Clear any existing legacy storage just in case
-    localStorage.clear();
-    sessionStorage.clear();
     const timer = setTimeout(() => setLoading(false), 2500);
     return () => clearTimeout(timer);
   }, []);
@@ -212,6 +288,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     session, user: null, profile, loading, isSubscribed: profile?.subscription_status === 'active',
     planId: profile?.plan_id, updateUserProfile, 
     resetApp: () => {
+        localStorage.clear();
+        sessionStorage.clear();
         window.location.reload(); 
     },
     signIn: (p: any) => {
