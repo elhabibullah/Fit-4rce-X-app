@@ -25,6 +25,13 @@
     "three": "^0.170.0",
     "ws": "^8.21.0"
   },
+  "overrides": {
+    "@react-three/fiber": "$@react-three/fiber",
+    "@react-three/drei": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/react": "^19.0.0",
