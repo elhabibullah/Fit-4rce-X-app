@@ -22,6 +22,7 @@ export enum Screen {
     SubscriptionManagement = 'subscription-management',
     Spinning = 'spinning',
     Running = 'running',
+    AboutApp = 'about-app',
 }
 
 export type OnboardingStep = 'language' | 'intro' | 'subscription' | 'profileSetup';

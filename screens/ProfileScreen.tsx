@@ -5,7 +5,6 @@ import { useApp } from '../hooks/useApp.ts';
 import { Screen } from '../types.ts';
 import Button from '../components/common/Button.tsx';
 import PrivacyModal from '../components/profile/PrivacyModal.tsx';
-import AboutAppModal from '../components/profile/AboutAppModal.tsx';
 import ImageCropper from '../components/profile/ImageCropper.tsx';
 
 const ProfileOption: React.FC<{ icon: React.ElementType; title: string; onClick?: () => void; disabled?: boolean; subtitle?: string }> = ({ icon: Icon, title, onClick, disabled = false, subtitle }) => {
@@ -34,7 +33,6 @@ const ProfileScreen: React.FC = () => {
         updateUserProfile, language, openDeviceModal
     } = useApp();
     const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
-    const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
     const [imageToCrop, setImageToCrop] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,50 +89,27 @@ const ProfileScreen: React.FC = () => {
                 </Card>
             </div>
 
-            <div className="space-y-6">
-                 <section>
-                    <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-3 ml-1">{translate('profile.section.training')}</h3>
-                    <div className="space-y-2">
-                        <ProfileOption icon={History} title={translate('profile.history.title')} onClick={() => setScreen(Screen.WorkoutHistory)} />
-                        <ProfileOption icon={Bookmark} title={translate('profile.saved.title')} onClick={() => setScreen(Screen.SavedWorkouts)} />
-                    </div>
-                </section>
-
-                <section>
-                    <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-3 ml-1">{translate('profile.section.ecosystem')}</h3>
-                    <div className="space-y-2">
-                        <ProfileOption icon={CreditCard} title={translate('profile.subscription.title')} onClick={() => setScreen(Screen.SubscriptionManagement)} />
-                        <ProfileOption icon={Watch} title={translate('profile.gear.title')} subtitle={translate('profile.gear.subtitle')} onClick={openDeviceModal} />
-                        <ProfileOption icon={MessageSquareQuote} title={translate('profile.services.title')} onClick={() => setScreen(Screen.Trainers)} />
-                    </div>
-                </section>
-
-                <section>
-                    <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-3 ml-1">{translate('profile.section.settings')}</h3>
-                    <div className="space-y-2">
-                        <ProfileOption icon={Globe} title={translate('profile.language.title')} onClick={() => setScreen(Screen.Language)} subtitle={language.toUpperCase()} />
-                        <ProfileOption icon={RefreshCw} title={translate('profile.sync.title')} onClick={syncProfile} disabled={isSyncing} />
-                    </div>
-                </section>
-
-                <section>
-                    <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-3 ml-1">{translate('profile.section.system')}</h3>
-                    <div className="space-y-2">
-                        <ProfileOption icon={Info} title={translate('profile.about.title')} onClick={() => setIsAboutModalOpen(true)} />
-                        <ProfileOption icon={Shield} title={translate('profile.privacy.title')} onClick={() => setIsPrivacyModalOpen(true)} />
-                    </div>
-                </section>
+            <div className="space-y-2 pt-2">
+                <ProfileOption icon={Watch} title={translate('profile.gear.title')} onClick={openDeviceModal} />
+                <ProfileOption icon={CreditCard} title={translate('profile.subscription.title')} onClick={() => setScreen(Screen.SubscriptionManagement)} />
+                <ProfileOption icon={History} title={translate('profile.history.title')} onClick={() => setScreen(Screen.WorkoutHistory)} />
+                <ProfileOption icon={Bookmark} title={translate('profile.saved.title')} onClick={() => setScreen(Screen.SavedWorkouts)} />
+                <ProfileOption icon={MessageSquareQuote} title={translate('profile.services.title')} onClick={() => setScreen(Screen.Trainers)} />
+                <ProfileOption icon={Globe} title={translate('profile.language.title')} onClick={() => setScreen(Screen.Language)} />
+                <ProfileOption icon={Info} title={translate('profile.about.title')} onClick={() => setScreen(Screen.AboutApp)} />
 
                 <div className="pt-4">
-                    <Button variant="secondary" onClick={resetApp} className="w-full border-red-900/50 text-red-500 hover:bg-red-950/20 py-4 uppercase text-xs font-bold tracking-widest">
-                        <Lock className="w-4 h-4 mr-2 inline-block" />
+                    <Button 
+                      variant="secondary" 
+                      onClick={() => setScreen(Screen.Home)} 
+                      className="w-full !border-red-500/30 !text-red-500 hover:!bg-red-950/40 hover:!text-red-400 py-4 uppercase text-xs font-bold tracking-widest"
+                    >
                         {translate('profile.reset')}
                     </Button>
                 </div>
             </div>
 
             <PrivacyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
-            <AboutAppModal isOpen={isAboutModalOpen} onClose={() => setIsAboutModalOpen(false)} />
             {imageToCrop && <ImageCropper src={imageToCrop} onSave={handleCropSave} onClose={() => setImageToCrop(null)} />}
         </div>
     );

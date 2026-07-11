@@ -17,6 +17,7 @@ import SubscriptionScreen from '../../screens/SubscriptionScreen.tsx';
 import ProfileSetupScreen from '../../screens/ProfileSetupScreen.tsx';
 import WorkoutHistoryScreen from '../../screens/WorkoutHistoryScreen.tsx';
 import SavedWorkoutsScreen from '../../screens/SavedWorkoutsScreen.tsx';
+import AboutScreen from '../../screens/AboutScreen.tsx';
 import SignInScreen from '../../screens/SignInScreen.tsx';
 import { SpinningScreen } from '../../screens/SpinningScreen.tsx';
 import RunningScreen from '../../screens/RunningScreen.tsx';
@@ -41,6 +42,7 @@ const MainContent: React.FC<{ screen: Screen }> = React.memo(({ screen }) => {
     case Screen.Spinning: return <SpinningScreen />;
     case Screen.Running: return <RunningScreen />;
     case Screen.Nutrition: return <NutritionScreen />;
+    case Screen.AboutApp: return <AboutScreen />;
     default: return <DashboardScreen />;
   }
 });

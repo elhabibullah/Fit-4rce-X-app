@@ -46,7 +46,7 @@ const DietAlChat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-150px)] animate-fadeIn font-['Poppins']">
+    <div className="flex flex-col h-[calc(100vh-255px)] animate-fadeIn font-['Poppins']">
         <DietAlHeader title={translate('nutrition.chat.title')} subtitle={translate('nutrition.chat.subtitle')} />
         <main className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/40 rounded-2xl border border-gray-800 shadow-sm custom-scrollbar">
           {messages.map((msg, index) => (
