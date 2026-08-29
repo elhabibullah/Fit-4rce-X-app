@@ -37,6 +37,18 @@ const WorkoutScreen: React.FC = () => {
     const [workoutType, setWorkoutType] = useState('fitness');
     const [intensity, setIntensity] = useState('medium');
 
+    useEffect(() => {
+        if (selectedPlan) {
+            setPlan(selectedPlan);
+            setView('active');
+            setIdx(0);
+            setTimer(45);
+            setPrepTimer(10);
+            setIsPrep(true);
+            setIsPaused(false);
+        }
+    }, [selectedPlan]);
+
     const handleFinish = useCallback(() => {
         if (plan) logWorkout(plan);
         setView('finished');

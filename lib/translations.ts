@@ -32,6 +32,16 @@ const en: TranslationMap = {
   'nav.defense': 'Defense',
   'nav.profile': 'Profile',
 
+  // AI Coach Status
+  'coach.status.initializing': 'INITIALIZING...',
+  'coach.status.listening': 'LISTENING...',
+  'coach.status.speaking': 'COACH SPEAKING...',
+  'coach.status.ready_voice': 'Ready for voice instruction...',
+  'coach.status.im_listening': "I'm listening...",
+  'coach.status.mic_restricted': 'Microphone access restricted',
+  'coach.status.conn_error': 'Connection error',
+  'coach.status.link_closed': 'Voice link closed',
+
   // Home Page - Final English
   'home.system.active': 'System Active',
   'home.system.load': 'LOAD',
@@ -485,6 +495,16 @@ const fr: TranslationMap = {
   'nav.defense': 'Défense',
   'nav.profile': 'Profil',
 
+  // AI Coach Status
+  'coach.status.initializing': 'INITIALISATION...',
+  'coach.status.listening': 'À L’ÉCOUTE...',
+  'coach.status.speaking': 'LE COACH PARLE...',
+  'coach.status.ready_voice': 'Prêt pour vos instructions vocales...',
+  'coach.status.im_listening': 'Je vous écoute...',
+  'coach.status.mic_restricted': 'Microphone non autorisé',
+  'coach.status.conn_error': 'Erreur de connexion',
+  'coach.status.link_closed': 'Liaison vocale fermée',
+
   // Home Page - Final French
   'home.system.active': 'Système actif',
   'home.system.load': 'CHARGE',
@@ -915,6 +935,16 @@ const ar: TranslationMap = {
   'nav.defense': 'الدفاع',
   'nav.profile': 'الملف الشخصي',
 
+  // AI Coach Status
+  'coach.status.initializing': 'جاري التهيئة...',
+  'coach.status.listening': 'أستمع الآن...',
+  'coach.status.speaking': 'المدرب يتحدث...',
+  'coach.status.ready_voice': 'جاهز للتعليمات الصوتية...',
+  'coach.status.im_listening': 'أنا أستمع إليك...',
+  'coach.status.mic_restricted': 'الميكروفون مقيد',
+  'coach.status.conn_error': 'خطأ في الاتصال',
+  'coach.status.link_closed': 'تم إغلاق الرابط الصوتي',
+
   // Home Page - Final Arabic
   'home.system.active': 'النظام نشط',
   'home.system.load': 'التحميل',
@@ -1318,6 +1348,16 @@ const es: TranslationMap = {
   'nav.defense': 'Defensa',
   'nav.profile': 'Perfil',
 
+  // AI Coach Status
+  'coach.status.initializing': 'INICIALIZANDO...',
+  'coach.status.listening': 'ESCUCHANDO...',
+  'coach.status.speaking': 'EL COACH ESTÁ HABLANDO...',
+  'coach.status.ready_voice': 'Listo para instrucciones de voz...',
+  'coach.status.im_listening': 'Te escucho...',
+  'coach.status.mic_restricted': 'Micrófono restringido',
+  'coach.status.conn_error': 'Error de conexión',
+  'coach.status.link_closed': 'Enlace de voz cerrado',
+
   // Home Page - Final Spanish
   'home.system.active': 'Sistema activo',
   'home.system.load': 'CARGA',
@@ -1702,6 +1742,16 @@ const pt: TranslationMap = {
   'nav.defense': 'Defesa',
   'nav.profile': 'Perfil',
 
+  // AI Coach Status
+  'coach.status.initializing': 'INICIALIZANDO...',
+  'coach.status.listening': 'OUVINDO...',
+  'coach.status.speaking': 'O TREINADOR ESTÁ FALANDO...',
+  'coach.status.ready_voice': 'Pronto para instruções de voz...',
+  'coach.status.im_listening': 'Estou ouvindo...',
+  'coach.status.mic_restricted': 'Microfone restrito',
+  'coach.status.conn_error': 'Erro de conexão',
+  'coach.status.link_closed': 'Link de voz encerrado',
+
   // Home Page - Final Portuguese
   'home.system.active': 'Sistema Ativo',
   'home.system.load': 'CARGA',
@@ -2085,6 +2135,16 @@ const ja: TranslationMap = {
   'nav.nutrition': '栄養',
   'nav.defense': '防御',
   'nav.profile': 'プロフィール',
+
+  // AI Coach Status
+  'coach.status.initializing': '初期化中...',
+  'coach.status.listening': '聞き取り中...',
+  'coach.status.speaking': 'コーチが話しています...',
+  'coach.status.ready_voice': '音声指示の準備ができました...',
+  'coach.status.im_listening': '聞いています...',
+  'coach.status.mic_restricted': 'マイクが制限されています',
+  'coach.status.conn_error': '接続エラー',
+  'coach.status.link_closed': '音声リンク終了',
 
   // Home Page - Final Japanese
   'home.system.active': 'システム稼働',
@@ -2489,6 +2549,16 @@ const zh: TranslationMap = {
   'nav.defense': '防御',
   'nav.profile': '个人资料',
 
+  // AI Coach Status
+  'coach.status.initializing': '正在初始化...',
+  'coach.status.listening': '正在倾听...',
+  'coach.status.speaking': '教练正在讲话...',
+  'coach.status.ready_voice': '已准备好接收语音指令...',
+  'coach.status.im_listening': '正在听您说...',
+  'coach.status.mic_restricted': '麦克风权限受限',
+  'coach.status.conn_error': '连接错误',
+  'coach.status.link_closed': '语音连接已关闭',
+
   // Home Page - Final Chinese
   'home.system.active': '系统激活',
   'home.system.load': '负载',
@@ -2891,6 +2961,16 @@ const ru: TranslationMap = {
   'nav.nutrition': 'Питание',
   'nav.defense': 'Защита',
   'nav.profile': 'Профиль',
+
+  // AI Coach Status
+  'coach.status.initializing': 'ИНИЦИАЛИЗАЦИЯ...',
+  'coach.status.listening': 'СЛУШАЮ...',
+  'coach.status.speaking': 'ТРЕНЕР ГОВОРИТ...',
+  'coach.status.ready_voice': 'Готов к голосовым инструкциям...',
+  'coach.status.im_listening': 'Я слушаю вас...',
+  'coach.status.mic_restricted': 'Микрофон ограничен',
+  'coach.status.conn_error': 'Ошибка подключения',
+  'coach.status.link_closed': 'Голосовая связь закрыта',
 
   // Home Page - Final Russian
   'home.system.active': 'Система активна',
