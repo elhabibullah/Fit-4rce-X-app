@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Pause, Play, X, ChevronRight, Activity, Timer as TimerIcon } from 'lucide-react';
+import { Pause, Play, X, ChevronRight, Activity, Timer as TimerIcon, Video, Box } from 'lucide-react';
 import { generateWorkoutWithGemini } from '../services/aiService.ts';
 import { WorkoutPlan, Screen, AIProvider } from '../types.ts';
 import Loader from '../components/common/Loader.tsx';
@@ -31,6 +31,7 @@ const WorkoutScreen: React.FC = () => {
     const [isPrep, setIsPrep] = useState(true);
     const [prepTimer, setPrepTimer] = useState(10);
     const [customRequirements, setCustomRequirements] = useState('');
+    const [displayMode, setDisplayMode] = useState<'video' | '3d'>('video');
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const [workoutType, setWorkoutType] = useState('fitness');
@@ -89,10 +90,10 @@ const WorkoutScreen: React.FC = () => {
             if (isPaused || isPrep) {
                 v.pause();
             } else {
-                v.play().catch(e => console.log("Video error:", e));
+                v.play().catch(e => console.log("Video playback error:", e));
             }
         }
-    }, [isPaused, isPrep, idx, view]);
+    }, [isPaused, isPrep, idx, view, displayMode]);
 
     const handleGenerate = async () => {
         setView('loading');
@@ -134,22 +135,53 @@ const WorkoutScreen: React.FC = () => {
         const hasVideo = !!ex.videoUrl;
 
         return (
-            <div className="fixed inset-0 z-[2500] bg-white flex flex-col font-['Poppins'] animate-fadeIn overflow-hidden">
-                <div className="relative flex-1 bg-white overflow-hidden">
-                    <div className="absolute inset-0 z-10">
-                        <HolographicCoach 
-                            key="workout-holographic-coach"
-                            modelUrl={ex.modelUrl} 
-                            isPaused={isPaused} 
-                            exerciseName={ex.name}
-                            isPrep={isPrep}
-                        />
-                    </div>
+            <div className="fixed inset-0 z-[2500] bg-neutral-950 flex flex-col font-['Poppins'] animate-fadeIn overflow-hidden">
+                <div className="relative flex-1 bg-neutral-950 overflow-hidden">
+                    {/* VIDEO OR 3D COACH VIEW */}
+                    {displayMode === 'video' && hasVideo ? (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
+                            <video
+                                ref={videoRef}
+                                key={ex.videoUrl}
+                                src={ex.videoUrl}
+                                className="w-full h-full object-cover"
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
+                        </div>
+                    ) : (
+                        <div className="absolute inset-0 z-10">
+                            <HolographicCoach 
+                                key="workout-holographic-coach"
+                                modelUrl={ex.modelUrl} 
+                                isPaused={isPaused} 
+                                exerciseName={ex.name}
+                                isPrep={isPrep}
+                            />
+                        </div>
+                    )}
 
+                    {/* TOP CONTROLS & HUD */}
                     <div className="absolute top-0 left-0 right-0 z-[100] p-6 flex justify-between items-start pointer-events-none">
-                        <button onClick={handleClose} className="p-3 bg-white/90 text-black rounded-full shadow-2xl pointer-events-auto active:scale-90 transition-transform border border-zinc-200">
-                            <X size={20}/>
-                        </button>
+                        <div className="flex items-center gap-2 pointer-events-auto">
+                            <button onClick={handleClose} className="p-3 bg-white/90 text-black rounded-full shadow-2xl active:scale-90 transition-transform border border-zinc-200">
+                                <X size={20}/>
+                            </button>
+
+                            {/* TOGGLE VIDEO / 3D COACH */}
+                            {hasVideo && (
+                                <button 
+                                    onClick={() => setDisplayMode(prev => prev === 'video' ? '3d' : 'video')}
+                                    className="px-4 py-2.5 bg-black/70 backdrop-blur-md border border-purple-500/40 rounded-full text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg active:scale-95 transition-all"
+                                >
+                                    {displayMode === 'video' ? <Box size={14} className="text-purple-400" /> : <Video size={14} className="text-purple-400" />}
+                                    <span>{displayMode === 'video' ? 'Coach 3D' : 'Vidéo'}</span>
+                                </button>
+                            )}
+                        </div>
 
                         <div className="flex flex-col items-end gap-3 pointer-events-auto">
                             <div className="bg-[#8A2BE2] px-5 py-2 rounded-2xl flex items-center gap-2 shadow-[0_0_20px_rgba(138,43,226,0.4)]">
@@ -163,7 +195,7 @@ const WorkoutScreen: React.FC = () => {
                     </div>
 
                     {isPrep && (
-                        <div className="absolute inset-0 z-[200] bg-zinc-950/20 backdrop-blur-[2px] flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4">
+                        <div className="absolute inset-0 z-[200] bg-zinc-950/40 backdrop-blur-[4px] flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4">
                             <div className="text-[10rem] sm:text-[14rem] font-black text-white leading-none tabular-nums drop-shadow-[0_0_40px_rgba(138,43,226,0.8)] animate-pulse">
                                 {prepTimer}
                             </div>
@@ -174,16 +206,16 @@ const WorkoutScreen: React.FC = () => {
                     )}
                 </div>
 
-                <div className="h-40 bg-white p-8 z-[300] relative flex flex-col justify-center border-t border-zinc-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-                    <div className="absolute top-0 left-0 right-0 h-2 bg-zinc-100">
+                <div className="h-40 bg-zinc-950 p-8 z-[300] relative flex flex-col justify-center border-t border-zinc-900 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                    <div className="absolute top-0 left-0 right-0 h-2 bg-zinc-900">
                         <div className="h-full bg-[#8A2BE2] transition-all duration-1000 ease-linear shadow-[0_0_15px_#8A2BE2]" style={{ width: `${progress}%` }} />
                     </div>
                     <div className="flex justify-between items-center gap-6">
                         <div className="flex-1 overflow-hidden">
                             <span className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-[0.4em]">{idx + 1} / {plan.exercises.length}</span>
-                            <h2 className="text-2xl font-black text-black uppercase truncate leading-tight mt-1">{ex.name}</h2>
+                            <h2 className="text-2xl font-black text-white uppercase truncate leading-tight mt-1">{ex.name}</h2>
                         </div>
-                        <button onClick={skipExercise} className="bg-black text-white w-16 h-16 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl">
+                        <button onClick={skipExercise} className="bg-white text-black w-16 h-16 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl">
                             <ChevronRight size={32} />
                         </button>
                     </div>

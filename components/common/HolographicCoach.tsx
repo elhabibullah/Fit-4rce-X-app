@@ -437,7 +437,13 @@ const CoachCanvas: React.FC<{
             <ProceduralCoach isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />
           </group>
         }>
-          <Model url={finalUrl} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />
+          <Suspense fallback={
+            <group position={[0, 0.43, 0]} scale={1.15}>
+              <ProceduralCoach isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />
+            </group>
+          }>
+            <Model url={finalUrl} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />
+          </Suspense>
         </ModelErrorBoundary>
       </group>
 

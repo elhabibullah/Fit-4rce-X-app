@@ -180,7 +180,39 @@ wss.on('connection', (ws) => {
             speechConfig: {
               voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName || 'Zephyr' } },
             },
-            systemInstruction: systemPrompt || 'You are Fit-4rce-X Coach.',
+            systemInstruction: `${systemPrompt || 'You are Fit-4rce-X Coach.'} When the user confirms they are ready or asks for a workout session (e.g. "I am ready", "let's train", "prépare l'entraînement", "je suis prêt", "go"), you MUST immediately call the tool startWorkoutGeneration to prepare and launch their workout program.`,
+            tools: [
+              {
+                functionDeclarations: [
+                  {
+                    name: 'startWorkoutGeneration',
+                    description: 'Generates and starts the personalized workout training program with holographic 3D coach and exercise videos when the user is ready to begin.',
+                    parameters: {
+                      type: 'OBJECT' as any,
+                      properties: {
+                        workoutType: {
+                          type: 'STRING' as any,
+                          description: 'The type of workout: fitness, calisthenics, powerlifting, pilates, yoga, crossfit, cardio, or full body.'
+                        },
+                        intensity: {
+                          type: 'STRING' as any,
+                          description: 'Intensity level: low, medium, or high.'
+                        },
+                        targetArea: {
+                          type: 'ARRAY' as any,
+                          items: { type: 'STRING' as any },
+                          description: 'Target body areas (e.g. chest, legs, abs, full body).'
+                        },
+                        customPrompt: {
+                          type: 'STRING' as any,
+                          description: 'Specific goals or constraints mentioned by the user.'
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
             inputAudioTranscription: {},
             outputAudioTranscription: {},
           },

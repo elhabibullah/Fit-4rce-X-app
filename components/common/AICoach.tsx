@@ -88,7 +88,8 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   }, [selectedCoachPersona]);
 
   const systemPrompt = useMemo(() => {
-    return `You are Fit-4rce-X Coach. Professional, supportive, and technical. Goal: ${profile?.goal?.join(', ') || 'fitness'}. Lang: ${language}.`;
+    return `You are Fit-4rce-X AI Coach. You are a world-class physical trainer. Goal: ${profile?.goal?.join(', ') || 'fitness'}. Lang: ${language}.
+When the user speaks with you and says they are ready to start workout, or confirms readiness (e.g. "I am ready", "je suis prêt", "c'est parti", "start workout", "prépare la séance"), answer briefly with encouragement and call the startWorkoutGeneration tool immediately so their workout video session is generated and presented.`;
   }, [profile, language]);
 
   useEffect(() => {
@@ -158,8 +159,9 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
                     return;
                 }
                 
-                if (message.toolCall && message.toolCall.functionCalls) {
-                    for (const fc of message.toolCall.functionCalls) {
+                const functionCalls = message.toolCall?.functionCalls || message.serverContent?.modelTurn?.parts?.filter((p: any) => p.functionCall).map((p: any) => p.functionCall);
+                if (functionCalls && functionCalls.length > 0) {
+                    for (const fc of functionCalls) {
                         if (fc.name === 'startWorkoutGeneration') {
                             setIsGeneratingWorkout(true);
                             onClose();
