@@ -6,6 +6,7 @@ import { Screen } from '../types.ts';
 import Button from '../components/common/Button.tsx';
 import PrivacyModal from '../components/profile/PrivacyModal.tsx';
 import ImageCropper from '../components/profile/ImageCropper.tsx';
+import { SensorsPermissionBanner } from '../components/common/SensorsPermissionBanner.tsx';
 
 const ProfileOption: React.FC<{ icon: React.ElementType; title: string; onClick?: () => void; disabled?: boolean; subtitle?: string }> = ({ icon: Icon, title, onClick, disabled = false, subtitle }) => {
     const IconComp = Icon as any;
@@ -88,6 +89,8 @@ const ProfileScreen: React.FC = () => {
                     <p className="text-[10px] font-bold text-white mt-1 uppercase truncate">{profile?.fitness_level ? translate(`level.${profile.fitness_level}`) : '--'}</p>
                 </Card>
             </div>
+
+            <SensorsPermissionBanner />
 
             <div className="space-y-2 pt-2">
                 <ProfileOption icon={Watch} title={translate('profile.gear.title')} onClick={openDeviceModal} />

@@ -5,6 +5,7 @@ import { useApp } from '../hooks/useApp.ts';
 import { Screen } from '../types.ts';
 import Chatbot from '../components/nutrition/Chatbot.tsx';
 import { generateWorkoutWithGemini } from '../services/aiService.ts';
+import { SensorsPermissionBanner } from '../components/common/SensorsPermissionBanner.tsx';
 
 const DashboardScreen: React.FC = () => {
   const { setScreen, translate, setIsCoachOpen, planId, showStatus, setNutritionTab, language, setSelectedPlan, profile } = useApp();
@@ -69,6 +70,9 @@ const DashboardScreen: React.FC = () => {
               <Activity size={12} className="text-purple-500" />
           </div>
       </div>
+
+      {/* SENSORS & PERMISSIONS BANNER */}
+      <SensorsPermissionBanner />
 
       <div className="grid grid-cols-2 gap-4">
           {/* AI COACH CARD */}

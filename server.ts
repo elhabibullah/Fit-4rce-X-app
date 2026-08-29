@@ -675,6 +675,7 @@ app.post('/api/fasting-phase', async (req: express.Request, res: express.Respons
 wss.on('connection', (ws) => {
   console.log('Client connected to Live Coach WebSocket proxy');
   let session: any = null;
+  let isConnecting = false;
 
   ws.on('message', async (message) => {
     try {
@@ -683,71 +684,97 @@ wss.on('connection', (ws) => {
       if (parsed.type === 'setup') {
         const { systemPrompt, voiceName } = parsed;
         console.log('Establishing secure live session with voice name:', voiceName);
+        isConnecting = true;
         
-        session = await ai.live.connect({
-          model: 'gemini-3.1-flash-live-preview',
-          config: {
-            responseModalities: [Modality.AUDIO],
-            speechConfig: {
-              voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName || 'Zephyr' } },
-            },
-            systemInstruction: `${systemPrompt || 'You are Fit-4rce-X Coach.'} When the user confirms they are ready or asks for a workout session (e.g. "I am ready", "let's train", "prépare l'entraînement", "je suis prêt", "go"), you MUST immediately call the tool startWorkoutGeneration to prepare and launch their workout program.`,
-            tools: [
-              {
-                functionDeclarations: [
-                  {
-                    name: 'startWorkoutGeneration',
-                    description: 'Generates and starts the personalized workout training program with holographic 3D coach and exercise videos when the user is ready to begin.',
-                    parameters: {
-                      type: 'OBJECT' as any,
-                      properties: {
-                        workoutType: {
-                          type: 'STRING' as any,
-                          description: 'The type of workout: fitness, calisthenics, powerlifting, pilates, yoga, crossfit, cardio, or full body.'
-                        },
-                        intensity: {
-                          type: 'STRING' as any,
-                          description: 'Intensity level: low, medium, or high.'
-                        },
-                        targetArea: {
-                          type: 'ARRAY' as any,
-                          items: { type: 'STRING' as any },
-                          description: 'Target body areas (e.g. chest, legs, abs, full body).'
-                        },
-                        customPrompt: {
-                          type: 'STRING' as any,
-                          description: 'Specific goals or constraints mentioned by the user.'
+        try {
+          session = await ai.live.connect({
+            model: 'gemini-3.1-flash-live-preview',
+            config: {
+              responseModalities: [Modality.AUDIO],
+              speechConfig: {
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName || 'Zephyr' } },
+              },
+              systemInstruction: `${systemPrompt || 'You are Fit-4rce-X Coach.'} When the user confirms they are ready or asks for a workout session (e.g. "I am ready", "let's train", "prépare l'entraînement", "je suis prêt", "go"), you MUST immediately call the tool startWorkoutGeneration to prepare and launch their workout program.`,
+              tools: [
+                {
+                  functionDeclarations: [
+                    {
+                      name: 'startWorkoutGeneration',
+                      description: 'Generates and starts the personalized workout training program with holographic 3D coach and exercise videos when the user is ready to begin.',
+                      parameters: {
+                        type: 'OBJECT' as any,
+                        properties: {
+                          workoutType: {
+                            type: 'STRING' as any,
+                            description: 'The type of workout: fitness, calisthenics, powerlifting, pilates, yoga, crossfit, cardio, or full body.'
+                          },
+                          intensity: {
+                            type: 'STRING' as any,
+                            description: 'Intensity level: low, medium, or high.'
+                          },
+                          targetArea: {
+                            type: 'ARRAY' as any,
+                            items: { type: 'STRING' as any },
+                            description: 'Target body areas (e.g. chest, legs, abs, full body).'
+                          },
+                          customPrompt: {
+                            type: 'STRING' as any,
+                            description: 'Specific goals or constraints mentioned by the user.'
+                          }
                         }
                       }
                     }
+                  ]
+                }
+              ],
+              inputAudioTranscription: {},
+              outputAudioTranscription: {},
+            },
+            callbacks: {
+              onmessage: (msg: any) => {
+                if (ws.readyState === ws.OPEN) {
+                  const audio = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
+                  if (audio) {
+                    ws.send(JSON.stringify({ audio, ...msg }));
+                  } else {
+                    ws.send(JSON.stringify(msg));
                   }
-                ]
+                }
+              },
+              onclose: () => {
+                console.log('Gemini live session closed');
+                if (ws.readyState === ws.OPEN) {
+                  ws.send(JSON.stringify({ type: 'status', status: 'Link closed' }));
+                }
+              },
+              onerror: (err) => {
+                console.error('Gemini live session error:', err);
+                if (ws.readyState === ws.OPEN) {
+                  ws.send(JSON.stringify({ type: 'status', status: 'Connection error' }));
+                }
               }
-            ],
-            inputAudioTranscription: {},
-            outputAudioTranscription: {},
-          },
-          callbacks: {
-            onmessage: (msg) => {
-              // Directly forward the server content to the client
-              ws.send(JSON.stringify(msg));
-            },
-            onclose: () => {
-              console.log('Gemini session closed');
-              ws.send(JSON.stringify({ type: 'status', status: 'Link closed' }));
-            },
-            onerror: (err) => {
-              console.error('Gemini session error:', err);
-              ws.send(JSON.stringify({ type: 'status', status: 'Connection error' }));
             }
-          }
-        });
-        ws.send(JSON.stringify({ type: 'status', status: 'Listening...' }));
-      } else if (parsed.audio) {
-        if (session) {
-          session.sendRealtimeInput({
-            audio: { data: parsed.audio, mimeType: 'audio/pcm;rate=16000' }
           });
+          isConnecting = false;
+          if (ws.readyState === ws.OPEN) {
+            ws.send(JSON.stringify({ type: 'status', status: 'Listening...' }));
+          }
+        } catch (connErr) {
+          console.warn('Gemini Live API direct connect failed, fallback ready:', connErr);
+          isConnecting = false;
+          if (ws.readyState === ws.OPEN) {
+            ws.send(JSON.stringify({ type: 'status', status: 'fallback_ready' }));
+          }
+        }
+      } else if (parsed.audio) {
+        if (session && !isConnecting) {
+          try {
+            session.sendRealtimeInput({
+              audio: { data: parsed.audio, mimeType: 'audio/pcm;rate=16000' }
+            });
+          } catch (sendErr) {
+            console.error('Error sending realtime input to Gemini:', sendErr);
+          }
         }
       }
     } catch (err) {
@@ -758,7 +785,9 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     console.log('Client disconnected from Live Coach WebSocket proxy');
     if (session) {
-      session.close();
+      try {
+        session.close();
+      } catch (e) {}
     }
   });
 });
