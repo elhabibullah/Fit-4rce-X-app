@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { GoogleGenAI, LiveServerMessage, Modality, Blob, FunctionDeclaration, Type } from '@google/genai';
 import { X, Mic, MicOff, Heart, Flame } from 'lucide-react';
 import { useApp } from '../../hooks/useApp.ts';
 import { AIProvider, WorkoutGenerationParams } from '../../types.ts';
@@ -7,6 +6,11 @@ import { AIProvider, WorkoutGenerationParams } from '../../types.ts';
 interface AICoachProps {
   isVisible: boolean;
   onClose: () => void;
+}
+
+interface AudioBlobPayload {
+  data: string;
+  mimeType: string;
 }
 
 function encode(bytes: Uint8Array) {
@@ -46,7 +50,7 @@ async function decodeAudioData(
   return buffer;
 }
 
-function createBlob(data: Float32Array): Blob {
+function createBlob(data: Float32Array): AudioBlobPayload {
   const l = data.length;
   const int16 = new Int16Array(l);
   for (let i = 0; i < l; i++) {
@@ -58,20 +62,6 @@ function createBlob(data: Float32Array): Blob {
     mimeType: 'audio/pcm;rate=16000',
   };
 }
-
-const startWorkoutGenerationDeclaration: FunctionDeclaration = {
-    name: 'startWorkoutGeneration',
-    description: 'Call this ONLY when the user specifies intensity and equipment.',
-    parameters: {
-        type: Type.OBJECT,
-        properties: {
-            workoutType: { type: Type.STRING },
-            equipment: { type: Type.ARRAY, items: { type: Type.STRING } },
-            intensity: { type: Type.STRING },
-        },
-        required: ['intensity']
-    }
-};
 
 const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const { profile, language, selectedCoachPersona, startWorkoutFromVoice, deviceMetrics, isDeviceConnected, setIsGeneratingWorkout } = useApp();

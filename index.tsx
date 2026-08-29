@@ -12,15 +12,13 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 
-// REGISTER SERVICE WORKER FOR PWA
+// UNREGISTER OLD SERVICE WORKERS TO PREVENT FETCH CONFLICTS
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('F4X SW Registered: ', registration.scope);
-    }).catch(error => {
-      console.log('F4X SW Registration failed: ', error);
-    });
-  });
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    for (const registration of registrations) {
+      registration.unregister();
+    }
+  }).catch(() => {});
 }
 
 root.render(

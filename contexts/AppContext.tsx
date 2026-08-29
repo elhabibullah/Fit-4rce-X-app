@@ -1,6 +1,5 @@
 import React, { createContext, useState, useCallback, useMemo, useEffect } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { DailyMacros, FastingPlan, Language, Meal, MealPlanSection, Screen, TrainerProfile, TranslatedConstants, UserProfile, WeightHistoryItem, WorkoutPlan, WorkoutHistoryItem, OnboardingStep, CurrencyInfo, AIProvider, WorkoutGenerationParams, ConnectedDevice, LiveBioMetrics } from '../types.ts';
+import { DailyMacros, FastingPlan, Language, Meal, MealPlanSection, Screen, TrainerProfile, TranslatedConstants, UserProfile, WeightHistoryItem, WorkoutPlan, WorkoutHistoryItem, OnboardingStep, CurrencyInfo, AIProvider, WorkoutGenerationParams, ConnectedDevice, LiveBioMetrics, Session, User } from '../types.ts';
 import { getTranslatedConstants } from '../lib/i18n.ts';
 import { TRANSLATIONS } from '../lib/translations.ts';
 import { CURRENCY_MAP, DEFAULT_CURRENCY_INFO } from '../screens/currency.ts';
@@ -26,6 +25,8 @@ interface AppContextType {
   expertToBook: TrainerProfile | null;
   openBookingScreen: (trainer: TrainerProfile) => void;
   closeBookingScreen: () => void;
+  isAppEntered: boolean;
+  setIsAppEntered: (entered: boolean) => void;
   onboardingStep: OnboardingStep;
   setOnboardingStep: (step: OnboardingStep) => void;
   showSignIn: boolean;
@@ -103,6 +104,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
   const [screen, setScreen] = useState<Screen>(Screen.Home);
+  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('language');
+  const [isAppEntered, setIsAppEntered] = useState<boolean>(false);
   const [currencyInfo, setCurrencyInfo] = useState<CurrencyInfo>(DEFAULT_CURRENCY_INFO);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
@@ -294,12 +297,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     },
     signIn: (p: any) => {
       updateUserProfile({ ...p, subscription_status: 'active', plan_id: 'premium', onboarding_complete: true });
+      setIsAppEntered(true);
       setShowSignIn(false);
     },
-    finalizeOnboarding: (p: any) => updateUserProfile({...p, onboarding_complete: true}),
+    finalizeOnboarding: (p: any) => {
+      updateUserProfile({...p, onboarding_complete: true});
+      setIsAppEntered(true);
+    },
     isSyncing: false, syncProfile: () => showStatus("Profile Synchronized"), language, setLanguage, screen, setScreen,
     expertToBook: null, openBookingScreen: () => {}, closeBookingScreen: () => {},
-    onboardingStep: profile?.onboarding_step || 'language', setOnboardingStep: (s: any) => updateUserProfile({ onboarding_step: s }),
+    isAppEntered, setIsAppEntered,
+    onboardingStep, setOnboardingStep,
     showSignIn, setShowSignIn, statusMessage, showStatus,
     isCoachOpen, setIsCoachOpen, coachContext: null, setCoachContext: () => {},
     selectedCoachPersona, setSelectedCoachPersona, installPromptEvent: null, clearInstallPrompt: () => {},
@@ -326,7 +334,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isCoachOpen, selectedCoachPersona, nutritionTab, selectedPlan, isGeneratingWorkout,
     constants, workoutHistory, savedWorkouts, nutritionHistory, dailyMacros, dietPlan,
     deviceMetrics, translate, showStatus, updateUserProfile, setLanguage, setCurrency, 
-    logWorkout, startWorkoutFromVoice, isDeviceModalOpen
+    logWorkout, startWorkoutFromVoice, isDeviceModalOpen, isAppEntered, onboardingStep
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

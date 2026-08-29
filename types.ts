@@ -53,6 +53,16 @@ export interface TrainerProfile {
     sessionFeeEUR: number;
 }
 
+export interface Session {
+  user: User;
+  access_token?: string;
+}
+
+export interface User {
+  id: string;
+  email?: string;
+}
+
 export type AIProvider = 'gemini' | 'openai' | 'anthropic' | 'perplexity';
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 export type WorkoutGoal = 'lose_weight' | 'build_muscle' | 'improve_endurance' | 'learn_self_defense';

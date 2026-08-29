@@ -51,7 +51,7 @@ const App: React.FC = () => {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const { 
     profile, loading, screen, expertToBook, closeBookingScreen, 
-    updateUserProfile, onboardingStep, setOnboardingStep, showSignIn, setShowSignIn,
+    updateUserProfile, isAppEntered, setIsAppEntered, onboardingStep, setOnboardingStep, showSignIn, setShowSignIn,
     statusMessage, isCoachOpen, setIsCoachOpen, isDeviceModalOpen, closeDeviceModal,
     isGeneratingWorkout, translate
   } = useApp();
@@ -65,6 +65,7 @@ const App: React.FC = () => {
   const handleSubscriptionComplete = () => setOnboardingStep('profileSetup');
   const handleProfileSetupComplete = async () => { 
     await updateUserProfile({ onboarding_complete: true }); 
+    setIsAppEntered(true);
   };
   
   const handleCloseCoach = useCallback(() => {
@@ -73,7 +74,7 @@ const App: React.FC = () => {
 
   if (isSplashVisible || loading) return <SplashScreen />;
   
-  if (!profile?.onboarding_complete) {
+  if (!isAppEntered) {
     return (
       <GlobalErrorBoundary>
         <div className="bg-black min-h-screen w-full overflow-y-auto">

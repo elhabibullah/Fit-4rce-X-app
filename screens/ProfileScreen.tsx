@@ -92,19 +92,27 @@ const ProfileScreen: React.FC = () => {
             <div className="space-y-2 pt-2">
                 <ProfileOption icon={Watch} title={translate('profile.gear.title')} onClick={openDeviceModal} />
                 <ProfileOption icon={CreditCard} title={translate('profile.subscription.title')} onClick={() => setScreen(Screen.SubscriptionManagement)} />
+                <ProfileOption icon={Info} title={translate('intro.header')} subtitle={translate('home.cardio.spinning.desc')} onClick={() => updateUserProfile({ onboarding_complete: false, onboarding_step: 'intro' })} />
                 <ProfileOption icon={History} title={translate('profile.history.title')} onClick={() => setScreen(Screen.WorkoutHistory)} />
                 <ProfileOption icon={Bookmark} title={translate('profile.saved.title')} onClick={() => setScreen(Screen.SavedWorkouts)} />
                 <ProfileOption icon={MessageSquareQuote} title={translate('profile.services.title')} onClick={() => setScreen(Screen.Trainers)} />
                 <ProfileOption icon={Globe} title={translate('profile.language.title')} onClick={() => setScreen(Screen.Language)} />
                 <ProfileOption icon={Info} title={translate('profile.about.title')} onClick={() => setScreen(Screen.AboutApp)} />
 
-                <div className="pt-4">
+                <div className="pt-4 space-y-3">
                     <Button 
                       variant="secondary" 
-                      onClick={() => setScreen(Screen.Home)} 
-                      className="w-full !border-red-500/30 !text-red-500 hover:!bg-red-950/40 hover:!text-red-400 py-4 uppercase text-xs font-bold tracking-widest"
+                      onClick={() => updateUserProfile({ onboarding_complete: false, onboarding_step: 'language' })} 
+                      className="w-full !border-purple-500/40 !text-purple-400 hover:!bg-purple-950/40 py-3.5 uppercase text-xs font-bold tracking-widest"
                     >
-                        {translate('profile.reset')}
+                        {translate('profile.language.title')} & Onboarding
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      onClick={resetApp} 
+                      className="w-full !border-red-500/30 !text-red-500 hover:!bg-red-950/40 hover:!text-red-400 py-3.5 uppercase text-xs font-bold tracking-widest"
+                    >
+                        Réinitialiser l'application
                     </Button>
                 </div>
             </div>
