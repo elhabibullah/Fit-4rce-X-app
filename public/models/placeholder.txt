@@ -1,0 +1,1 @@
+Placeholder for 3D model. Drag android_rigged.glb here.

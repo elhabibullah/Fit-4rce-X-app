@@ -1,304 +1,198 @@
 import React, { Suspense, useMemo, useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, OrbitControls, ContactShadows } from '@react-three/drei';
+import { useGLTF, useFBX, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { Video, Camera, Tv, Eye, RefreshCw, Sliders, X, Maximize2, Minimize2, Info, Sparkles } from 'lucide-react';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { Sun, Moon } from 'lucide-react';
 import { COACH_MODEL_URL } from '../../lib/constants.ts';
 
-// Helper to resolve exercise names in multiple languages (English, French, Spanish, Russian, Arabic, etc.)
-const getExerciseType = (name?: string): 'push' | 'squat' | 'jack' | 'idle' => {
+// Multi-language exercise name resolver for Hunyuan biomechanical animations
+export type ExerciseCategory = 'squat' | 'pushup' | 'jack' | 'lunge' | 'boxing' | 'plank' | 'idle';
+
+export const getExerciseType = (name?: string): ExerciseCategory => {
   if (!name) return 'idle';
   const ex = name.toLowerCase();
-  
-  // 1. Jumping Jacks / Cardio / Sauts
+
+  // 1. Jumping Jacks / Cardio / Sauts / Corde
   if (
-    ex.includes('jack') || 
-    ex.includes('saut') || ex.includes('écart') || 
-    ex.includes('salto') || 
-    ex.includes('прыж') || ex.includes('джек') || 
-    ex.includes('قفز') || ex.includes('جاك') ||
-    ex.includes('jump') || ex.includes('skipping') || ex.includes('rope') || 
-    ex.includes('cardio') || ex.includes('run') || ex.includes('sprint') || 
-    ex.includes('hiit') || ex.includes('climb') || ex.includes('mountain') || 
-    ex.includes('knee') || ex.includes('heel') || ex.includes('bound') || 
-    ex.includes('hop') || ex.includes('course') || ex.includes('foulée') || 
-    ex.includes('genou') || ex.includes('burpee') || ex.includes('corde')
+    ex.includes('jack') || ex.includes('saut') || ex.includes('jump') ||
+    ex.includes('skipping') || ex.includes('rope') || ex.includes('corde') ||
+    ex.includes('burpee') || ex.includes('hiit') || ex.includes('hop') ||
+    ex.includes('climb') || ex.includes('mountain') || ex.includes('course') ||
+    ex.includes('foulée') || ex.includes('sprint')
   ) {
     return 'jack';
   }
-  
-  // 2. Push-ups / Press / Pompes / Core
+
+  // 2. Push-ups / Pompes / Bench Press / Développé
   if (
-    ex.includes('push') || ex.includes('pump') || ex.includes('press') || ex.includes('bench') ||
-    ex.includes('pompe') || ex.includes('appui') ||
-    ex.includes('flexi') || ex.includes('lagartija') ||
-    ex.includes('отжим') || ex.includes('жим') ||
-    ex.includes('ضغط') || ex.includes('بنش') ||
-    ex.includes('flexã') || ex.includes('apoio') ||
-    ex.includes('plank') || ex.includes('dip') || ex.includes('tricep') || 
-    ex.includes('chest') || ex.includes('shoulder') || ex.includes('ab') || 
-    ex.includes('abs') || ex.includes('core') || ex.includes('crunch') || 
-    ex.includes('sit-up') || ex.includes('situp') || ex.includes('extension') ||
-    ex.includes('gainage') || ex.includes('planche') || ex.includes('ventre') || 
-    ex.includes('abdo') || ex.includes('poitrine') || ex.includes('bras') || 
-    ex.includes('épaule')
+    ex.includes('push') || ex.includes('pump') || ex.includes('pompe') ||
+    ex.includes('press-up') || ex.includes('pressup') || ex.includes('appui') ||
+    ex.includes('bench') || ex.includes('développé') || ex.includes('developpe')
   ) {
-    return 'push';
+    return 'pushup';
   }
-  
-  // 3. Squats / Lunges / Fentes / Legs
+
+  // 3. Lunges / Fentes
   if (
-    ex.includes('squat') || ex.includes('lunge') ||
-    ex.includes('fente') || ex.includes('flexion') ||
-    ex.includes('sentadilla') || ex.includes('zancada') ||
-    ex.includes('присед') || ex.includes('выпад') ||
-    ex.includes('قرفصاء') || ex.includes('اندفاع') ||
-    ex.includes('agachamento') || ex.includes('afundo') ||
-    ex.includes('leg') || ex.includes('thigh') || ex.includes('quad') || 
-    ex.includes('hamstring') || ex.includes('glute') || ex.includes('calf') || 
-    ex.includes('calves') || ex.includes('raise') || ex.includes('bridge') || 
-    ex.includes('kick') || ex.includes('jambe') || ex.includes('fessier') || 
-    ex.includes('mollet') || ex.includes('cuisse')
+    ex.includes('lunge') || ex.includes('fente') || ex.includes('split squat') ||
+    ex.includes('zancada') || ex.includes('afundo')
+  ) {
+    return 'lunge';
+  }
+
+  // 4. Squats / Cuisses / Jambes
+  if (
+    ex.includes('squat') || ex.includes('cuisse') || ex.includes('jambe') ||
+    ex.includes('flexion') || ex.includes('quad') || ex.includes('glute') ||
+    ex.includes('fessier') || ex.includes('chaise') || ex.includes('chair') ||
+    ex.includes('sentadilla') || ex.includes('agachamento') || ex.includes('leg')
   ) {
     return 'squat';
   }
-  
+
+  // 5. Boxing / Cardio Combat / Punches
+  if (
+    ex.includes('punch') || ex.includes('boxe') || ex.includes('jab') ||
+    ex.includes('cross') || ex.includes('crochet') || ex.includes('uppercut') ||
+    ex.includes('combat') || ex.includes('frappe') || ex.includes('tricep') ||
+    ex.includes('bicep') || ex.includes('bras')
+  ) {
+    return 'boxing';
+  }
+
+  // 6. Plank / Gainage / Core
+  if (
+    ex.includes('plank') || ex.includes('gainage') || ex.includes('planche') ||
+    ex.includes('abdo') || ex.includes('core') || ex.includes('crunch') ||
+    ex.includes('ventre') || ex.includes('hollow') || ex.includes('sit-up')
+  ) {
+    return 'plank';
+  }
+
   return 'idle';
 };
 
-// 1. Model Error Boundary to gracefully switch to the high-quality Procedural Coach if S3 fails
-class ModelErrorBoundary extends React.Component<
-  { children: React.ReactNode; fallback: React.ReactNode },
-  { hasError: boolean }
-> {
-  state = { hasError: false };
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch(err: any) {
-    console.warn("3D GLTF model load failed. Switching seamlessly to Procedural holographic Android coach.", err);
-  }
-  render() {
-    if (this.state.hasError) return this.props.fallback;
-    return this.props.children;
-  }
-}
+// World Axes for Hunyuan 3D Rig
+const WORLD_X = new THREE.Vector3(1, 0, 0); // Sagittal axis (pitch: lean forward/back, knee bend, elbow flex)
+const WORLD_Y = new THREE.Vector3(0, 1, 0); // Vertical axis (yaw: head turn, torso twist)
+const WORLD_Z = new THREE.Vector3(0, 0, 1); // Coronal axis (roll: arm abduction, leg abduction)
 
-// 2. Procedural Holographic Android Coach: Fully animated using React Three Fiber.
-// Guaranteed 100% offline, zero external CDN assets, zero CORS blocks, ultra-high performance.
-const ProceduralCoach = ({ isPaused, exerciseName, isPrep }: { isPaused?: boolean; exerciseName?: string; isPrep?: boolean }) => {
-  const leftArmRef = useRef<THREE.Group>(null);
-  const rightArmRef = useRef<THREE.Group>(null);
-  const leftLegRef = useRef<THREE.Group>(null);
-  const rightLegRef = useRef<THREE.Group>(null);
-  const leftCalfRef = useRef<THREE.Group>(null);
-  const rightCalfRef = useRef<THREE.Group>(null);
-  const bodyRef = useRef<THREE.Group>(null);
-  const headRef = useRef<THREE.Group>(null);
-
-  const isPausedRef = useRef(isPaused);
-  const exerciseNameRef = useRef(exerciseName);
-  const isPrepRef = useRef(isPrep);
-
-  useEffect(() => {
-    isPausedRef.current = isPaused;
-    exerciseNameRef.current = exerciseName;
-    isPrepRef.current = isPrep;
-  }, [isPaused, exerciseName, isPrep]);
-
+// Loading Holographic Ring
+const MatrixStudioLoader: React.FC<{ isDark?: boolean }> = ({ isDark }) => {
+  const ringRef = useRef<THREE.Mesh>(null);
   useFrame((state) => {
-    if (isPausedRef.current) return;
-    const t = state.clock.getElapsedTime();
-    const exType = isPrepRef.current ? 'idle' : getExerciseType(exerciseNameRef.current);
-
-    // Standard Reset / Idle state rotations
-    if (bodyRef.current) {
-      bodyRef.current.position.set(0, 0.4, 0);
-      bodyRef.current.rotation.set(0, 0, 0);
-    }
-    if (headRef.current) headRef.current.rotation.set(0, 0, 0);
-    if (leftArmRef.current) leftArmRef.current.rotation.set(0, 0, 0.25);
-    if (rightArmRef.current) rightArmRef.current.rotation.set(0, 0, -0.25);
-    if (leftLegRef.current) leftLegRef.current.rotation.set(0, 0, 0.05);
-    if (rightLegRef.current) rightLegRef.current.rotation.set(0, 0, -0.05);
-    if (leftCalfRef.current) leftCalfRef.current.rotation.set(0, 0, 0);
-    if (rightCalfRef.current) rightCalfRef.current.rotation.set(0, 0, 0);
-
-    // Animating the Android puppet according to resolved exercise type
-    if (exType === 'jack') {
-      const speed = 6;
-      const wave = Math.sin(t * speed);
-      // Jumping Jacks: Arms and legs move out/in
-      if (bodyRef.current) bodyRef.current.position.y = 0.4 + Math.abs(wave) * 0.15;
-      if (leftArmRef.current) leftArmRef.current.rotation.z = 0.25 + Math.abs(wave) * 1.8;
-      if (rightArmRef.current) rightArmRef.current.rotation.z = -0.25 - Math.abs(wave) * 1.8;
-      if (leftLegRef.current) leftLegRef.current.rotation.z = 0.05 + Math.abs(wave) * 0.4;
-      if (rightLegRef.current) rightLegRef.current.rotation.z = -0.05 - Math.abs(wave) * 0.4;
-    } else if (exType === 'push') {
-      const speed = 4;
-      const wave = Math.sin(t * speed);
-      // Push-ups / Press: Torso moves down and rotates, arms pivot forward
-      if (bodyRef.current) {
-        bodyRef.current.position.y = 0.2 + (wave + 1) * 0.1;
-        bodyRef.current.rotation.x = 0.4 + wave * 0.15;
-      }
-      if (leftArmRef.current) leftArmRef.current.rotation.x = -0.6 + wave * 0.5;
-      if (rightArmRef.current) rightArmRef.current.rotation.x = -0.6 + wave * 0.5;
-    } else if (exType === 'squat') {
-      // Squats / Lunges: Torso drops down, thighs and calves bend
-      const wave = Math.sin(t * 3);
-      const squatFactor = Math.max(0, wave); // only descend
-      
-      if (bodyRef.current) {
-        bodyRef.current.position.y = 0.4 - squatFactor * 0.35;
-        bodyRef.current.rotation.x = squatFactor * 0.15;
-      }
-      if (leftLegRef.current) leftLegRef.current.rotation.x = -squatFactor * 0.7;
-      if (rightLegRef.current) rightLegRef.current.rotation.x = -squatFactor * 0.7;
-      if (leftCalfRef.current) leftCalfRef.current.rotation.x = squatFactor * 0.6;
-      if (rightCalfRef.current) rightCalfRef.current.rotation.x = squatFactor * 0.6;
-    } else {
-      // Default / Idle state: gentle high-tech organic breathing
-      const wave = Math.sin(t * 1.5);
-      if (bodyRef.current) {
-        bodyRef.current.position.y = 0.4 + wave * 0.015;
-      }
-      if (leftArmRef.current) leftArmRef.current.rotation.z = 0.25 + wave * 0.03;
-      if (rightArmRef.current) rightArmRef.current.rotation.z = -0.25 - wave * 0.03;
-      if (headRef.current) headRef.current.rotation.y = Math.sin(t * 0.5) * 0.15;
+    if (ringRef.current) {
+      ringRef.current.rotation.z = state.clock.getElapsedTime() * 1.5;
     }
   });
 
-  const chromeMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#0ea5e9', // Premium neon sky blue metallic skin
-    metalness: 0.95,
-    roughness: 0.15,
-  }), []);
-
-  const glowMaterial = useMemo(() => new THREE.MeshBasicMaterial({
-    color: '#8A2BE2', // Deep high-contrast cybernetic violet
-  }), []);
-
-  const jointMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#3b0764',
-    metalness: 0.8,
-    roughness: 0.2,
-  }), []);
-
   return (
-    <group>
-      {/* Dynamic Torso Group */}
-      <group ref={bodyRef} position={[0, 0.4, 0]}>
-        {/* Core Chest Column */}
-        <mesh material={chromeMaterial} position={[0, 0.4, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.22, 0.14, 0.55, 16]} />
-        </mesh>
-        
-        {/* Futuristic glowing cyber heart indicator */}
-        <mesh material={glowMaterial} position={[0, 0.48, 0.14]}>
-          <sphereGeometry args={[0.07, 16, 16]} />
-        </mesh>
-
-        {/* Head and visor group */}
-        <group ref={headRef} position={[0, 0.8, 0]}>
-          {/* Cyber Neck */}
-          <mesh material={jointMaterial} position={[0, -0.1, 0]}>
-            <cylinderGeometry args={[0.06, 0.07, 0.08, 12]} />
-          </mesh>
-          {/* Android Helmet */}
-          <mesh material={chromeMaterial} castShadow>
-            <sphereGeometry args={[0.16, 20, 20]} />
-          </mesh>
-          {/* Glowing Visor */}
-          <mesh material={glowMaterial} position={[0, 0.04, 0.12]}>
-            <boxGeometry args={[0.18, 0.03, 0.08]} />
-          </mesh>
-        </group>
-
-        {/* Left Arm Group */}
-        <group ref={leftArmRef} position={[-0.3, 0.5, 0]}>
-          {/* Shoulder Joint */}
-          <mesh material={glowMaterial}><sphereGeometry args={[0.06, 8, 8]} /></mesh>
-          {/* Upper Arm Segment */}
-          <mesh material={chromeMaterial} position={[0, -0.18, 0]} castShadow>
-            <cylinderGeometry args={[0.04, 0.035, 0.3, 8]} />
-          </mesh>
-          {/* Forearm */}
-          <group position={[0, -0.32, 0]}>
-            {/* Elbow Joint */}
-            <mesh material={glowMaterial}><sphereGeometry args={[0.045, 8, 8]} /></mesh>
-            <mesh material={chromeMaterial} position={[0, -0.14, 0]} castShadow>
-              <cylinderGeometry args={[0.032, 0.03, 0.25, 8]} />
-            </mesh>
-          </group>
-        </group>
-
-        {/* Right Arm Group */}
-        <group ref={rightArmRef} position={[0.3, 0.5, 0]}>
-          {/* Shoulder Joint */}
-          <mesh material={glowMaterial}><sphereGeometry args={[0.06, 8, 8]} /></mesh>
-          {/* Upper Arm Segment */}
-          <mesh material={chromeMaterial} position={[0, -0.18, 0]} castShadow>
-            <cylinderGeometry args={[0.04, 0.035, 0.3, 8]} />
-          </mesh>
-          {/* Forearm */}
-          <group position={[0, -0.32, 0]}>
-            {/* Elbow Joint */}
-            <mesh material={glowMaterial}><sphereGeometry args={[0.045, 8, 8]} /></mesh>
-            <mesh material={chromeMaterial} position={[0, -0.14, 0]} castShadow>
-              <cylinderGeometry args={[0.032, 0.03, 0.25, 8]} />
-            </mesh>
-          </group>
-        </group>
-
-        {/* Left Leg Group */}
-        <group ref={leftLegRef} position={[-0.14, -0.05, 0]}>
-          {/* Hip Joint */}
-          <mesh material={glowMaterial}><sphereGeometry args={[0.065, 8, 8]} /></mesh>
-          {/* Thigh */}
-          <mesh material={chromeMaterial} position={[0, -0.22, 0]} castShadow>
-            <cylinderGeometry args={[0.05, 0.042, 0.4, 8]} />
-          </mesh>
-          {/* Calf Segment */}
-          <group ref={leftCalfRef} position={[0, -0.42, 0]}>
-            {/* Knee Joint */}
-            <mesh material={glowMaterial}><sphereGeometry args={[0.05, 8, 8]} /></mesh>
-            <mesh material={chromeMaterial} position={[0, -0.18, 0]} castShadow>
-              <cylinderGeometry args={[0.04, 0.035, 0.35, 8]} />
-            </mesh>
-          </group>
-        </group>
-
-        {/* Right Leg Group */}
-        <group ref={rightLegRef} position={[0.14, -0.05, 0]}>
-          {/* Hip Joint */}
-          <mesh material={glowMaterial}><sphereGeometry args={[0.065, 8, 8]} /></mesh>
-          {/* Thigh */}
-          <mesh material={chromeMaterial} position={[0, -0.22, 0]} castShadow>
-            <cylinderGeometry args={[0.05, 0.042, 0.4, 8]} />
-          </mesh>
-          {/* Calf Segment */}
-          <group ref={rightCalfRef} position={[0, -0.42, 0]}>
-            {/* Knee Joint */}
-            <mesh material={glowMaterial}><sphereGeometry args={[0.05, 8, 8]} /></mesh>
-            <mesh material={chromeMaterial} position={[0, -0.18, 0]} castShadow>
-              <cylinderGeometry args={[0.04, 0.035, 0.35, 8]} />
-            </mesh>
-          </group>
-        </group>
-      </group>
+    <group position={[0, -0.92, 0]}>
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.5, 0.55, 48]} />
+        <meshBasicMaterial color={isDark ? '#c084fc' : '#a855f7'} transparent opacity={0.7} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.48, 32]} />
+        <meshBasicMaterial color="#ec4899" transparent opacity={0.15} side={THREE.DoubleSide} />
+      </mesh>
     </group>
   );
 };
 
-// 3. GLTF Model Loader (Rigged S3 Android Model)
-const Model = ({ url, isPaused, exerciseName, isPrep }: { url: string; isPaused?: boolean; exerciseName?: string; isPrep?: boolean }) => {
-  const { scene } = useGLTF(url);
-  const clonedScene = useMemo(() => scene.clone(), [scene]);
+// High-End 3D Fitness Studio Stage / Podium
+// Prevents the coach from floating in "open air" ("en plein air") by anchoring him on a high-tech training circular stage
+const StudioStage: React.FC<{ isDark: boolean }> = ({ isDark }) => {
+  const shadowTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    grad.addColorStop(0, isDark ? 'rgba(0, 0, 0, 0.70)' : 'rgba(0, 0, 0, 0.25)');
+    grad.addColorStop(0.38, isDark ? 'rgba(0, 0, 0, 0.40)' : 'rgba(0, 0, 0, 0.10)');
+    grad.addColorStop(0.75, isDark ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.02)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 256);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }, [isDark]);
 
+  return (
+    <group position={[0, -0.92, 0]}>
+      {/* 1. Feathered soft contact shadow beneath the training platform */}
+      {shadowTexture && (
+        <mesh position={[0, -0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[3.8, 3.8]} />
+          <meshBasicMaterial map={shadowTexture} transparent opacity={0.9} depthWrite={false} />
+        </mesh>
+      )}
+
+      {/* 2. Elevated Training Podium */}
+      <mesh position={[0, 0.015, 0]}>
+        <cylinderGeometry args={[1.45, 1.48, 0.03, 64]} />
+        <meshStandardMaterial
+          color={isDark ? '#141419' : '#f8fafc'}
+          roughness={isDark ? 0.35 : 0.25}
+          metalness={isDark ? 0.4 : 0.1}
+        />
+      </mesh>
+
+      {/* 3. Satin Architectural Rim */}
+      <mesh position={[0, 0.0302, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.40, 1.45, 64]} />
+        <meshStandardMaterial
+          color={isDark ? '#272732' : '#e2e8f0'}
+          roughness={0.2}
+          metalness={isDark ? 0.8 : 0.4}
+        />
+      </mesh>
+
+      {/* 4. Illuminated Energy Halo Ring */}
+      <mesh position={[0, 0.031, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.34, 1.37, 64]} />
+        <meshBasicMaterial
+          color={isDark ? '#a855f7' : '#9333ea'}
+          transparent
+          opacity={isDark ? 0.85 : 0.55}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* 5. Inner Mat Center */}
+      <mesh position={[0, 0.0305, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[1.33, 64]} />
+        <meshStandardMaterial
+          color={isDark ? '#0b0b10' : '#ffffff'}
+          roughness={0.5}
+          metalness={0.05}
+        />
+      </mesh>
+    </group>
+  );
+};
+
+// Rigged Hunyuan 3D Puppet Player
+// Real human biomechanical animation engine for squats, push-ups, lunges, jacks, and boxing
+const HunyuanRiggedCoach: React.FC<{
+  scene: THREE.Object3D;
+  isPaused?: boolean;
+  exerciseName?: string;
+  isPrep?: boolean;
+}> = ({ scene, isPaused, exerciseName, isPrep }) => {
   const isPausedRef = useRef(isPaused);
   const exerciseNameRef = useRef(exerciseName);
   const isPrepRef = useRef(isPrep);
+
+  const timeRef = useRef(0);
+  const restWorldQ = useRef<Map<string, THREE.Quaternion>>(new Map());
+  const restLocalQ = useRef<Map<string, THREE.Quaternion>>(new Map());
+  const restLocalPos = useRef<Map<string, THREE.Vector3>>(new Map());
+  const boneMap = useRef<Map<string, THREE.Bone>>(new Map());
 
   useEffect(() => {
     isPausedRef.current = isPaused;
@@ -306,413 +200,504 @@ const Model = ({ url, isPaused, exerciseName, isPrep }: { url: string; isPaused?
     isPrepRef.current = isPrep;
   }, [isPaused, exerciseName, isPrep]);
 
+  // Capture bind pose in rest state
   useEffect(() => {
-    if (!clonedScene) return;
+    if (!scene) return;
+    restWorldQ.current.clear();
+    restLocalQ.current.clear();
+    restLocalPos.current.clear();
+    boneMap.current.clear();
 
-    const updateScaleAndRotation = () => {
-      try {
-        const box = new THREE.Box3().setFromObject(clonedScene);
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
+    scene.updateMatrixWorld(true);
 
-        if (maxDim > 0.05 && maxDim < 500) {
-          const calculatedScale = 1.8 / maxDim;
-          // Clamp the scale to a safe range to prevent microscopic/massive rendering glitches
-          const safeScale = Math.min(Math.max(calculatedScale, 0.4), 2.5);
-          clonedScene.scale.setScalar(safeScale);
-        } else {
-          // Safe default fallback scale
-          clonedScene.scale.setScalar(1.0);
-        }
-        
-        // Force perfect front-facing orientation
-        clonedScene.rotation.set(0, 0, 0);
-      } catch (err) {
-        console.warn("Scale computation failed, using safe fallback scale.", err);
-        clonedScene.scale.setScalar(1.0);
-      }
-    };
-
-    // Run immediately
-    updateScaleAndRotation();
-
-    // Schedule subsequent updates to handle asynchronous layout and compilation steps
-    const t1 = setTimeout(updateScaleAndRotation, 50);
-    const t2 = setTimeout(updateScaleAndRotation, 150);
-    const t3 = setTimeout(updateScaleAndRotation, 400);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [clonedScene]);
-
-  // Puppeteer logic to animate bones of the GLTF skeleton
-  useFrame((state) => {
-    if (isPausedRef.current) return;
-    const t = state.clock.getElapsedTime();
-    const exType = isPrepRef.current ? 'idle' : getExerciseType(exerciseNameRef.current);
-
-    clonedScene.traverse((obj) => {
-      if (obj instanceof THREE.Bone) {
-        const name = obj.name.toLowerCase();
-
-        // Reset bone rotation
-        obj.rotation.set(0, 0, 0);
-
-        // Movement scripts based on resolved exercise type
-        if (exType === 'jack') {
-          const speed = 6;
-          if (name.includes('arm') || name.includes('shoulder') || name.includes('forearm')) {
-            obj.rotation.z = Math.sin(t * speed) * 1.5;
-          }
-          if (name.includes('leg') || name.includes('thigh')) {
-            obj.rotation.z = Math.sin(t * speed) * 0.4;
-          }
-        } else if (exType === 'push') {
-          const speed = 4;
-          if (name.includes('arm') || name.includes('shoulder') || name.includes('forearm')) {
-            obj.rotation.x = -Math.PI / 2 + Math.sin(t * speed) * 0.6;
-          }
-          if (name.includes('spine')) {
-            obj.rotation.x = Math.sin(t * speed) * 0.2;
-          }
-        } else if (exType === 'squat') {
-          const speed = 4;
-          if (name.includes('thigh') || name.includes('leg') || name.includes('calf')) {
-            obj.rotation.x = Math.sin(t * speed) * 0.7;
-          }
-          if (name.includes('spine') || name.includes('hips')) {
-            obj.rotation.x = Math.sin(t * speed) * 0.3;
-          }
-        } else {
-          // Idle state movement
-          if (name.includes('spine')) {
-            obj.rotation.x = Math.sin(t * 1.5) * 0.05;
-          }
-          if (name.includes('arm')) {
-            obj.rotation.z = Math.sin(t * 1.5) * 0.1;
-          }
-        }
+    scene.traverse((child) => {
+      if (child instanceof THREE.Bone) {
+        boneMap.current.set(child.name, child);
+        const wq = new THREE.Quaternion();
+        child.getWorldQuaternion(wq);
+        restWorldQ.current.set(child.name, wq.clone());
+        restLocalQ.current.set(child.name, child.quaternion.clone());
+        restLocalPos.current.set(child.name, child.position.clone());
       }
     });
+  }, [scene]);
+
+  useFrame((_, delta) => {
+    if (!scene) return;
+    if (isPausedRef.current) return;
+
+    timeRef.current += Math.min(delta, 0.05);
+    const t = timeRef.current;
+
+    // 1. Reset all bones to bind pose to eliminate distortion and drift
+    scene.traverse((child) => {
+      if (child instanceof THREE.Bone) {
+        const lq = restLocalQ.current.get(child.name);
+        const lp = restLocalPos.current.get(child.name);
+        if (lq) child.quaternion.copy(lq);
+        if (lp) child.position.copy(lp);
+      }
+    });
+    scene.updateMatrixWorld(true);
+
+    // 2. Exact world rotation applier with parent compensation
+    const applyWorldRot = (boneName: string, worldAxis: THREE.Vector3, angle: number) => {
+      const bone = boneMap.current.get(boneName);
+      const wRest = restWorldQ.current.get(boneName);
+      if (!bone || !wRest) return;
+
+      const deltaQ = new THREE.Quaternion().setFromAxisAngle(worldAxis, angle);
+      const targetWorldQ = deltaQ.multiply(wRest.clone());
+
+      if (bone.parent) {
+        const parentWorldQ = new THREE.Quaternion();
+        bone.parent.getWorldQuaternion(parentWorldQ);
+        const localQ = parentWorldQ.clone().invert().multiply(targetWorldQ);
+        bone.quaternion.copy(localQ);
+      } else {
+        bone.quaternion.copy(targetWorldQ);
+      }
+      bone.updateMatrixWorld(true);
+    };
+
+    const hips = boneMap.current.get('Hips');
+    const hipsRestPos = restLocalPos.current.get('Hips');
+    const hipsRestQ = restLocalQ.current.get('Hips');
+
+    const exCategory = isPrepRef.current ? 'idle' : getExerciseType(exerciseNameRef.current);
+
+    // 3. Natural Kinematics Engine
+    switch (exCategory) {
+      case 'squat': {
+        // Biomechanical Squat: Smooth concentric/eccentric cycle with hip hinge & arm counter-balance
+        const speed = 2.4;
+        const rawCycle = (Math.sin(t * speed) + 1) * 0.5; // 0 (top) to 1 (bottom)
+        const p = rawCycle * rawCycle * (3 - 2 * rawCycle); // Smoothstep easing
+
+        if (hips && hipsRestPos) {
+          hips.position.y = hipsRestPos.y - 0.52 * p;
+          hips.position.z = hipsRestPos.z - 0.18 * p;
+          hips.updateMatrixWorld(true);
+        }
+
+        // Torso hinges forward at hips to balance center of gravity
+        applyWorldRot('Spine', WORLD_X, 0.28 * p);
+        applyWorldRot('Spine1', WORLD_X, 0.14 * p);
+        applyWorldRot('Head', WORLD_X, -0.16 * p); // Keep eyes focused forward
+
+        // Thighs bend forward at hip
+        applyWorldRot('LeftUpLeg', WORLD_X, 0.72 * p);
+        applyWorldRot('RightUpLeg', WORLD_X, 0.72 * p);
+        // Athletic knee abduction tracking toes
+        applyWorldRot('LeftUpLeg', WORLD_Z, 0.08 * p);
+        applyWorldRot('RightUpLeg', WORLD_Z, -0.08 * p);
+
+        // Knees bend backward
+        applyWorldRot('LeftLeg', WORLD_X, -0.85 * p);
+        applyWorldRot('RightLeg', WORLD_X, -0.85 * p);
+
+        // Feet dorsiflexion to remain firmly planted
+        applyWorldRot('LeftFoot', WORLD_X, 0.15 * p);
+        applyWorldRot('RightFoot', WORLD_X, 0.15 * p);
+
+        // Arms reach forward horizontally for balance
+        applyWorldRot('LeftArm', WORLD_X, 0.68 * p);
+        applyWorldRot('RightArm', WORLD_X, 0.68 * p);
+        applyWorldRot('LeftForeArm', WORLD_X, 0.35 * p);
+        applyWorldRot('RightForeArm', WORLD_X, 0.35 * p);
+        break;
+      }
+
+      case 'jack': {
+        // High-Energy Jumping Jacks: Dynamic arm swing overhead & lateral leg spring
+        const speed = 5.2;
+        const rawCycle = (Math.sin(t * speed) + 1) * 0.5;
+        const p = rawCycle * rawCycle * (3 - 2 * rawCycle);
+        const bounce = Math.abs(Math.sin(t * speed));
+
+        if (hips && hipsRestPos) {
+          hips.position.y = hipsRestPos.y + bounce * 0.10;
+          hips.updateMatrixWorld(true);
+        }
+
+        // Arms swing wide out and up into high V
+        applyWorldRot('LeftArm', WORLD_Z, 1.85 * p);
+        applyWorldRot('RightArm', WORLD_Z, -1.85 * p);
+        applyWorldRot('LeftArm', WORLD_X, 0.15 * p);
+        applyWorldRot('RightArm', WORLD_X, 0.15 * p);
+        applyWorldRot('LeftForeArm', WORLD_X, 0.22 * p);
+        applyWorldRot('RightForeArm', WORLD_X, 0.22 * p);
+
+        // Legs jump outward laterally
+        applyWorldRot('LeftUpLeg', WORLD_Z, 0.32 * p);
+        applyWorldRot('RightUpLeg', WORLD_Z, -0.32 * p);
+
+        // Cushioning knee flex on each landing
+        const landingFlex = (1 - bounce) * 0.18;
+        applyWorldRot('LeftLeg', WORLD_X, -landingFlex);
+        applyWorldRot('RightLeg', WORLD_X, -landingFlex);
+        break;
+      }
+
+      case 'pushup': {
+        // Floor Push-ups: Coach assumes horizontal plank on the stage, lowering chest & driving up
+        const speed = 2.4;
+        const rawCycle = (Math.sin(t * speed) + 1) * 0.5;
+        const p = rawCycle * rawCycle * (3 - 2 * rawCycle);
+
+        if (hips && hipsRestPos && hipsRestQ) {
+          hips.position.y = 0.55 - 0.22 * p;
+          hips.position.z = -1.2;
+          const plankQ = new THREE.Quaternion().setFromAxisAngle(WORLD_X, Math.PI * 0.44);
+          hips.quaternion.copy(hipsRestQ).premultiply(plankQ);
+          hips.updateMatrixWorld(true);
+        }
+
+        applyWorldRot('Spine', WORLD_X, 0.05);
+        applyWorldRot('Head', WORLD_X, -0.35); // Head looks down towards the mat
+
+        applyWorldRot('LeftUpLeg', WORLD_X, -0.05);
+        applyWorldRot('RightUpLeg', WORLD_X, -0.05);
+        applyWorldRot('LeftLeg', WORLD_X, 0.05);
+        applyWorldRot('RightLeg', WORLD_X, 0.05);
+
+        // Arms bend outwards 90 degrees as chest lowers to mat
+        applyWorldRot('LeftArm', WORLD_X, 0.35 + 0.30 * p);
+        applyWorldRot('RightArm', WORLD_X, 0.35 + 0.30 * p);
+        applyWorldRot('LeftArm', WORLD_Z, 0.25 * p);
+        applyWorldRot('RightArm', WORLD_Z, -0.25 * p);
+        applyWorldRot('LeftForeArm', WORLD_X, 0.50 + 0.75 * p);
+        applyWorldRot('RightForeArm', WORLD_X, 0.50 + 0.75 * p);
+        break;
+      }
+
+      case 'lunge': {
+        // Alternating Front Lunges with 90-degree knee bend & athletic balance
+        const speed = 2.0;
+        const phase = Math.sin(t * speed);
+        const isLeft = phase >= 0;
+        const p = Math.abs(phase);
+        const smoothP = p * p * (3 - 2 * p);
+
+        if (hips && hipsRestPos) {
+          hips.position.y = hipsRestPos.y - 0.38 * smoothP;
+          hips.updateMatrixWorld(true);
+        }
+
+        applyWorldRot('Spine', WORLD_X, 0.08 * smoothP);
+
+        if (isLeft) {
+          applyWorldRot('LeftUpLeg', WORLD_X, 0.65 * smoothP);
+          applyWorldRot('LeftLeg', WORLD_X, -0.75 * smoothP);
+          applyWorldRot('LeftFoot', WORLD_X, 0.15 * smoothP);
+
+          applyWorldRot('RightUpLeg', WORLD_X, -0.35 * smoothP);
+          applyWorldRot('RightLeg', WORLD_X, -0.55 * smoothP);
+        } else {
+          applyWorldRot('RightUpLeg', WORLD_X, 0.65 * smoothP);
+          applyWorldRot('RightLeg', WORLD_X, -0.75 * smoothP);
+          applyWorldRot('RightFoot', WORLD_X, 0.15 * smoothP);
+
+          applyWorldRot('LeftUpLeg', WORLD_X, -0.35 * smoothP);
+          applyWorldRot('LeftLeg', WORLD_X, -0.55 * smoothP);
+        }
+
+        applyWorldRot('LeftArm', WORLD_X, isLeft ? -0.35 * smoothP : 0.45 * smoothP);
+        applyWorldRot('RightArm', WORLD_X, isLeft ? 0.45 * smoothP : -0.35 * smoothP);
+        applyWorldRot('LeftForeArm', WORLD_X, 0.60);
+        applyWorldRot('RightForeArm', WORLD_X, 0.60);
+        break;
+      }
+
+      case 'boxing': {
+        // Cardio Shadow Boxing: Rhythmic Jabs, Crosses, and Combat Stance
+        const speed = 4.0;
+        const jab = Math.max(0, Math.sin(t * speed));
+        const cross = Math.max(0, Math.sin(t * speed + Math.PI));
+
+        applyWorldRot('Spine', WORLD_Y, 0.20 * jab - 0.25 * cross);
+        applyWorldRot('Spine1', WORLD_X, 0.08);
+
+        // Left Jab
+        applyWorldRot('LeftArm', WORLD_X, 0.75 * jab + 0.30 * (1 - jab));
+        applyWorldRot('LeftForeArm', WORLD_X, 0.20 * jab + 0.85 * (1 - jab));
+
+        // Right Cross
+        applyWorldRot('RightArm', WORLD_X, 0.85 * cross + 0.30 * (1 - cross));
+        applyWorldRot('RightForeArm', WORLD_X, 0.15 * cross + 0.85 * (1 - cross));
+
+        // Athletic boxing leg stance
+        applyWorldRot('LeftUpLeg', WORLD_X, 0.12);
+        applyWorldRot('RightUpLeg', WORLD_X, -0.10);
+        applyWorldRot('LeftLeg', WORLD_X, -0.15);
+        applyWorldRot('RightLeg', WORLD_X, -0.12);
+        break;
+      }
+
+      case 'plank': {
+        // Isometric Plank Hold with controlled breathing
+        const breath = Math.sin(t * 1.5) * 0.03;
+        if (hips && hipsRestPos && hipsRestQ) {
+          hips.position.y = 0.45 + breath * 0.02;
+          hips.position.z = -1.2;
+          const plankQ = new THREE.Quaternion().setFromAxisAngle(WORLD_X, Math.PI * 0.44);
+          hips.quaternion.copy(hipsRestQ).premultiply(plankQ);
+          hips.updateMatrixWorld(true);
+        }
+
+        applyWorldRot('Spine', WORLD_X, 0.04);
+        applyWorldRot('Head', WORLD_X, -0.35);
+        applyWorldRot('LeftArm', WORLD_X, 0.65);
+        applyWorldRot('RightArm', WORLD_X, 0.65);
+        applyWorldRot('LeftForeArm', WORLD_X, 0.85);
+        applyWorldRot('RightForeArm', WORLD_X, 0.85);
+        break;
+      }
+
+      case 'idle':
+      default: {
+        // Heroic Athletic Stance with Natural Diaphragmatic Breathing
+        const breath = Math.sin(t * 1.5);
+        if (hips && hipsRestPos) {
+          hips.position.y = hipsRestPos.y + breath * 0.012;
+          hips.updateMatrixWorld(true);
+        }
+
+        applyWorldRot('Spine', WORLD_X, breath * 0.035);
+        applyWorldRot('Spine1', WORLD_X, breath * 0.045);
+        applyWorldRot('Head', WORLD_Y, Math.sin(t * 0.7) * 0.07);
+        applyWorldRot('Head', WORLD_X, -0.05 + breath * 0.02);
+
+        applyWorldRot('LeftArm', WORLD_Z, 0.06 + breath * 0.02);
+        applyWorldRot('RightArm', WORLD_Z, -0.06 - breath * 0.02);
+        applyWorldRot('LeftForeArm', WORLD_X, 0.15);
+        applyWorldRot('RightForeArm', WORLD_X, 0.15);
+        break;
+      }
+    }
   });
 
-  return <primitive object={clonedScene} />;
+  // Scale 0.34 scales the 5.5m raw mesh to a commanding, heroic 1.87m athletic height
+  // Grounded at y = -0.92 so feet rest perfectly on top of the workout platform
+  return (
+    <group scale={[0.34, 0.34, 0.34]} position={[0, -0.92, 0]}>
+      <primitive object={scene} />
+    </group>
+  );
 };
 
-// Premium sub-component to render the 3D Canvas
+// Universal Model Loader (GLTF & FBX with SkeletonUtils)
+const UniversalModel: React.FC<{
+  url: string;
+  isPaused?: boolean;
+  exerciseName?: string;
+  isPrep?: boolean;
+}> = ({ url, isPaused, exerciseName, isPrep }) => {
+  const isFBX = url.toLowerCase().includes('.fbx') || url.includes('format=fbx');
+
+  if (isFBX) {
+    const fbx = useFBX(url);
+    const cloned = useMemo(() => (fbx ? SkeletonUtils.clone(fbx) : null), [fbx]);
+    if (!cloned) return null;
+    return <HunyuanRiggedCoach scene={cloned} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />;
+  }
+
+  const gltf = useGLTF(url, '/draco/');
+  const cloned = useMemo(() => (gltf?.scene ? SkeletonUtils.clone(gltf.scene) : null), [gltf]);
+  if (!cloned) return null;
+  return <HunyuanRiggedCoach scene={cloned} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />;
+};
+
+// 3D Canvas Studio Viewport
 const CoachCanvas: React.FC<{
   finalUrl: string;
   isPaused?: boolean;
   exerciseName?: string;
   isPrep?: boolean;
-  isTransparent: boolean;
-  flipX?: boolean;
-  flipY?: boolean;
-}> = ({ finalUrl, isPaused, exerciseName, isPrep, isTransparent, flipX, flipY }) => {
+  isDark: boolean;
+  isTransparent?: boolean;
+}> = ({ finalUrl, isPaused, exerciseName, isPrep, isDark, isTransparent }) => {
   return (
     <Canvas
       gl={{ antialias: true, alpha: isTransparent, powerPreference: 'high-performance' }}
-      camera={{ position: [0, 0.15, 5.1], fov: 35 }}
+      camera={{ position: [0, 0.25, 3.1], fov: 38 }}
       dpr={[1, 2]}
-      shadows
-      style={{
-        transform: `${flipX ? 'scaleX(-1)' : ''} ${flipY ? 'scaleY(-1)' : ''}`,
-      }}
     >
-      {/* If transparent, background is empty. Otherwise, futuristic dark slate/black background */}
-      {!isTransparent && <color attach="background" args={['#0a0a0a']} />}
+      {/* Background color */}
+      {!isTransparent && (
+        <color attach="background" args={[isDark ? '#08080c' : '#ffffff']} />
+      )}
 
-      {/* High-quality studio lights */}
-      <ambientLight intensity={1.2} />
-      <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow />
-      <directionalLight position={[-5, 5, -5]} intensity={0.8} />
-      <pointLight position={[0, 3, -2]} intensity={2} color="#8A2BE2" />
+      {/* High-End Studio Lighting */}
+      <ambientLight intensity={isDark ? 0.55 : 1.35} color={isDark ? '#e2e8f0' : '#ffffff'} />
+      <directionalLight position={[3.0, 6.0, 4.0]} intensity={isDark ? 1.6 : 1.7} color="#ffffff" />
+      <directionalLight position={[-3.0, 4.0, 2.5]} intensity={isDark ? 0.7 : 0.9} color={isDark ? '#818cf8' : '#f1f5f9'} />
+      
+      {/* Rim / Silhouette Backlight: Sculpts shoulders and head for true 3D separation */}
+      <directionalLight position={[0, 3.5, -3.5]} intensity={isDark ? 2.2 : 1.5} color={isDark ? '#c084fc' : '#cbd5e1'} />
 
-      <group position={[0, -0.8, 0]}>
-        <ModelErrorBoundary fallback={
-          <group position={[0, 0.43, 0]} scale={1.15}>
-            <ProceduralCoach isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />
-          </group>
-        }>
-          <Suspense fallback={
-            <group position={[0, 0.43, 0]} scale={1.15}>
-              <ProceduralCoach isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />
-            </group>
-          }>
-            <Model url={finalUrl} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />
-          </Suspense>
-        </ModelErrorBoundary>
-      </group>
+      {/* Cyberpunk accent in Dark Mode */}
+      {isDark && (
+        <>
+          <pointLight position={[0, 0.5, 1.8]} intensity={1.2} color="#ec4899" />
+          <pointLight position={[0, -0.6, -1.0]} intensity={1.0} color="#8a2be2" />
+        </>
+      )}
 
-      <ContactShadows
-        position={[0, -0.81, 0]}
-        opacity={0.15}
-        scale={10}
-        blur={2.5}
-        far={4}
-        color="#000000"
-      />
+      {/* Architectural Workout Podium */}
+      {!isTransparent && <StudioStage isDark={isDark} />}
 
+      {/* 3D Cyborg Coach Model */}
+      <Suspense fallback={<MatrixStudioLoader isDark={isDark} />}>
+        <UniversalModel
+          url={finalUrl}
+          isPaused={isPaused}
+          exerciseName={exerciseName}
+          isPrep={isPrep}
+        />
+      </Suspense>
+
+      {/* Fluid 360-degree Orbit Controls */}
       <OrbitControls
-        enableZoom={false}
+        enableZoom={true}
         enablePan={false}
         makeDefault
-        target={[0, 0.1, 0]}
+        target={[0, 0.0, 0]}
+        minDistance={1.8}
+        maxDistance={4.5}
         minPolarAngle={Math.PI / 4}
-        maxPolarAngle={Math.PI / 1.6}
+        maxPolarAngle={Math.PI / 1.75}
       />
     </Canvas>
   );
 };
 
-export const HolographicCoach: React.FC<{
+export interface HolographicCoachProps {
   modelUrl?: string;
   isPaused?: boolean;
-  background?: string;
   exerciseName?: string;
   isPrep?: boolean;
-}> = ({ modelUrl, isPaused, background = 'white', exerciseName, isPrep }) => {
-  const finalUrl = modelUrl || COACH_MODEL_URL;
+  background?: 'transparent' | 'white' | 'dark';
+  studioTheme?: 'white' | 'dark';
+  onToggleStudioTheme?: (theme: 'white' | 'dark') => void;
+}
+
+// HolographicCoach Main Component
+export const HolographicCoach: React.FC<HolographicCoachProps> = ({
+  modelUrl,
+  isPaused = false,
+  exerciseName,
+  isPrep = false,
+  background,
+  studioTheme: propStudioTheme,
+  onToggleStudioTheme,
+}) => {
+  const [internalStudioTheme, setInternalStudioTheme] = useState<'white' | 'dark'>(() => {
+    return (localStorage.getItem('f4x_studio_theme') as 'white' | 'dark') || 'white';
+  });
+
+  const currentTheme = propStudioTheme || internalStudioTheme;
+  const isDark = currentTheme === 'dark';
   const isTransparent = background === 'transparent';
-  
-  // Projection mode state: normal, ar (cam background), pyramid (4-way cross), ghost (Pepper's Ghost mirrored)
-  const [projectionMode, setProjectionMode] = useState<'normal' | 'ar' | 'pyramid' | 'ghost'>('normal');
-  const [showMenu, setShowMenu] = useState(false);
-  const [flipX, setFlipX] = useState(false);
-  const [flipY, setFlipY] = useState(false);
-  
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [cameraActive, setCameraActive] = useState(false);
 
-  // Preload the GLTF Model
-  useEffect(() => {
-    useGLTF.preload(finalUrl);
-  }, [finalUrl]);
-
-  // AR Camera stream management
-  useEffect(() => {
-    if (projectionMode === 'ar') {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(stream => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            videoRef.current.play().catch(e => console.warn("Camera play error:", e));
-            setCameraActive(true);
-          }
-        })
-        .catch(err => {
-          console.warn("Camera access denied or failed", err);
-          setCameraActive(false);
-        });
+  const toggleStudioTheme = () => {
+    const nextTheme = currentTheme === 'white' ? 'dark' : 'white';
+    if (onToggleStudioTheme) {
+      onToggleStudioTheme(nextTheme);
     } else {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-        videoRef.current.srcObject = null;
-        setCameraActive(false);
-      }
+      setInternalStudioTheme(nextTheme);
+      localStorage.setItem('f4x_studio_theme', nextTheme);
     }
+  };
 
-    return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [projectionMode]);
+  const finalUrl = useMemo(() => {
+    return modelUrl && modelUrl.trim() !== '' ? modelUrl : COACH_MODEL_URL;
+  }, [modelUrl]);
+
+  const category = isPrep ? 'idle' : getExerciseType(exerciseName);
+  const categoryLabels: Record<ExerciseCategory, string> = {
+    squat: 'Squats',
+    pushup: 'Pompes',
+    jack: 'Jumping Jacks',
+    lunge: 'Fentes',
+    boxing: 'Shadow Boxing',
+    plank: 'Gainage Planche',
+    idle: 'Respiration & Préparation'
+  };
 
   return (
-    <div className="w-full h-full relative bg-neutral-950 overflow-hidden flex flex-col justify-between">
-      
-      {/* BACKGROUNDS FOR SPECIAL MODES */}
-      {projectionMode === 'ar' && (
-        <video 
-          ref={videoRef} 
-          className="absolute inset-0 w-full h-full object-cover z-0" 
-          playsInline 
-          muted 
-        />
-      )}
-
-      {/* TOP FLOATING PROJECTION METHOD MENU */}
-      <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between">
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          className="px-3 py-1.5 bg-purple-900/80 hover:bg-purple-800 border border-purple-500/40 rounded-xl text-[10px] font-black uppercase tracking-wider text-white shadow-[0_0_15px_rgba(138,43,226,0.4)] transition-all flex items-center gap-1.5 backdrop-blur-md active:scale-95"
-        >
-          <Sparkles size={11} className="animate-pulse" />
-          <span>PROJECTION HOLO</span>
-        </button>
-
-        <div className="flex gap-2">
-          {projectionMode === 'ghost' && (
-            <>
-              <button 
-                onClick={() => setFlipX(!flipX)}
-                className={`px-2 py-1 rounded border text-[8px] font-bold uppercase transition-all ${flipX ? 'bg-amber-500 text-black border-amber-400' : 'bg-neutral-900/80 text-neutral-400 border-neutral-800'}`}
-              >
-                MIROIR X
-              </button>
-              <button 
-                onClick={() => setFlipY(!flipY)}
-                className={`px-2 py-1 rounded border text-[8px] font-bold uppercase transition-all ${flipY ? 'bg-amber-500 text-black border-amber-400' : 'bg-neutral-900/80 text-neutral-400 border-neutral-800'}`}
-              >
-                MIROIR Y
-              </button>
-            </>
-          )}
-          {projectionMode !== 'normal' && (
-            <button 
-              onClick={() => setProjectionMode('normal')}
-              className="p-1.5 bg-red-600/90 hover:bg-red-500 rounded-xl border border-red-500/30 text-white flex items-center justify-center active:scale-95"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* INTERACTIVE MENU OVERLAY */}
-      {showMenu && (
-        <div className="absolute inset-x-3 top-14 z-40 p-4 rounded-2xl bg-neutral-950/95 border border-neutral-800/80 shadow-2xl backdrop-blur-xl animate-fadeIn text-left space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-400">DIFFUSION DU COACH EN PHYSIQUE</h4>
-            <button onClick={() => setShowMenu(false)} className="text-neutral-500 hover:text-white">
-              <X size={14} />
-            </button>
-          </div>
-          
-          <p className="text-[9px] text-neutral-400 leading-relaxed">
-            Choisissez la technologie de projection holographique virtuelle adaptée à votre environnement d’entraînement (chez vous) :
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            
-            {/* AR MODE */}
-            <button
-              onClick={() => {
-                setProjectionMode('ar');
-                setShowMenu(false);
-              }}
-              className={`p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all ${projectionMode === 'ar' ? 'bg-purple-950/40 border-purple-500' : 'bg-neutral-900/40 border-neutral-800 hover:bg-neutral-900/80'}`}
-            >
-              <Camera size={16} className="text-purple-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <span className="text-[9px] font-black uppercase text-white block">1. Réalité Augmentée Web AR</span>
-                <span className="text-[8px] text-neutral-500 block mt-0.5 leading-tight">Superposez le coach en taille réelle 1:1 sur votre caméra de chambre/salon.</span>
-              </div>
-            </button>
-
-            {/* PYRAMID MODE */}
-            <button
-              onClick={() => {
-                setProjectionMode('pyramid');
-                setShowMenu(false);
-              }}
-              className={`p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all ${projectionMode === 'pyramid' ? 'bg-purple-950/40 border-purple-500' : 'bg-neutral-900/40 border-neutral-800 hover:bg-neutral-900/80'}`}
-            >
-              <Tv size={16} className="text-emerald-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <span className="text-[9px] font-black uppercase text-white block">2. Pyramide Holographique 3D</span>
-                <span className="text-[8px] text-neutral-500 block mt-0.5 leading-tight">Génère 4 vues croisées symétriques. Posez un prisme en plastique sur l’écran pour un hologramme 3D physique !</span>
-              </div>
-            </button>
-
-            {/* PEPPERS GHOST MODE */}
-            <button
-              onClick={() => {
-                setProjectionMode('ghost');
-                setShowMenu(false);
-              }}
-              className={`p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all ${projectionMode === 'ghost' ? 'bg-purple-950/40 border-purple-500' : 'bg-neutral-900/40 border-neutral-800 hover:bg-neutral-900/80'}`}
-            >
-              <Eye size={16} className="text-amber-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <span className="text-[9px] font-black uppercase text-white block">3. Projecteur "Pepper's Ghost"</span>
-                <span className="text-[8px] text-neutral-500 block mt-0.5 leading-tight">Fond ultra-noir contrasté avec effet miroir. Idéal pour refléter sur une vitre ou projeter au mur.</span>
-              </div>
-            </button>
-
-          </div>
+    <div className={`w-full h-full relative overflow-hidden flex flex-col justify-between select-none ${
+      isTransparent ? 'bg-transparent' : (isDark ? 'bg-[#08080c]' : 'bg-white')
+    }`}>
+      {/* TOP CONTROLS: Studio White vs Studio Black Toggle */}
+      {!isTransparent && (
+        <div className="absolute top-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
+          <button
+            onClick={toggleStudioTheme}
+            className={`px-3.5 py-2 rounded-full border text-[10px] font-black uppercase tracking-wider backdrop-blur-md transition-all shadow-lg flex items-center gap-2 active:scale-95 ${
+              isDark
+                ? 'bg-neutral-900/90 text-white border-neutral-700 hover:bg-neutral-800'
+                : 'bg-white/95 text-neutral-800 border-neutral-200 hover:bg-neutral-100'
+            }`}
+            title={isDark ? "Passer au Studio Blanc Matrix" : "Passer au Studio Noir"}
+          >
+            {isDark ? (
+              <>
+                <Sun size={13} className="text-amber-400" />
+                <span>Studio Blanc</span>
+              </>
+            ) : (
+              <>
+                <Moon size={13} className="text-purple-600" />
+                <span>Studio Noir</span>
+              </>
+            )}
+          </button>
         </div>
       )}
 
-      {/* CORE CANVAS VIEWPORT DISPLAY DELEGATION */}
+      {/* 3D CANVAS VIEWPORT */}
       <div className="flex-grow w-full relative z-10 flex items-center justify-center">
         <Suspense
           fallback={
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-              <div className="w-12 h-12 border-4 border-neutral-800 border-t-purple-500 rounded-full animate-spin mb-4" />
-              <p className="text-[10px] font-black text-purple-500 uppercase tracking-[0.4em] animate-pulse">
-                Synchronisation du coach...
+            <div className={`absolute inset-0 flex flex-col items-center justify-center ${
+              isDark ? 'bg-[#08080c]/80' : 'bg-white/80'
+            } backdrop-blur-sm z-50`}>
+              <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-3" />
+              <p className="text-[10px] font-black text-purple-700 uppercase tracking-[0.3em] animate-pulse">
+                INITIALISATION DU COACH CYBORG...
               </p>
             </div>
           }
         >
-          {projectionMode === 'pyramid' ? (
-            /* PYRAMID MODE 4-WAY SYMMETRICAL CROSS LAYOUT */
-            <div className="w-full h-full bg-black flex items-center justify-center p-4">
-              <div className="relative w-[280px] h-[280px] md:w-[360px] md:h-[360px] flex items-center justify-center bg-black/90 rounded-full border border-purple-500/10">
-                
-                {/* Visual grid target helpers */}
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div className="w-6 h-6 rounded-full bg-purple-500/20 border border-purple-500/40 animate-ping"></div>
-                </div>
-
-                {/* TOP (Rotated 180 deg for projection pyramid) */}
-                <div className="absolute top-0 w-24 h-24 md:w-32 md:h-32 transform rotate-180">
-                  <CoachCanvas finalUrl={finalUrl} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} isTransparent={true} />
-                </div>
-
-                {/* BOTTOM */}
-                <div className="absolute bottom-0 w-24 h-24 md:w-32 md:h-32">
-                  <CoachCanvas finalUrl={finalUrl} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} isTransparent={true} />
-                </div>
-
-                {/* LEFT (Rotated 90 deg) */}
-                <div className="absolute left-0 w-24 h-24 md:w-32 md:h-32 transform rotate-90">
-                  <CoachCanvas finalUrl={finalUrl} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} isTransparent={true} />
-                </div>
-
-                {/* RIGHT (Rotated -90 deg) */}
-                <div className="absolute right-0 w-24 h-24 md:w-32 md:h-32 transform -rotate-90">
-                  <CoachCanvas finalUrl={finalUrl} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} isTransparent={true} />
-                </div>
-
-              </div>
-            </div>
-          ) : (
-            /* STANDARD OR AR PASSTHROUGH OR GHOST MIRRORED CANVAS DISPLAY */
-            <div className="w-full h-full">
-              <CoachCanvas 
-                finalUrl={finalUrl} 
-                isPaused={isPaused} 
-                exerciseName={exerciseName} 
-                isPrep={isPrep} 
-                isTransparent={projectionMode === 'ar' || isTransparent}
-                flipX={flipX}
-                flipY={flipY}
-              />
-            </div>
-          )}
+          <div className="w-full h-full">
+            <CoachCanvas
+              finalUrl={finalUrl}
+              isPaused={isPaused}
+              exerciseName={exerciseName}
+              isPrep={isPrep}
+              isDark={isDark}
+              isTransparent={isTransparent}
+            />
+          </div>
         </Suspense>
       </div>
 
-      {/* FOOTER METADATA / INFORMATION FOR ACTIVE PROJECTION MODES */}
-      {projectionMode !== 'normal' && (
-        <div className="absolute bottom-3 left-3 right-3 z-30 p-2.5 rounded-xl bg-neutral-900/90 border border-neutral-800/80 backdrop-blur-md flex items-center gap-2 animate-slideInUp text-left">
-          <Info size={14} className="text-purple-400 flex-shrink-0" />
-          <div className="text-[8px] text-neutral-400 leading-normal">
-            {projectionMode === 'ar' && "Caméra active. Posez votre appareil à hauteur d'yeux pour simuler le coach devant vous."}
-            {projectionMode === 'pyramid' && "Posez votre pyramide réfléchissante au centre de l'écran pour un effet 3D relief direct."}
-            {projectionMode === 'ghost' && "Reliez votre écran à un vidéoprojecteur. Utilisez les boutons Miroir pour caler la réflexion."}
+      {/* BOTTOM EXERCISE BADGE */}
+      {!isTransparent && (
+        <div className="absolute bottom-4 left-4 z-30 pointer-events-none">
+          <div className={`px-3 py-1.5 rounded-full border backdrop-blur-md text-[9px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm ${
+            isDark
+              ? 'bg-black/60 text-purple-300 border-purple-900/50'
+              : 'bg-white/90 text-purple-700 border-purple-200 shadow-sm'
+          }`}>
+            <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+            <span>Mouvement : {categoryLabels[category]}</span>
           </div>
         </div>
       )}
-
     </div>
   );
 };
+
+export default HolographicCoach;

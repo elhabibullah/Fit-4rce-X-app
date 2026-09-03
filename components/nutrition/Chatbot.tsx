@@ -44,17 +44,15 @@ const cleanTextForDisplay = (text: string) => {
 };
 
 const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
-  const { translate } = useApp();
+  const { translate, language } = useApp();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    if (messages.length === 0) {
-        setMessages([{ role: 'ai', content: translate('chatbot.greeting') }]);
-    }
-  }, [translate, messages.length]);
+    setMessages([{ role: 'ai', content: translate('chatbot.greeting') }]);
+  }, [translate, language]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,10 +69,10 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
     setIsLoading(true);
 
     try {
-        const aiResponse = await getChatbotResponse(userMessage.content);
+        const aiResponse = await getChatbotResponse(userMessage.content, language);
         setMessages(prev => [...prev, { role: 'ai', content: aiResponse }]);
     } catch (error) {
-        setMessages(prev => [...prev, { role: 'ai', content: "Connection error. Please try again." }]);
+        setMessages(prev => [...prev, { role: 'ai', content: translate('coach.status.conn_error') }]);
     } finally {
         setIsLoading(false);
     }

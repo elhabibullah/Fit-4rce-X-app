@@ -598,15 +598,63 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
 
 app.post('/api/chatbot-response', async (req: express.Request, res: express.Response) => {
   try {
-    const { msg } = req.body;
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: msg,
-      config: {
-        systemInstruction: "You are the Fit-4rce X Assistant. Helpful, concise, and focused on fitness performance."
+    const { msg, language, history } = req.body;
+    const targetLang = language || 'en';
+    
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        let contents: any = msg;
+        if (Array.isArray(history) && history.length > 0) {
+          contents = [
+            ...history.map((h: any) => ({
+              role: h.role === 'user' ? 'user' : 'model',
+              parts: [{ text: h.text }]
+            })),
+            { role: 'user', parts: [{ text: msg }] }
+          ];
+        }
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: contents,
+          config: {
+            systemInstruction: `You are Fit-4rce X AI Holographic Coach, a high-level personal trainer speaking via live voice with the athlete (like ChatGPT Voice or Gemini Live).
+Respond naturally, concisely, warmly, and like an authentic elite coach.
+Talk back in a human, encouraging, conversational tone without robotic phrases or markdown symbols.
+If the user mentions wanting a workout, ask any clarifying question or confirm the plan.
+If the user confirms they are ready to begin (e.g., "je suis prêt", "c'est parti", "lance", "commence", "let's go", "ready", "listo", "vamos", "يلا", "ابدأ"), warmly confirm that you are generating their custom exercises right now!
+
+CRITICAL MANDATE: You MUST reply entirely in the requested language code: "${targetLang}".
+- If language is 'fr': reply in French.
+- If language is 'es': reply in Spanish.
+- If language is 'ar': reply in Arabic.
+- If language is 'pt': reply in Portuguese.
+- If language is 'ja': reply in Japanese.
+- If language is 'zh': reply in Chinese.
+- If language is 'ru': reply in Russian.
+- If language is 'en': reply in English.
+Keep responses short and punchy (1 to 2 sentences max) suitable for direct speech output.`
+          }
+        });
+        res.json({ text: response.text || "OK" });
+        return;
+      } catch (geminiErr) {
+        console.warn("Gemini chatbot error:", geminiErr);
       }
-    });
-    res.json({ text: response.text || "System ready." });
+    }
+
+    const fallbacks: Record<string, string> = {
+      fr: "Bien reçu ! Je prépare vos exercices sur mesure.",
+      es: "¡Perfecto! Estoy preparando tus ejercicios personalizados.",
+      ar: "ممتاز! أقوم بإعداد تمارينك المخصصة الآن.",
+      pt: "Perfeito! Estou preparando seus exercícios personalizados.",
+      ja: "了解しました！あなた専用のエクササイズを準備しています。",
+      zh: "收到！正在为您准备定制训练动作。",
+      ru: "Отлично! Подготавливаю ваши индивидуальные упражнения.",
+      en: "Awesome! I'm preparing your custom exercises right now."
+    };
+    const reply = fallbacks[targetLang] || fallbacks.en;
+    res.json({ text: reply });
   } catch (error: any) {
     console.error("API error chatbot-response:", error);
     res.status(500).json({ error: error.message });

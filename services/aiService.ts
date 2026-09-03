@@ -156,17 +156,19 @@ export const generateWorkoutWithOpenAI = generateWorkout;
 export const generateWorkoutWithAnthropic = generateWorkout;
 export const generateWorkoutWithPerplexity = generateWorkout;
 
-export const getChatbotResponse = async (msg: string) => {
+export const getChatbotResponse = async (msg: string, language: string = 'en', history?: Array<{ role: string; text: string }>) => {
     try {
         const response = await fetch('/api/chatbot-response', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ msg })
+            body: JSON.stringify({ msg, language, history })
         });
         if (!response.ok) throw new Error('Chatbot response failed');
         const data = await response.json();
-        return data.text || "Connection active.";
-    } catch (e) { return "System ready."; }
+        return data.text || (language === 'fr' ? "Bien reçu ! Je prépare vos exercices." : (language === 'es' ? "¡Perfecto! Preparando tus ejercicios." : (language === 'ar' ? "ممتاز! جاري تجهيز التمارين." : "Great! Preparing your exercises.")));
+    } catch (e) {
+        return language === 'fr' ? "Bien reçu ! Je prépare vos exercices." : (language === 'es' ? "¡Perfecto! Preparando tus ejercicios." : (language === 'ar' ? "ممتاز! جاري تجهيز التمارين." : "Great! Preparing your exercises."));
+    }
 };
 
 export const generateDietPlan = async (profile: UserProfile, language: Language) => {

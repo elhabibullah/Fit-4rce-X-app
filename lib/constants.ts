@@ -1,8 +1,8 @@
 import { DurationOption, Language } from '../types.ts';
 
-export const COACH_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/android_workout_coach_rigged-v1.glb";
+export const COACH_MODEL_URL = "/models/Magneta_Cyborg_F4X_rigged.glb";
 export const SPINNING_COACH_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/Spinning_coach_compressed.glb?v=12350"; 
-export const TECHNIQUE_MODEL_URL = "https://raw.githubusercontent.com/elhabibullah/3D-model-1/main/android_workout_coach_rigged-v1.glb";
+export const TECHNIQUE_MODEL_URL = "/models/Magneta_Cyborg_F4X_rigged.glb";
 
 export const MODEL_LIBRARY: Record<string, string> = {
     'default': COACH_MODEL_URL,

@@ -75,11 +75,11 @@ export const SensorsPermissionBanner: React.FC = () => {
 
     setIsRequesting(false);
     if (micOk && geoOk) {
-      setFeedback('Microphone et Localisation GPS autorisés avec succès.');
+      setFeedback(translate('sensors.feedback_all'));
     } else if (micOk) {
-      setFeedback('Microphone autorisé. Localisation à activer dans les réglages.');
+      setFeedback(translate('sensors.feedback_mic_only'));
     } else {
-      setFeedback('Veuillez autoriser les accès dans les paramètres du navigateur.');
+      setFeedback(translate('sensors.feedback_none'));
     }
   };
 
@@ -94,20 +94,20 @@ export const SensorsPermissionBanner: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black uppercase text-white tracking-widest">Capteurs Live & GPS</span>
+              <span className="text-[11px] font-black uppercase text-white tracking-widest">{translate('sensors.title')}</span>
               <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-widest ${isAllGranted ? 'bg-green-950 text-green-400 border border-green-800' : 'bg-purple-950 text-purple-400 border border-purple-800'}`}>
-                {isAllGranted ? '100% Prêt' : 'Activation requise'}
+                {isAllGranted ? translate('sensors.ready') : translate('sensors.required')}
               </span>
             </div>
             <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
               <span className="flex items-center gap-1">
                 <Mic size={10} className={micStatus === 'granted' ? 'text-green-400' : 'text-yellow-400'} />
-                <span>Micro: {micStatus === 'granted' ? 'Autorisé' : 'En attente'}</span>
+                <span>{translate('sensors.mic')}: {micStatus === 'granted' ? translate('sensors.granted') : translate('sensors.pending')}</span>
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <MapPin size={10} className={geoStatus === 'granted' ? 'text-green-400' : 'text-yellow-400'} />
-                <span>GPS: {geoStatus === 'granted' ? 'Autorisé' : 'En attente'}</span>
+                <span>{translate('sensors.gps')}: {geoStatus === 'granted' ? translate('sensors.granted') : translate('sensors.pending')}</span>
               </span>
             </div>
           </div>
@@ -119,7 +119,7 @@ export const SensorsPermissionBanner: React.FC = () => {
             disabled={isRequesting}
             className="shrink-0 px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md transition-all active:scale-95 disabled:opacity-50"
           >
-            {isRequesting ? 'Connexion...' : 'Autoriser'}
+            {isRequesting ? '...' : translate('sensors.authorize')}
           </button>
         )}
       </div>

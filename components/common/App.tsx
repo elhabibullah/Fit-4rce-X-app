@@ -106,12 +106,12 @@ const App: React.FC = () => {
         
         {isGeneratingWorkout && (
           <div className="fixed inset-0 z-[10001] bg-black flex flex-col items-center justify-center p-8 text-center animate-fadeIn">
-              <div className="relative mb-10">
+              <div className="relative mb-8">
                   <div className="scale-125">
                       <Loader />
                   </div>
               </div>
-              <h2 className="text-[10px] font-black text-purple-500 uppercase tracking-[0.6em] animate-pulse">
+              <h2 className="text-xs sm:text-sm font-black text-purple-400 uppercase tracking-[0.35em] animate-pulse max-w-xs sm:max-w-sm">
                 {translate('workout.loading.calculating')}
               </h2>
           </div>

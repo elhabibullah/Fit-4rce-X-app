@@ -31,7 +31,10 @@ const WorkoutScreen: React.FC = () => {
     const [isPrep, setIsPrep] = useState(true);
     const [prepTimer, setPrepTimer] = useState(10);
     const [customRequirements, setCustomRequirements] = useState('');
-    const [displayMode, setDisplayMode] = useState<'video' | '3d'>('video');
+    const [displayMode, setDisplayMode] = useState<'video' | '3d'>('3d');
+    const [studioTheme, setStudioTheme] = useState<'white' | 'dark'>(() => {
+        return (localStorage.getItem('f4x_studio_theme') as 'white' | 'dark') || 'white';
+    });
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const [workoutType, setWorkoutType] = useState('fitness');
@@ -147,8 +150,8 @@ const WorkoutScreen: React.FC = () => {
         const hasVideo = !!ex.videoUrl;
 
         return (
-            <div className="fixed inset-0 z-[2500] bg-neutral-950 flex flex-col font-['Poppins'] animate-fadeIn overflow-hidden">
-                <div className="relative flex-1 bg-neutral-950 overflow-hidden">
+            <div className={`fixed inset-0 z-[2500] ${displayMode === '3d' ? 'bg-white' : 'bg-neutral-950'} flex flex-col font-['Poppins'] animate-fadeIn overflow-hidden`}>
+                <div className={`relative flex-1 ${displayMode === '3d' ? 'bg-white' : 'bg-neutral-950'} overflow-hidden`}>
                     {/* VIDEO OR 3D COACH VIEW */}
                     {displayMode === 'video' && hasVideo ? (
                         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
@@ -165,7 +168,7 @@ const WorkoutScreen: React.FC = () => {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
                         </div>
                     ) : (
-                        <div className="absolute inset-0 z-10">
+                        <div className="absolute inset-0 z-10 bg-white">
                             <HolographicCoach 
                                 key="workout-holographic-coach"
                                 modelUrl={ex.modelUrl} 
@@ -207,8 +210,8 @@ const WorkoutScreen: React.FC = () => {
                     </div>
 
                     {isPrep && (
-                        <div className="absolute inset-0 z-[200] bg-zinc-950/40 backdrop-blur-[4px] flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4">
-                            <div className="text-[10rem] sm:text-[14rem] font-black text-white leading-none tabular-nums drop-shadow-[0_0_40px_rgba(138,43,226,0.8)] animate-pulse">
+                        <div className={`absolute inset-0 z-[200] ${displayMode === '3d' ? 'bg-white/50 backdrop-blur-[2px]' : 'bg-zinc-950/40 backdrop-blur-[4px]'} flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4`}>
+                            <div className={`text-[10rem] sm:text-[14rem] font-black ${displayMode === '3d' ? 'text-purple-600 drop-shadow-[0_0_40px_rgba(138,43,226,0.35)]' : 'text-white drop-shadow-[0_0_40px_rgba(138,43,226,0.8)]'} leading-none tabular-nums animate-pulse`}>
                                 {prepTimer}
                             </div>
                             <div className="px-6 py-3 bg-[#8A2BE2] text-white rounded-full font-bold uppercase tracking-[0.15em] sm:tracking-[0.3em] text-[9px] sm:text-[11px] mt-6 shadow-[0_0_30px_rgba(138,43,226,0.5)] text-center max-w-[90%] truncate">
