@@ -1,17 +1,47 @@
 import React, { Suspense, useMemo, useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, useFBX, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { Sun, Moon } from 'lucide-react';
 import { COACH_MODEL_URL } from '../../lib/constants.ts';
+import { HumanoidMotionEngine } from '../../lib/animation/humanoidMotionEngine.ts';
 
 // Multi-language exercise name resolver for Hunyuan biomechanical animations
-export type ExerciseCategory = 'squat' | 'pushup' | 'jack' | 'lunge' | 'boxing' | 'plank' | 'idle';
+export type ExerciseCategory =
+  | 'squat'
+  | 'pushup'
+  | 'jack'
+  | 'lunge'
+  | 'boxing'
+  | 'plank'
+  | 'martial_mabu'
+  | 'martial_punch'
+  | 'martial_palm'
+  | 'martial_kick'
+  | 'martial_taichi'
+  | 'idle';
 
 export const getExerciseType = (name?: string): ExerciseCategory => {
   if (!name) return 'idle';
   const ex = name.toLowerCase();
+
+  // Martial Arts / Self-Defense Techniques (Sifu Abdelwahid & Kung Fu / Tai Chi)
+  if (ex.includes('mabu') || ex.includes('cavalier') || ex.includes('horse stance') || ex.includes('enracinement') || ex.includes('stance')) {
+    return 'martial_mabu';
+  }
+  if (ex.includes('palm') || ex.includes('paume') || ex.includes('ondulatoire') || ex.includes('deflection')) {
+    return 'martial_palm';
+  }
+  if (ex.includes('kick') || ex.includes('fouetté') || ex.includes('fouette') || ex.includes('balayage') || ex.includes('pied') || ex.includes('jambe')) {
+    return 'martial_kick';
+  }
+  if (ex.includes('tai') || ex.includes('chi') || ex.includes('onde') || ex.includes('flow') || ex.includes('spiral') || ex.includes('nuage') || ex.includes('fluid') || ex.includes('shift')) {
+    return 'martial_taichi';
+  }
+  if (ex.includes('fist') || ex.includes('poing') || ex.includes('thrust') || ex.includes('chain') || ex.includes('wing chun') || ex.includes('frappe direct')) {
+    return 'martial_punch';
+  }
 
   // 1. Jumping Jacks / Cardio / Sauts / Corde
   if (
@@ -43,10 +73,10 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
 
   // 4. Squats / Cuisses / Jambes
   if (
-    ex.includes('squat') || ex.includes('cuisse') || ex.includes('jambe') ||
+    ex.includes('squat') || ex.includes('cuisse') ||
     ex.includes('flexion') || ex.includes('quad') || ex.includes('glute') ||
     ex.includes('fessier') || ex.includes('chaise') || ex.includes('chair') ||
-    ex.includes('sentadilla') || ex.includes('agachamento') || ex.includes('leg')
+    ex.includes('sentadilla') || ex.includes('agachamento')
   ) {
     return 'squat';
   }
@@ -177,311 +207,93 @@ const StudioStage: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 };
 
 // Rigged Hunyuan 3D Puppet Player
-// Real human biomechanical animation engine for squats, push-ups, lunges, jacks, and boxing
+// Powered by HumanoidMotionEngine with calibrated skeletal retargeting, 
+// anatomical joint limits, and smooth cross-fading transitions
 const HunyuanRiggedCoach: React.FC<{
   scene: THREE.Object3D;
   isPaused?: boolean;
   exerciseName?: string;
   isPrep?: boolean;
-}> = ({ scene, isPaused, exerciseName, isPrep }) => {
-  const isPausedRef = useRef(isPaused);
-  const exerciseNameRef = useRef(exerciseName);
-  const isPrepRef = useRef(isPrep);
+  speed?: number;
+  timelineProgress?: number;
+}> = ({ scene, isPaused, exerciseName, isPrep, speed = 1.0, timelineProgress }) => {
+  const groupRef = useRef<THREE.Group>(null);
+  const bodyPivotRef = useRef<THREE.Group>(null);
+  const engineRef = useRef<HumanoidMotionEngine | null>(null);
 
-  const timeRef = useRef(0);
-  const restWorldQ = useRef<Map<string, THREE.Quaternion>>(new Map());
-  const restLocalQ = useRef<Map<string, THREE.Quaternion>>(new Map());
-  const restLocalPos = useRef<Map<string, THREE.Vector3>>(new Map());
-  const boneMap = useRef<Map<string, THREE.Bone>>(new Map());
-
-  useEffect(() => {
-    isPausedRef.current = isPaused;
-    exerciseNameRef.current = exerciseName;
-    isPrepRef.current = isPrep;
-  }, [isPaused, exerciseName, isPrep]);
-
-  // Capture bind pose in rest state
+  // Initialize skeletal retargeting & humanoid motion engine on model scene
   useEffect(() => {
     if (!scene) return;
-    restWorldQ.current.clear();
-    restLocalQ.current.clear();
-    restLocalPos.current.clear();
-    boneMap.current.clear();
+    if (!engineRef.current) {
+      engineRef.current = new HumanoidMotionEngine(scene);
+      const clipName = isPrep ? 'idle' : (exerciseName || 'idle');
+      engineRef.current.setAnimation(clipName, 0.0);
+    } else {
+      const clipName = isPrep ? 'idle' : (exerciseName || 'idle');
+      engineRef.current.setAnimation(clipName, 0.35);
+    }
+  }, [scene, exerciseName, isPrep]);
 
+  // Adaptive model scale normalization for both Cyborg (~4.82m) and Sifu Abdelwahid (~8.23m)
+  const { modelScale, rawHeight, unitScale } = useMemo(() => {
     scene.updateMatrixWorld(true);
-
+    let headY: number | null = null;
+    let footY: number | null = null;
     scene.traverse((child) => {
-      if (child instanceof THREE.Bone) {
-        boneMap.current.set(child.name, child);
-        const wq = new THREE.Quaternion();
-        child.getWorldQuaternion(wq);
-        restWorldQ.current.set(child.name, wq.clone());
-        restLocalQ.current.set(child.name, child.quaternion.clone());
-        restLocalPos.current.set(child.name, child.position.clone());
+      if (child.name === 'Head') {
+        const p = new THREE.Vector3();
+        child.getWorldPosition(p);
+        headY = p.y;
+      }
+      if (
+        child.name === 'LeftFoot' ||
+        child.name === 'LeftToeBase' ||
+        child.name === 'RightFoot' ||
+        child.name === 'RightToeBase'
+      ) {
+        const p = new THREE.Vector3();
+        child.getWorldPosition(p);
+        if (footY === null || p.y < footY) footY = p.y;
       }
     });
+
+    const h = (headY !== null && footY !== null && headY > footY) ? (headY - footY) : 4.82;
+    const targetHeight = 1.55; // Master calibrated human height in meters
+    return {
+      modelScale: targetHeight / h,
+      rawHeight: h,
+      unitScale: h / 1.70, // Physical distance conversion factor
+    };
   }, [scene]);
 
   useFrame((_, delta) => {
-    if (!scene) return;
-    if (isPausedRef.current) return;
+    if (!scene || !engineRef.current) return;
 
-    timeRef.current += Math.min(delta, 0.05);
-    const t = timeRef.current;
+    const effectiveDelta = isPaused ? 0 : Math.min(delta, 0.05);
+    engineRef.current.update(effectiveDelta, speed, timelineProgress);
 
-    // 1. Reset all bones to bind pose to eliminate distortion and drift
-    scene.traverse((child) => {
-      if (child instanceof THREE.Bone) {
-        const lq = restLocalQ.current.get(child.name);
-        const lp = restLocalPos.current.get(child.name);
-        if (lq) child.quaternion.copy(lq);
-        if (lp) child.position.copy(lp);
-      }
-    });
-    scene.updateMatrixWorld(true);
+    // Apply prone horizontal orientation (pushups and planks)
+    if (bodyPivotRef.current) {
+      bodyPivotRef.current.rotation.x = engineRef.current.currentProneAngle;
+      const centerOffset = rawHeight * 0.5;
+      const isProne = engineRef.current.currentProneAngle > 0.05;
+      bodyPivotRef.current.position.set(
+        0,
+        engineRef.current.currentProneY * unitScale,
+        isProne ? -centerOffset : 0
+      );
+    }
 
-    // 2. Exact world rotation applier with parent compensation
-    const applyWorldRot = (boneName: string, worldAxis: THREE.Vector3, angle: number) => {
-      const bone = boneMap.current.get(boneName);
-      const wRest = restWorldQ.current.get(boneName);
-      if (!bone || !wRest) return;
-
-      const deltaQ = new THREE.Quaternion().setFromAxisAngle(worldAxis, angle);
-      const targetWorldQ = deltaQ.multiply(wRest.clone());
-
-      if (bone.parent) {
-        const parentWorldQ = new THREE.Quaternion();
-        bone.parent.getWorldQuaternion(parentWorldQ);
-        const localQ = parentWorldQ.clone().invert().multiply(targetWorldQ);
-        bone.quaternion.copy(localQ);
-      } else {
-        bone.quaternion.copy(targetWorldQ);
-      }
-      bone.updateMatrixWorld(true);
-    };
-
-    const hips = boneMap.current.get('Hips');
-    const hipsRestPos = restLocalPos.current.get('Hips');
-    const hipsRestQ = restLocalQ.current.get('Hips');
-
-    const exCategory = isPrepRef.current ? 'idle' : getExerciseType(exerciseNameRef.current);
-
-    // 3. Natural Kinematics Engine
-    switch (exCategory) {
-      case 'squat': {
-        // Biomechanical Squat: Smooth concentric/eccentric cycle with hip hinge & arm counter-balance
-        const speed = 2.4;
-        const rawCycle = (Math.sin(t * speed) + 1) * 0.5; // 0 (top) to 1 (bottom)
-        const p = rawCycle * rawCycle * (3 - 2 * rawCycle); // Smoothstep easing
-
-        if (hips && hipsRestPos) {
-          hips.position.y = hipsRestPos.y - 0.52 * p;
-          hips.position.z = hipsRestPos.z - 0.18 * p;
-          hips.updateMatrixWorld(true);
-        }
-
-        // Torso hinges forward at hips to balance center of gravity
-        applyWorldRot('Spine', WORLD_X, 0.28 * p);
-        applyWorldRot('Spine1', WORLD_X, 0.14 * p);
-        applyWorldRot('Head', WORLD_X, -0.16 * p); // Keep eyes focused forward
-
-        // Thighs bend forward at hip
-        applyWorldRot('LeftUpLeg', WORLD_X, 0.72 * p);
-        applyWorldRot('RightUpLeg', WORLD_X, 0.72 * p);
-        // Athletic knee abduction tracking toes
-        applyWorldRot('LeftUpLeg', WORLD_Z, 0.08 * p);
-        applyWorldRot('RightUpLeg', WORLD_Z, -0.08 * p);
-
-        // Knees bend backward
-        applyWorldRot('LeftLeg', WORLD_X, -0.85 * p);
-        applyWorldRot('RightLeg', WORLD_X, -0.85 * p);
-
-        // Feet dorsiflexion to remain firmly planted
-        applyWorldRot('LeftFoot', WORLD_X, 0.15 * p);
-        applyWorldRot('RightFoot', WORLD_X, 0.15 * p);
-
-        // Arms reach forward horizontally for balance
-        applyWorldRot('LeftArm', WORLD_X, 0.68 * p);
-        applyWorldRot('RightArm', WORLD_X, 0.68 * p);
-        applyWorldRot('LeftForeArm', WORLD_X, 0.35 * p);
-        applyWorldRot('RightForeArm', WORLD_X, 0.35 * p);
-        break;
-      }
-
-      case 'jack': {
-        // High-Energy Jumping Jacks: Dynamic arm swing overhead & lateral leg spring
-        const speed = 5.2;
-        const rawCycle = (Math.sin(t * speed) + 1) * 0.5;
-        const p = rawCycle * rawCycle * (3 - 2 * rawCycle);
-        const bounce = Math.abs(Math.sin(t * speed));
-
-        if (hips && hipsRestPos) {
-          hips.position.y = hipsRestPos.y + bounce * 0.10;
-          hips.updateMatrixWorld(true);
-        }
-
-        // Arms swing wide out and up into high V
-        applyWorldRot('LeftArm', WORLD_Z, 1.85 * p);
-        applyWorldRot('RightArm', WORLD_Z, -1.85 * p);
-        applyWorldRot('LeftArm', WORLD_X, 0.15 * p);
-        applyWorldRot('RightArm', WORLD_X, 0.15 * p);
-        applyWorldRot('LeftForeArm', WORLD_X, 0.22 * p);
-        applyWorldRot('RightForeArm', WORLD_X, 0.22 * p);
-
-        // Legs jump outward laterally
-        applyWorldRot('LeftUpLeg', WORLD_Z, 0.32 * p);
-        applyWorldRot('RightUpLeg', WORLD_Z, -0.32 * p);
-
-        // Cushioning knee flex on each landing
-        const landingFlex = (1 - bounce) * 0.18;
-        applyWorldRot('LeftLeg', WORLD_X, -landingFlex);
-        applyWorldRot('RightLeg', WORLD_X, -landingFlex);
-        break;
-      }
-
-      case 'pushup': {
-        // Floor Push-ups: Coach assumes horizontal plank on the stage, lowering chest & driving up
-        const speed = 2.4;
-        const rawCycle = (Math.sin(t * speed) + 1) * 0.5;
-        const p = rawCycle * rawCycle * (3 - 2 * rawCycle);
-
-        if (hips && hipsRestPos && hipsRestQ) {
-          hips.position.y = 0.55 - 0.22 * p;
-          hips.position.z = -1.2;
-          const plankQ = new THREE.Quaternion().setFromAxisAngle(WORLD_X, Math.PI * 0.44);
-          hips.quaternion.copy(hipsRestQ).premultiply(plankQ);
-          hips.updateMatrixWorld(true);
-        }
-
-        applyWorldRot('Spine', WORLD_X, 0.05);
-        applyWorldRot('Head', WORLD_X, -0.35); // Head looks down towards the mat
-
-        applyWorldRot('LeftUpLeg', WORLD_X, -0.05);
-        applyWorldRot('RightUpLeg', WORLD_X, -0.05);
-        applyWorldRot('LeftLeg', WORLD_X, 0.05);
-        applyWorldRot('RightLeg', WORLD_X, 0.05);
-
-        // Arms bend outwards 90 degrees as chest lowers to mat
-        applyWorldRot('LeftArm', WORLD_X, 0.35 + 0.30 * p);
-        applyWorldRot('RightArm', WORLD_X, 0.35 + 0.30 * p);
-        applyWorldRot('LeftArm', WORLD_Z, 0.25 * p);
-        applyWorldRot('RightArm', WORLD_Z, -0.25 * p);
-        applyWorldRot('LeftForeArm', WORLD_X, 0.50 + 0.75 * p);
-        applyWorldRot('RightForeArm', WORLD_X, 0.50 + 0.75 * p);
-        break;
-      }
-
-      case 'lunge': {
-        // Alternating Front Lunges with 90-degree knee bend & athletic balance
-        const speed = 2.0;
-        const phase = Math.sin(t * speed);
-        const isLeft = phase >= 0;
-        const p = Math.abs(phase);
-        const smoothP = p * p * (3 - 2 * p);
-
-        if (hips && hipsRestPos) {
-          hips.position.y = hipsRestPos.y - 0.38 * smoothP;
-          hips.updateMatrixWorld(true);
-        }
-
-        applyWorldRot('Spine', WORLD_X, 0.08 * smoothP);
-
-        if (isLeft) {
-          applyWorldRot('LeftUpLeg', WORLD_X, 0.65 * smoothP);
-          applyWorldRot('LeftLeg', WORLD_X, -0.75 * smoothP);
-          applyWorldRot('LeftFoot', WORLD_X, 0.15 * smoothP);
-
-          applyWorldRot('RightUpLeg', WORLD_X, -0.35 * smoothP);
-          applyWorldRot('RightLeg', WORLD_X, -0.55 * smoothP);
-        } else {
-          applyWorldRot('RightUpLeg', WORLD_X, 0.65 * smoothP);
-          applyWorldRot('RightLeg', WORLD_X, -0.75 * smoothP);
-          applyWorldRot('RightFoot', WORLD_X, 0.15 * smoothP);
-
-          applyWorldRot('LeftUpLeg', WORLD_X, -0.35 * smoothP);
-          applyWorldRot('LeftLeg', WORLD_X, -0.55 * smoothP);
-        }
-
-        applyWorldRot('LeftArm', WORLD_X, isLeft ? -0.35 * smoothP : 0.45 * smoothP);
-        applyWorldRot('RightArm', WORLD_X, isLeft ? 0.45 * smoothP : -0.35 * smoothP);
-        applyWorldRot('LeftForeArm', WORLD_X, 0.60);
-        applyWorldRot('RightForeArm', WORLD_X, 0.60);
-        break;
-      }
-
-      case 'boxing': {
-        // Cardio Shadow Boxing: Rhythmic Jabs, Crosses, and Combat Stance
-        const speed = 4.0;
-        const jab = Math.max(0, Math.sin(t * speed));
-        const cross = Math.max(0, Math.sin(t * speed + Math.PI));
-
-        applyWorldRot('Spine', WORLD_Y, 0.20 * jab - 0.25 * cross);
-        applyWorldRot('Spine1', WORLD_X, 0.08);
-
-        // Left Jab
-        applyWorldRot('LeftArm', WORLD_X, 0.75 * jab + 0.30 * (1 - jab));
-        applyWorldRot('LeftForeArm', WORLD_X, 0.20 * jab + 0.85 * (1 - jab));
-
-        // Right Cross
-        applyWorldRot('RightArm', WORLD_X, 0.85 * cross + 0.30 * (1 - cross));
-        applyWorldRot('RightForeArm', WORLD_X, 0.15 * cross + 0.85 * (1 - cross));
-
-        // Athletic boxing leg stance
-        applyWorldRot('LeftUpLeg', WORLD_X, 0.12);
-        applyWorldRot('RightUpLeg', WORLD_X, -0.10);
-        applyWorldRot('LeftLeg', WORLD_X, -0.15);
-        applyWorldRot('RightLeg', WORLD_X, -0.12);
-        break;
-      }
-
-      case 'plank': {
-        // Isometric Plank Hold with controlled breathing
-        const breath = Math.sin(t * 1.5) * 0.03;
-        if (hips && hipsRestPos && hipsRestQ) {
-          hips.position.y = 0.45 + breath * 0.02;
-          hips.position.z = -1.2;
-          const plankQ = new THREE.Quaternion().setFromAxisAngle(WORLD_X, Math.PI * 0.44);
-          hips.quaternion.copy(hipsRestQ).premultiply(plankQ);
-          hips.updateMatrixWorld(true);
-        }
-
-        applyWorldRot('Spine', WORLD_X, 0.04);
-        applyWorldRot('Head', WORLD_X, -0.35);
-        applyWorldRot('LeftArm', WORLD_X, 0.65);
-        applyWorldRot('RightArm', WORLD_X, 0.65);
-        applyWorldRot('LeftForeArm', WORLD_X, 0.85);
-        applyWorldRot('RightForeArm', WORLD_X, 0.85);
-        break;
-      }
-
-      case 'idle':
-      default: {
-        // Heroic Athletic Stance with Natural Diaphragmatic Breathing
-        const breath = Math.sin(t * 1.5);
-        if (hips && hipsRestPos) {
-          hips.position.y = hipsRestPos.y + breath * 0.012;
-          hips.updateMatrixWorld(true);
-        }
-
-        applyWorldRot('Spine', WORLD_X, breath * 0.035);
-        applyWorldRot('Spine1', WORLD_X, breath * 0.045);
-        applyWorldRot('Head', WORLD_Y, Math.sin(t * 0.7) * 0.07);
-        applyWorldRot('Head', WORLD_X, -0.05 + breath * 0.02);
-
-        applyWorldRot('LeftArm', WORLD_Z, 0.06 + breath * 0.02);
-        applyWorldRot('RightArm', WORLD_Z, -0.06 - breath * 0.02);
-        applyWorldRot('LeftForeArm', WORLD_X, 0.15);
-        applyWorldRot('RightForeArm', WORLD_X, 0.15);
-        break;
-      }
+    if (groupRef.current) {
+      groupRef.current.position.y = -0.89;
     }
   });
 
-  // Scale 0.34 scales the 5.5m raw mesh to a commanding, heroic 1.87m athletic height
-  // Grounded at y = -0.92 so feet rest perfectly on top of the workout platform
   return (
-    <group scale={[0.34, 0.34, 0.34]} position={[0, -0.92, 0]}>
-      <primitive object={scene} />
+    <group ref={groupRef} scale={[modelScale, modelScale, modelScale]} position={[0, -0.89, 0]}>
+      <group ref={bodyPivotRef}>
+        <primitive object={scene} />
+      </group>
     </group>
   );
 };
@@ -492,20 +304,70 @@ const UniversalModel: React.FC<{
   isPaused?: boolean;
   exerciseName?: string;
   isPrep?: boolean;
-}> = ({ url, isPaused, exerciseName, isPrep }) => {
+  speed?: number;
+  timelineProgress?: number;
+}> = ({ url, isPaused, exerciseName, isPrep, speed, timelineProgress }) => {
   const isFBX = url.toLowerCase().includes('.fbx') || url.includes('format=fbx');
 
   if (isFBX) {
     const fbx = useFBX(url);
     const cloned = useMemo(() => (fbx ? SkeletonUtils.clone(fbx) : null), [fbx]);
     if (!cloned) return null;
-    return <HunyuanRiggedCoach scene={cloned} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />;
+    return (
+      <HunyuanRiggedCoach
+        scene={cloned}
+        isPaused={isPaused}
+        exerciseName={exerciseName}
+        isPrep={isPrep}
+        speed={speed}
+        timelineProgress={timelineProgress}
+      />
+    );
   }
 
   const gltf = useGLTF(url, '/draco/');
   const cloned = useMemo(() => (gltf?.scene ? SkeletonUtils.clone(gltf.scene) : null), [gltf]);
   if (!cloned) return null;
-  return <HunyuanRiggedCoach scene={cloned} isPaused={isPaused} exerciseName={exerciseName} isPrep={isPrep} />;
+  return (
+    <HunyuanRiggedCoach
+      scene={cloned}
+      isPaused={isPaused}
+      exerciseName={exerciseName}
+      isPrep={isPrep}
+      speed={speed}
+      timelineProgress={timelineProgress}
+    />
+  );
+};
+
+// Camera Preset Handler for Face / Profile / Free Orbit
+const CameraPresetHandler: React.FC<{
+  preset?: 'face' | 'profile' | 'free';
+  controlsRef: React.RefObject<any>;
+}> = ({ preset, controlsRef }) => {
+  const { camera } = useThree();
+  useEffect(() => {
+    if (!preset || preset === 'free') {
+      if (controlsRef.current) {
+        controlsRef.current.enabled = true;
+      }
+      return;
+    }
+    if (preset === 'face') {
+      camera.position.set(0, 0.25, 3.1);
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0);
+        controlsRef.current.update();
+      }
+    } else if (preset === 'profile') {
+      camera.position.set(3.1, 0.25, 0);
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0);
+        controlsRef.current.update();
+      }
+    }
+  }, [preset, camera, controlsRef]);
+  return null;
 };
 
 // 3D Canvas Studio Viewport
@@ -516,13 +378,20 @@ const CoachCanvas: React.FC<{
   isPrep?: boolean;
   isDark: boolean;
   isTransparent?: boolean;
-}> = ({ finalUrl, isPaused, exerciseName, isPrep, isDark, isTransparent }) => {
+  speed?: number;
+  timelineProgress?: number;
+  cameraPreset?: 'face' | 'profile' | 'free';
+}> = ({ finalUrl, isPaused, exerciseName, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset }) => {
+  const controlsRef = useRef<any>(null);
+
   return (
     <Canvas
       gl={{ antialias: true, alpha: isTransparent, powerPreference: 'high-performance' }}
       camera={{ position: [0, 0.25, 3.1], fov: 38 }}
       dpr={[1, 2]}
     >
+      <CameraPresetHandler preset={cameraPreset} controlsRef={controlsRef} />
+
       {/* Background color */}
       {!isTransparent && (
         <color attach="background" args={[isDark ? '#08080c' : '#ffffff']} />
@@ -547,24 +416,27 @@ const CoachCanvas: React.FC<{
       {/* Architectural Workout Podium */}
       {!isTransparent && <StudioStage isDark={isDark} />}
 
-      {/* 3D Cyborg Coach Model */}
+      {/* 3D Coach Model */}
       <Suspense fallback={<MatrixStudioLoader isDark={isDark} />}>
         <UniversalModel
           url={finalUrl}
           isPaused={isPaused}
           exerciseName={exerciseName}
           isPrep={isPrep}
+          speed={speed}
+          timelineProgress={timelineProgress}
         />
       </Suspense>
 
       {/* Fluid 360-degree Orbit Controls */}
       <OrbitControls
+        ref={controlsRef}
         enableZoom={true}
         enablePan={false}
         makeDefault
         target={[0, 0.0, 0]}
-        minDistance={1.8}
-        maxDistance={4.5}
+        minDistance={1.6}
+        maxDistance={4.8}
         minPolarAngle={Math.PI / 4}
         maxPolarAngle={Math.PI / 1.75}
       />
@@ -580,6 +452,11 @@ export interface HolographicCoachProps {
   background?: 'transparent' | 'white' | 'dark';
   studioTheme?: 'white' | 'dark';
   onToggleStudioTheme?: (theme: 'white' | 'dark') => void;
+  speed?: number;
+  timelineProgress?: number;
+  cameraPreset?: 'face' | 'profile' | 'free';
+  hideBadge?: boolean;
+  hideThemeToggle?: boolean;
 }
 
 // HolographicCoach Main Component
@@ -591,6 +468,11 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
   background,
   studioTheme: propStudioTheme,
   onToggleStudioTheme,
+  speed = 1.0,
+  timelineProgress,
+  cameraPreset,
+  hideBadge = false,
+  hideThemeToggle = false,
 }) => {
   const [internalStudioTheme, setInternalStudioTheme] = useState<'white' | 'dark'>(() => {
     return (localStorage.getItem('f4x_studio_theme') as 'white' | 'dark') || 'white';
@@ -622,15 +504,20 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
     lunge: 'Fentes',
     boxing: 'Shadow Boxing',
     plank: 'Gainage Planche',
-    idle: 'Respiration & Préparation'
+    martial_mabu: 'Posture du Cavalier (Ma Bu)',
+    martial_punch: 'Frappes Directes (Kung Fu)',
+    martial_palm: 'Paumes Ondulatoires',
+    martial_kick: 'Coups de Pied & Balayages',
+    martial_taichi: 'Neo Tai Chi Flow',
+    idle: 'Respiration & Posture'
   };
 
   return (
     <div className={`w-full h-full relative overflow-hidden flex flex-col justify-between select-none ${
       isTransparent ? 'bg-transparent' : (isDark ? 'bg-[#08080c]' : 'bg-white')
     }`}>
-      {/* TOP CONTROLS: Studio White vs Studio Black Toggle */}
-      {!isTransparent && (
+      {/* TOP CONTROLS: Studio White vs Studio Black Toggle (when not managed by external header) */}
+      {!isTransparent && !hideThemeToggle && (
         <div className="absolute top-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
           <button
             onClick={toggleStudioTheme}
@@ -678,13 +565,16 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
               isPrep={isPrep}
               isDark={isDark}
               isTransparent={isTransparent}
+              speed={speed}
+              timelineProgress={timelineProgress}
+              cameraPreset={cameraPreset}
             />
           </div>
         </Suspense>
       </div>
 
       {/* BOTTOM EXERCISE BADGE */}
-      {!isTransparent && (
+      {!isTransparent && !hideBadge && (
         <div className="absolute bottom-4 left-4 z-30 pointer-events-none">
           <div className={`px-3 py-1.5 rounded-full border backdrop-blur-md text-[9px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm ${
             isDark

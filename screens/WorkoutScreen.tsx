@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Pause, Play, X, ChevronRight, Activity, Timer as TimerIcon, Video, Box } from 'lucide-react';
+import { Pause, Play, X, ChevronRight, Activity, Timer as TimerIcon, Video, Box, Sun, Moon } from 'lucide-react';
 import { generateWorkoutWithGemini } from '../services/aiService.ts';
 import { WorkoutPlan, Screen, AIProvider } from '../types.ts';
 import Loader from '../components/common/Loader.tsx';
@@ -150,8 +150,8 @@ const WorkoutScreen: React.FC = () => {
         const hasVideo = !!ex.videoUrl;
 
         return (
-            <div className={`fixed inset-0 z-[2500] ${displayMode === '3d' ? 'bg-white' : 'bg-neutral-950'} flex flex-col font-['Poppins'] animate-fadeIn overflow-hidden`}>
-                <div className={`relative flex-1 ${displayMode === '3d' ? 'bg-white' : 'bg-neutral-950'} overflow-hidden`}>
+            <div className={`fixed inset-0 z-[2500] ${displayMode === '3d' ? (studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white') : 'bg-neutral-950'} flex flex-col font-['Poppins'] animate-fadeIn overflow-hidden`}>
+                <div className={`relative flex-1 ${displayMode === '3d' ? (studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white') : 'bg-neutral-950'} overflow-hidden`}>
                     {/* VIDEO OR 3D COACH VIEW */}
                     {displayMode === 'video' && hasVideo ? (
                         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
@@ -168,13 +168,19 @@ const WorkoutScreen: React.FC = () => {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
                         </div>
                     ) : (
-                        <div className="absolute inset-0 z-10 bg-white">
+                        <div className={`absolute inset-0 z-10 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'}`}>
                             <HolographicCoach 
                                 key="workout-holographic-coach"
                                 modelUrl={ex.modelUrl} 
                                 isPaused={isPaused} 
                                 exerciseName={ex.name}
-                                isPrep={isPrep}
+                                isPrep={false}
+                                studioTheme={studioTheme}
+                                onToggleStudioTheme={(next) => {
+                                    setStudioTheme(next);
+                                    localStorage.setItem('f4x_studio_theme', next);
+                                }}
+                                hideThemeToggle={true}
                             />
                         </div>
                     )}
@@ -182,7 +188,11 @@ const WorkoutScreen: React.FC = () => {
                     {/* TOP CONTROLS & HUD */}
                     <div className="absolute top-0 left-0 right-0 z-[100] p-6 flex justify-between items-start pointer-events-none">
                         <div className="flex items-center gap-2 pointer-events-auto">
-                            <button onClick={handleClose} className="p-3 bg-white/90 text-black rounded-full shadow-2xl active:scale-90 transition-transform border border-zinc-200">
+                            <button onClick={handleClose} className={`p-3 rounded-full shadow-2xl active:scale-90 transition-transform border ${
+                                studioTheme === 'dark' && displayMode === '3d'
+                                    ? 'bg-neutral-900/90 text-white border-neutral-700'
+                                    : 'bg-white/90 text-black border-zinc-200'
+                            }`}>
                                 <X size={20}/>
                             </button>
 
@@ -196,6 +206,26 @@ const WorkoutScreen: React.FC = () => {
                                     <span>{displayMode === 'video' ? 'Coach 3D' : 'Vidéo'}</span>
                                 </button>
                             )}
+
+                            {/* STUDIO NIGHT / DAY MODE TOGGLE */}
+                            {displayMode === '3d' && (
+                                <button
+                                    onClick={() => {
+                                        const next = studioTheme === 'dark' ? 'white' : 'dark';
+                                        setStudioTheme(next);
+                                        localStorage.setItem('f4x_studio_theme', next);
+                                    }}
+                                    className={`px-3.5 py-2.5 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg active:scale-95 transition-all border ${
+                                        studioTheme === 'dark'
+                                            ? 'bg-neutral-900/90 border-neutral-700 text-white hover:bg-neutral-800'
+                                            : 'bg-white/90 border-zinc-200 text-neutral-800 hover:bg-neutral-100'
+                                    }`}
+                                    title={studioTheme === 'dark' ? "Passer au Studio Blanc" : "Passer en Mode Nuit (Studio Noir)"}
+                                >
+                                    {studioTheme === 'dark' ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} className="text-purple-600" />}
+                                    <span>{studioTheme === 'dark' ? 'Studio Blanc' : 'Option Nuit'}</span>
+                                </button>
+                            )}
                         </div>
 
                         <div className="flex flex-col items-end gap-3 pointer-events-auto">
@@ -203,35 +233,41 @@ const WorkoutScreen: React.FC = () => {
                                 <TimerIcon size={18} className="text-white" />
                                 <span className="text-xl font-bold text-white font-mono leading-none">{timer}</span>
                             </div>
-                            <button onClick={() => setIsPaused(!isPaused)} className="w-14 h-14 bg-white/95 rounded-full flex items-center justify-center text-black shadow-2xl active:scale-90 transition-all border border-zinc-200">
-                                {isPaused ? <Play size={24} fill="black" className="ml-1"/> : <Pause size={24} fill="black"/>}
+                            <button onClick={() => setIsPaused(!isPaused)} className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all border ${
+                                studioTheme === 'dark' && displayMode === '3d'
+                                    ? 'bg-neutral-900 text-white border-neutral-700'
+                                    : 'bg-white/95 text-black border-zinc-200'
+                            }`}>
+                                {isPaused ? <Play size={24} fill={studioTheme === 'dark' && displayMode === '3d' ? "white" : "black"} className="ml-1"/> : <Pause size={24} fill={studioTheme === 'dark' && displayMode === '3d' ? "white" : "black"}/>}
                             </button>
                         </div>
                     </div>
 
                     {isPrep && (
                         <div className={`absolute inset-0 z-[200] ${displayMode === '3d' ? 'bg-white/50 backdrop-blur-[2px]' : 'bg-zinc-950/40 backdrop-blur-[4px]'} flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4`}>
-                            <div className={`text-[10rem] sm:text-[14rem] font-black ${displayMode === '3d' ? 'text-purple-600 drop-shadow-[0_0_40px_rgba(138,43,226,0.35)]' : 'text-white drop-shadow-[0_0_40px_rgba(138,43,226,0.8)]'} leading-none tabular-nums animate-pulse`}>
+                            <div className={`text-[8rem] sm:text-[12rem] font-black ${displayMode === '3d' ? 'text-purple-600 drop-shadow-[0_0_40px_rgba(138,43,226,0.35)]' : 'text-white drop-shadow-[0_0_40px_rgba(138,43,226,0.8)]'} leading-none tabular-nums animate-pulse`}>
                                 {prepTimer}
                             </div>
-                            <div className="px-6 py-3 bg-[#8A2BE2] text-white rounded-full font-bold uppercase tracking-[0.15em] sm:tracking-[0.3em] text-[9px] sm:text-[11px] mt-6 shadow-[0_0_30px_rgba(138,43,226,0.5)] text-center max-w-[90%] truncate">
+                            <div className="px-5 py-2.5 bg-[#8A2BE2] text-white rounded-full font-bold uppercase tracking-wider text-[10px] sm:text-xs mt-6 shadow-[0_0_30px_rgba(138,43,226,0.5)] text-center max-w-[92%] break-words">
                                 {translate('workout.active.next')} : {ex.name}
                             </div>
                         </div>
                     )}
                 </div>
 
-                <div className="h-40 bg-zinc-950 p-8 z-[300] relative flex flex-col justify-center border-t border-zinc-900 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                <div className="h-36 sm:h-40 bg-zinc-950 px-6 py-5 sm:p-8 z-[300] relative flex flex-col justify-center border-t border-zinc-900 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
                     <div className="absolute top-0 left-0 right-0 h-2 bg-zinc-900">
                         <div className="h-full bg-[#8A2BE2] transition-all duration-1000 ease-linear shadow-[0_0_15px_#8A2BE2]" style={{ width: `${progress}%` }} />
                     </div>
-                    <div className="flex justify-between items-center gap-6">
-                        <div className="flex-1 overflow-hidden">
-                            <span className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-[0.4em]">{idx + 1} / {plan.exercises.length}</span>
-                            <h2 className="text-2xl font-black text-white uppercase truncate leading-tight mt-1">{ex.name}</h2>
+                    <div className="flex justify-between items-center gap-4">
+                        <div className="flex-1 min-w-0 pr-2">
+                            <span className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-[0.3em]">{idx + 1} / {plan.exercises.length}</span>
+                            <h2 className={`${ex.name.length > 25 ? 'text-xs sm:text-sm' : ex.name.length > 16 ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} font-black text-white uppercase leading-tight mt-1 line-clamp-2 break-words`}>
+                                {ex.name}
+                            </h2>
                         </div>
-                        <button onClick={skipExercise} className="bg-white text-black w-16 h-16 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl">
-                            <ChevronRight size={32} />
+                        <button onClick={skipExercise} className="bg-white text-black w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl shrink-0">
+                            <ChevronRight size={26} />
                         </button>
                     </div>
                 </div>
