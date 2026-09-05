@@ -169,6 +169,7 @@ const RunningScreen: React.FC = () => {
                   <button onClick={() => setView('config')} className="flex items-center text-gray-400 hover:text-white font-normal uppercase text-[10px] tracking-widest">
                       <ChevronLeft className="w-5 h-5 mr-1" />{language === 'fr' ? 'Configuration' : 'Configure'}
                   </button>
+                  <DeviceStatusTrigger />
                   <button onClick={() => setScreen(Screen.Home)} className="flex items-center text-red-500 hover:text-red-400 font-normal uppercase text-[10px] tracking-widest">
                       <X className="w-4 h-4 mr-1" />{language === 'fr' ? 'Quitter' : 'Exit'}
                   </button>
@@ -365,7 +366,7 @@ const RunningScreen: React.FC = () => {
             )}
         </div>
         
-        <header className="flex-none p-6 flex items-center justify-between z-[100] bg-gradient-to-b from-black/90 to-transparent">
+        <header className="flex-none p-4 sm:p-6 flex items-center justify-between z-[500] pointer-events-auto bg-gradient-to-b from-black/90 to-transparent">
             <button 
                 onClick={() => {
                     setShowExitConfirm(true);
@@ -374,7 +375,7 @@ const RunningScreen: React.FC = () => {
             >
                 <X size={14}/> {language === 'fr' ? 'QUITTER / ENREGISTRER' : 'EXIT / SAVE'}
             </button>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
                 {['100m', '200m', '400m', '800m'].includes(event) ? (
                     <div className="flex bg-black/60 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-2xl">
                         <button
@@ -398,7 +399,7 @@ const RunningScreen: React.FC = () => {
                         <MapIcon size={20} />
                     </button>
                 )}
-                <DeviceStatusTrigger />
+                <DeviceStatusTrigger showLabel />
                 <CastButton isTVMode={isTVMode} onToggleTVMode={() => setIsTVMode(!isTVMode)} />
             </div>
         </header>

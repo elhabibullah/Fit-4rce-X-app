@@ -1,24 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../hooks/useApp.ts';
-import { Apple, Bookmark, RefreshCw, Bell } from 'lucide-react';
+import { Apple, Bookmark, RefreshCw, Bell, ChevronLeft, Sparkles } from 'lucide-react';
 import { generateDietPlan } from '../../services/aiService.ts';
 import { MealPlanSection } from '../../types.ts';
 
-const DietAlHeader: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
-  <div className="mb-6 font-['Poppins']">
-    <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white uppercase tracking-tighter">{title}</h1>
-        <Apple className="w-8 h-8 text-green-500" style={{ filter: 'drop-shadow(0 0 8px #22c55e)' }} />
+const DietAlHeader: React.FC<{ title: string; subtitle: string; onBack: () => void }> = ({ title, subtitle, onBack }) => {
+  const { translate } = useApp();
+  return (
+    <div className="mb-6 font-['Poppins']">
+      <div className="flex items-center justify-between mb-2">
+          <button 
+              onClick={onBack}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-green-500/50 transition-all text-xs font-bold uppercase tracking-wider"
+          >
+              <ChevronLeft size={16} className="text-green-400" />
+              <span>{translate('nutrition.log.backToDashboard')}</span>
+          </button>
+          <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black text-green-500 uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-green-950/40 border border-green-500/30">{translate('nutrition.plan.activeProtocol')}</span>
+              <Apple className="w-7 h-7 text-green-500" style={{ filter: 'drop-shadow(0 0 8px #22c55e)' }} />
+          </div>
+      </div>
+      <h1 className="text-2xl font-black text-white uppercase tracking-tight">{title}</h1>
+      <p className="text-gray-400 font-normal text-xs mt-0.5">{subtitle}</p>
     </div>
-    <p className="text-gray-400 font-normal text-sm">{subtitle}</p>
-  </div>
-);
+  );
+};
 
-const NORMALIZE_MEAL_TYPE = (type: string): string => {
+const NORMALIZE_MEAL_TYPE = (type?: any): string => {
+    if (!type || typeof type !== 'string') return 'snacks';
     const t = type.toLowerCase();
-    if (t.includes('breakfast') || t.includes('petit') || t.includes('desayuno') || t.includes('إفطار') || t.includes('завтрак')) return 'breakfast';
-    if (t.includes('lunch') || t.includes('déjeuner') || t.includes('comida') || t.includes('غداء') || t.includes('обед')) return 'lunch';
-    if (t.includes('dinner') || t.includes('dîner') || t.includes('cena') || t.includes('عشاء') || t.includes('ужин')) return 'dinner';
+    if (t.includes('breakfast') || t.includes('petit') || t.includes('desayuno') || t.includes('إفطار') || t.includes('завтрак') || t.includes('朝食') || t.includes('早')) return 'breakfast';
+    if (t.includes('lunch') || t.includes('déjeuner') || t.includes('comida') || t.includes('almuerzo') || t.includes('غداء') || t.includes('обед') || t.includes('昼食') || t.includes('午')) return 'lunch';
+    if (t.includes('dinner') || t.includes('dîner') || t.includes('cena') || t.includes('عشاء') || t.includes('ужин') || t.includes('夕食') || t.includes('晚')) return 'dinner';
     return 'snacks';
 };
 
@@ -85,39 +99,16 @@ const MealPlanCard: React.FC<{
 };
 
 const DietAlPlan: React.FC = () => {
-    const { translate, profile, dietPlan, setDietPlan, setDailyMacros, language, planId, showStatus } = useApp();
+    const { translate, profile, dietPlan, setDietPlan, setDailyMacros, language, showStatus, setNutritionTab } = useApp();
     const [isLoading, setIsLoading] = useState(false);
 
-    const isPremium = planId === 'premium';
-
-    const handleGeneratePlan = async () => {
-        if (!profile || !language || !isPremium) return;
-        setIsLoading(true);
-        try {
-            const plan = await generateDietPlan(profile, language);
-            if (plan) {
-                setDietPlan(plan.meals);
-                setDailyMacros({
-                    calories: { goal: plan.macros.calories.goal, current: 0 },
-                    protein: { goal: plan.macros.protein.goal, current: 0 },
-                    fat: { goal: plan.macros.fat.goal, current: 0 },
-                    carbs: { goal: plan.macros.carbs.goal, current: 0 },
-                });
-            }
-        } catch (e) {
-            console.error("Failed to generate diet plan:", e);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
     // Use the exact keys from lib/translations.ts for default static plan
     const getStaticDefaultPlan = (): MealPlanSection[] => {
         return [
             { 
                 mealType: 'breakfast', 
                 title: translate('meal.breakfast.name'), 
-                calories: 400, 
+                calories: 550, 
                 recipe: translate('meal.breakfast.recipe'), 
                 benefits: translate('meal.breakfast.benefits'),
                 description: ''
@@ -125,7 +116,7 @@ const DietAlPlan: React.FC = () => {
             { 
                 mealType: 'lunch', 
                 title: translate('meal.lunch.name'), 
-                calories: 600, 
+                calories: 850, 
                 recipe: translate('meal.lunch.recipe'), 
                 benefits: translate('meal.lunch.benefits'),
                 description: ''
@@ -133,7 +124,7 @@ const DietAlPlan: React.FC = () => {
             { 
                 mealType: 'snacks', 
                 title: translate('meal.snacks.name'), 
-                calories: 500, 
+                calories: 450, 
                 recipe: translate('meal.snacks.recipe'), 
                 benefits: translate('meal.snacks.benefits'),
                 description: ''
@@ -141,7 +132,7 @@ const DietAlPlan: React.FC = () => {
             { 
                 mealType: 'dinner', 
                 title: translate('meal.dinner.name'), 
-                calories: 700, 
+                calories: 750, 
                 recipe: translate('meal.dinner.recipe'), 
                 benefits: translate('meal.dinner.benefits'),
                 description: ''
@@ -149,28 +140,95 @@ const DietAlPlan: React.FC = () => {
         ];
     };
 
-    // React to language changes by refreshing the default static diet plan
+    // Ensure we always have a plan loaded so the screen is NEVER blank
     useEffect(() => {
-        if (isPremium) {
+        if (!dietPlan || !Array.isArray(dietPlan) || dietPlan.length === 0) {
             const defaultPlan = getStaticDefaultPlan();
             setDietPlan(defaultPlan);
         }
-    }, [language]); // Refresh when language toggles
+    }, [language]);
 
-    const activePlan = dietPlan || [];
+    const activePlan = useMemo((): MealPlanSection[] => {
+        let rawMeals: any[] | null = null;
+        if (Array.isArray(dietPlan) && dietPlan.length > 0) {
+            rawMeals = dietPlan;
+        } else if (dietPlan && typeof dietPlan === 'object' && Array.isArray((dietPlan as any).meals)) {
+            rawMeals = (dietPlan as any).meals;
+        }
+
+        if (rawMeals && rawMeals.length > 0) {
+            return rawMeals.map(meal => ({
+                mealType: NORMALIZE_MEAL_TYPE(meal?.mealType || meal?.type || meal?.category),
+                title: meal?.title || meal?.name || translate('nutrition.plan.title'),
+                calories: Number(meal?.calories) || 500,
+                recipe: meal?.recipe || meal?.description || meal?.ingredients || translate('nutrition.plan.recipe_default'),
+                benefits: meal?.benefits || meal?.notes || translate('nutrition.plan.benefits_default'),
+                description: meal?.description || ''
+            }));
+        }
+        return getStaticDefaultPlan();
+    }, [dietPlan, language, translate]);
+
+    const handleGeneratePlan = async () => {
+        setIsLoading(true);
+        showStatus(translate('nutrition.plan.generatingPlan'));
+        try {
+            const plan = await generateDietPlan(
+                profile || { name: 'Athlete', weight: 75, height: 178, age: 28, gender: 'male', fitnessLevel: 'intermediate', fitnessGoal: 'build_muscle' } as any, 
+                language || 'en'
+            );
+            if (plan && plan.meals && Array.isArray(plan.meals) && plan.meals.length > 0) {
+                const formatted = plan.meals.map((m: any) => ({
+                    mealType: NORMALIZE_MEAL_TYPE(m?.mealType || m?.type || m?.category),
+                    title: m?.title || m?.name || translate('nutrition.plan.title'),
+                    calories: Number(m?.calories) || 600,
+                    recipe: m?.recipe || m?.description || m?.ingredients || translate('nutrition.plan.recipe_default'),
+                    benefits: m?.benefits || m?.notes || translate('nutrition.plan.benefits_default'),
+                    description: m?.description || ''
+                }));
+                setDietPlan(formatted);
+                if (plan.macros) {
+                    setDailyMacros({
+                        calories: { goal: plan.macros.calories?.goal || 3200, current: 0 },
+                        protein: { goal: plan.macros.protein?.goal || 180, current: 0 },
+                        fat: { goal: plan.macros.fat?.goal || 80, current: 0 },
+                        carbs: { goal: plan.macros.carbs?.goal || 440, current: 0 },
+                    });
+                }
+                showStatus(translate('nutrition.plan.aiSuccess'));
+            } else {
+                setDietPlan(getStaticDefaultPlan());
+                showStatus(translate('nutrition.plan.optimalPlanLoaded'));
+            }
+        } catch (e) {
+            console.error("Failed to generate diet plan:", e);
+            setDietPlan(getStaticDefaultPlan());
+            showStatus(translate('nutrition.plan.optimalPlanLoaded'));
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
-        <div className="space-y-6 animate-fadeIn font-['Poppins']">
-            <DietAlHeader title={translate('nutrition.plan.title')} subtitle={translate('nutrition.plan.subtitle')} />
+        <div className="space-y-6 animate-fadeIn font-['Poppins'] pb-28">
+            <DietAlHeader 
+                title={translate('nutrition.plan.title')} 
+                subtitle={translate('nutrition.plan.subtitle')} 
+                onBack={() => setNutritionTab('dashboard')}
+            />
 
             {isLoading ? (
-                 <div className="text-center py-20 bg-gray-900/20 rounded-[2.5rem] border border-gray-800 border-dashed">
-                    <p className="text-green-500 animate-pulse font-black uppercase tracking-widest text-xs">
-                        GENERATING AI PROTOCOL...
+                 <div className="text-center py-20 bg-gray-900/40 rounded-[2.5rem] border border-gray-800 border-dashed animate-pulse">
+                    <Sparkles className="w-10 h-10 text-green-400 mx-auto mb-3 animate-spin" />
+                    <p className="text-green-400 font-black uppercase tracking-widest text-xs">
+                        {translate('nutrition.plan.generatingPlan')}
+                    </p>
+                    <p className="text-gray-500 text-[10px] mt-2 uppercase tracking-wider">
+                        {translate('nutrition.plan.optimizingMacros')}
                     </p>
                 </div>
             ) : (
-                <div className="space-y-4 pb-20">
+                <div className="space-y-4">
                     {activePlan.map((meal, idx) => (
                         <MealPlanCard 
                             key={idx}
@@ -179,21 +237,29 @@ const DietAlPlan: React.FC = () => {
                             calories={meal.calories}
                             recipe={meal.recipe}
                             benefits={meal.benefits}
-                            onSave={() => showStatus("Meal pattern locked.")}
+                            onSave={() => showStatus(translate('nutrition.plan.savedSuccess'))}
                             onReplace={() => handleGeneratePlan()}
-                            onRemind={() => showStatus("Biological reminder scheduled.")}
+                            onRemind={() => showStatus(translate('nutrition.plan.reminderSet'))}
                         />
                     ))}
                     
-                    {activePlan.length > 0 && (
+                    <div className="pt-2 pb-6 space-y-3">
                         <button 
                             onClick={handleGeneratePlan}
-                            className="w-full py-4 bg-gray-900 border border-gray-800 rounded-2xl flex items-center justify-center gap-3 hover:bg-gray-800 transition-all group"
+                            className="w-full py-4 bg-green-600 hover:bg-green-500 text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-all shadow-[0_0_25px_rgba(34,197,94,0.3)] active:scale-95 text-xs"
                         >
-                            <RefreshCw size={16} className="text-purple-400 group-hover:rotate-180 transition-transform duration-500" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-300">Regenerate AI Protocol</span>
+                            <Sparkles size={16} />
+                            <span>{translate('nutrition.plan.generateNewBtn')}</span>
                         </button>
-                    )}
+
+                        <button 
+                            onClick={() => setNutritionTab('dashboard')}
+                            className="w-full py-3.5 bg-gray-900/80 border border-gray-800 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-800 transition-all text-gray-400 hover:text-white text-xs uppercase font-bold tracking-wider"
+                        >
+                            <ChevronLeft size={16} />
+                            <span>{translate('nutrition.plan.returnDashboardBtn')}</span>
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

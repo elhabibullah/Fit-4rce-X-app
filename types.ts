@@ -76,6 +76,9 @@ export interface Exercise {
     modelUrl: string;
     videoUrl?: string; // Support for high-quality Veo loops
     difficulty: Difficulty;
+    sets?: number;
+    reps?: number;
+    restSeconds?: number;
 }
 
 export interface WorkoutPlan {
@@ -87,6 +90,11 @@ export interface WorkoutPlan {
     mainSets?: Exercise[];
     cooldown?: Exercise[];
     rest_duration_seconds?: number;
+    level?: 'beginner' | 'medium' | 'advanced' | string;
+    goal?: 'fitness' | 'mass_gaining' | 'power_training' | string;
+    targetSets?: number;
+    targetReps?: number;
+    restBetweenSets?: number;
 }
 
 // FIXED: Added customPrompt to support AI-generated custom protocols via voice or text input

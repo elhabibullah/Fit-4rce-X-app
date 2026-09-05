@@ -86,7 +86,7 @@ const NutritionScreen: React.FC = () => {
         </header>
       )}
 
-      <main className={`flex-1 ${activeView === 'chat' ? 'overflow-hidden' : 'overflow-y-auto'} custom-scrollbar`}>
+      <main className={`flex-1 ${activeView === 'chat' ? 'overflow-hidden' : 'overflow-y-auto'} pb-20 custom-scrollbar`}>
         {renderContent()}
       </main>
 

@@ -28,12 +28,67 @@ const mapToModel = (eq: string): string => {
     return MODEL_LIBRARY.bodyweight;
 };
 
-export const generateWorkout = async (prompt: string, language: Language): Promise<WorkoutPlan> => {
+export interface WorkoutConfigOptions {
+    level?: 'beginner' | 'medium' | 'advanced' | string;
+    goal?: 'fitness' | 'mass_gaining' | 'power_training' | string;
+    targetSets?: number;
+    targetReps?: number;
+    restBetweenSets?: number;
+}
+
+export const getWorkoutSeriesAndRest = (level?: string, goal?: string) => {
+    const normLevel = (level || 'medium').toLowerCase();
+    const normGoal = (goal || 'fitness').toLowerCase();
+
+    // Sets and Reps rule:
+    // Beginner: 3x15
+    // Medium: 4x14
+    // Advanced: 5x15
+    let sets = 4;
+    let reps = 14;
+    if (normLevel === 'low' || normLevel === 'beginner' || normLevel === 'debutant') {
+        sets = 3;
+        reps = 15;
+    } else if (normLevel === 'high' || normLevel === 'advanced' || normLevel === 'avance') {
+        sets = 5;
+        reps = 15;
+    } else {
+        // Medium default
+        sets = 4;
+        reps = 14;
+    }
+
+    // Rest period rule:
+    // Power training: 60s
+    // Mass gaining: 45s
+    // Standard / Fitness: 30s max
+    let restSeconds = 30;
+    if (normGoal.includes('power') || normGoal.includes('force')) {
+        restSeconds = 60;
+    } else if (normGoal.includes('mass') || normGoal.includes('hypertrophie')) {
+        restSeconds = 45;
+    } else {
+        restSeconds = 30;
+    }
+
+    return { sets, reps, restSeconds };
+};
+
+export const generateWorkout = async (
+    prompt: string, 
+    language: Language,
+    options?: WorkoutConfigOptions
+): Promise<WorkoutPlan> => {
+    const { sets, reps, restSeconds } = getWorkoutSeriesAndRest(options?.level, options?.goal);
+    const targetSets = options?.targetSets || sets;
+    const targetReps = options?.targetReps || reps;
+    const restBetweenSets = options?.restBetweenSets || restSeconds;
+
     try {
         const response = await fetch('/api/generate-workout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, language })
+            body: JSON.stringify({ prompt, language, options: { targetSets, targetReps, restBetweenSets } })
         });
         
         let data;
@@ -51,13 +106,21 @@ export const generateWorkout = async (prompt: string, language: Language): Promi
             modelUrl: mapToModel(ex.equipment),
             videoUrl: mapToVideoUrl(ex.name),
             difficulty: 'intermediate' as any,
-            muscleGroups: []
+            muscleGroups: [],
+            sets: targetSets,
+            reps: targetReps,
+            restSeconds: restBetweenSets
         }));
 
         return {
             title: data.title || (language === Language.FR ? "Entraînement Haute Performance" : "High-Performance Training"),
             description: data.description || (language === Language.FR ? "Séance personnalisée générée par l'IA." : "Custom AI workout session."),
-            exercises: exercises
+            exercises: exercises,
+            level: options?.level || 'medium',
+            goal: options?.goal || 'fitness',
+            targetSets,
+            targetReps,
+            restBetweenSets
         };
     } catch (e) {
         console.warn("Client fallback for workout plan:", e);
@@ -141,12 +204,17 @@ export const generateWorkout = async (prompt: string, language: Language): Promi
             title: currentDict.title,
             description: currentDict.desc,
             exercises: [
-                { name: currentDict.sName, description: currentDict.sDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['squat'], difficulty: 'intermediate' as any, muscleGroups: [] },
-                { name: currentDict.pName, description: currentDict.pDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['push up'], difficulty: 'intermediate' as any, muscleGroups: [] },
-                { name: currentDict.lName, description: currentDict.lDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['lunge'], difficulty: 'intermediate' as any, muscleGroups: [] },
-                { name: currentDict.plName, description: currentDict.plDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['plank'], difficulty: 'intermediate' as any, muscleGroups: [] },
-                { name: currentDict.dName, description: currentDict.dDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['deadlift'], difficulty: 'intermediate' as any, muscleGroups: [] }
-            ]
+                { name: currentDict.sName, description: currentDict.sDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['squat'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: currentDict.pName, description: currentDict.pDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['push up'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: currentDict.lName, description: currentDict.lDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['lunge'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: currentDict.plName, description: currentDict.plDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['plank'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: currentDict.dName, description: currentDict.dDesc, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['deadlift'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets }
+            ],
+            level: options?.level || 'medium',
+            goal: options?.goal || 'fitness',
+            targetSets,
+            targetReps,
+            restBetweenSets
         };
     }
 };

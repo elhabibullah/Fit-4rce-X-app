@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../hooks/useApp.ts';
-import { Share2, Flame, Watch, ArrowUpRight } from 'lucide-react';
+import { Share2, Flame, Watch, ArrowUpRight, Sparkles, PlusCircle } from 'lucide-react';
 import { generateDietPlan } from '../../services/aiService.ts';
 import { Meal, MealType } from '../../types.ts';
 
@@ -30,38 +30,65 @@ const MacroRing: React.FC<{ label: string; current: number; goal: number; color:
     );
 };
 
-const MealCard: React.FC<{ mealType: MealType; meals: Meal[] }> = ({ mealType, meals }) => {
+const MealCard: React.FC<{ mealType: MealType; meals: Meal[]; onLog: () => void }> = ({ mealType, meals, onLog }) => {
     const { translate } = useApp();
     const totalCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
 
     return (
-        <div className="bg-gray-900/40 p-5 rounded-2xl border border-gray-800 shadow-lg backdrop-blur-sm font-['Poppins'] group hover:border-green-500/30 transition-all">
+        <div 
+            onClick={onLog}
+            className="bg-gray-900/40 hover:bg-gray-900/70 p-5 rounded-2xl border border-gray-800 shadow-lg backdrop-blur-sm font-['Poppins'] group hover:border-green-500/50 transition-all cursor-pointer active:scale-[0.99]"
+            title={translate('nutrition.dashboard.mealJournalSub')}
+        >
             <div className="flex justify-between items-center mb-3">
-                <h3 className="font-black text-white uppercase text-[10px] tracking-[0.2em]">{translate(`meal_type.${mealType}`)}</h3>
-                <ArrowUpRight className="w-3 h-3 text-gray-700 group-hover:text-green-500" />
+                <div className="flex items-center gap-2">
+                    <h3 className="font-black text-white uppercase text-xs tracking-[0.2em]">{translate(`meal_type.${mealType}`)}</h3>
+                    <span className="text-[9px] font-bold text-green-400/90 uppercase px-2 py-0.5 rounded-md bg-green-950/40 border border-green-500/20 group-hover:border-green-500/50 transition-colors">
+                        {translate('nutrition.dashboard.logAction')}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-gray-500 group-hover:text-green-400 text-xs font-bold transition-colors">
+                    <span className="text-[10px] uppercase tracking-wider font-mono">IA Logger</span>
+                    <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </div>
             </div>
             {meals.length > 0 ? (
                 <div className="space-y-1.5">
                     {meals.map((meal, index) => (
                          <div key={index} className="flex justify-between items-center text-[11px] text-gray-300 font-normal">
                              <span className="truncate pr-2">{meal.name}</span>
-                             <span className="font-mono text-gray-500">{meal.calories}</span>
+                             <span className="font-mono text-gray-500">{meal.calories} kcal</span>
                          </div>
                     ))}
-                    <div className="pt-2 mt-2 border-t border-gray-800/50 flex justify-between">
+                    <div className="pt-2 mt-2 border-t border-gray-800/50 flex justify-between items-center">
                         <span className="text-[8px] text-gray-500 font-bold uppercase">Total</span>
                         <span className="text-xs font-black text-green-400">{totalCalories} {translate('nutrition.unit.kcal')}</span>
                     </div>
                 </div>
             ) : (
-                <p className="text-[9px] text-gray-600 mt-2 font-bold uppercase tracking-widest italic opacity-50">{translate('nutrition.log.noEntries')}</p>
+                <div className="mt-2 pt-2 border-t border-gray-800/30 flex items-center justify-between gap-2">
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider truncate">
+                        {translate('nutrition.dashboard.noMealsLogged')}
+                    </p>
+                    <button 
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onLog();
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-green-600/90 hover:bg-green-500 text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-md active:scale-95 transition-all whitespace-nowrap"
+                    >
+                        <PlusCircle size={12} />
+                        <span>{translate('nutrition.dashboard.logActionFull')}</span>
+                    </button>
+                </div>
             )}
         </div>
     );
-}
+};
 
 const DietAlDashboard: React.FC = () => {
-    const { translate, profile, dailyMacros, setDailyMacros, setDietPlan, nutritionHistory, language, planId, isDeviceConnected, deviceMetrics, openDeviceModal } = useApp();
+    const { translate, profile, dailyMacros, setDailyMacros, setDietPlan, nutritionHistory, language, planId, isDeviceConnected, deviceMetrics, openDeviceModal, setNutritionTab } = useApp();
     const [isLoading, setIsLoading] = useState(false);
 
     // EXACT GOALS AS REQUESTED
@@ -166,11 +193,26 @@ const DietAlDashboard: React.FC = () => {
                 <MacroRing label={translate('nutrition.dashboard.fat')} current={dailyMacros?.fat.current || 0} goal={fGoal} color="#3b82f6" />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 pt-4">
-                <MealCard mealType="breakfast" meals={categorizedMeals.breakfast} />
-                <MealCard mealType="lunch" meals={categorizedMeals.lunch} />
-                <MealCard mealType="dinner" meals={categorizedMeals.dinner} />
-                <MealCard mealType="snacks" meals={categorizedMeals.snacks} />
+            <div className="pt-4">
+                <div className="flex items-center justify-between px-1 mb-3">
+                    <div>
+                        <h3 className="text-xs font-black text-white uppercase tracking-widest">{translate('nutrition.dashboard.mealJournal')}</h3>
+                        <p className="text-[10px] text-gray-400">{translate('nutrition.dashboard.mealJournalSub')}</p>
+                    </div>
+                    <button
+                        onClick={() => setNutritionTab('log')}
+                        className="px-3.5 py-2 bg-green-600 hover:bg-green-500 text-black font-black text-[10px] uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-[0_0_15px_rgba(34,197,94,0.25)] active:scale-95 transition-all"
+                    >
+                        <Sparkles size={13} />
+                        <span>{translate('nutrition.dashboard.logMealBtn')}</span>
+                    </button>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                    <MealCard mealType="breakfast" meals={categorizedMeals.breakfast} onLog={() => setNutritionTab('log')} />
+                    <MealCard mealType="lunch" meals={categorizedMeals.lunch} onLog={() => setNutritionTab('log')} />
+                    <MealCard mealType="dinner" meals={categorizedMeals.dinner} onLog={() => setNutritionTab('log')} />
+                    <MealCard mealType="snacks" meals={categorizedMeals.snacks} onLog={() => setNutritionTab('log')} />
+                </div>
             </div>
 
             <div className="pt-4 pb-4">

@@ -568,7 +568,11 @@ const getDynamicWorkoutFallback = (prompt: string = '', language: string = 'en')
 };
 
 app.post('/api/generate-workout', async (req: express.Request, res: express.Response) => {
-  const { prompt, language } = req.body;
+  const { prompt, language, options } = req.body;
+  const targetSets = options?.targetSets || 4;
+  const targetReps = options?.targetReps || 14;
+  const restBetweenSets = options?.restBetweenSets || 30;
+
   try {
     let generatedData = null;
     if (process.env.GEMINI_API_KEY) {
@@ -576,10 +580,11 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
           contents: `As a world-class certified fitness coach, generate a high quality structured workout plan in ${language || 'fr'} for this request: "${prompt || 'full body fitness'}".
+          The session protocol requires exactly ${targetSets} sets of ${targetReps} reps per exercise with ${restBetweenSets}s rest pause between sets.
           Return a JSON object with:
           - "title": string
           - "description": string
-          - "exercises": array of 5 objects, each having { "name": string, "description": string, "equipment": string }`,
+          - "exercises": array of 5 objects, each having { "name": string, "description": string, "equipment": string, "sets": ${targetSets}, "reps": ${targetReps}, "restSeconds": ${restBetweenSets} }`,
           config: {
             responseMimeType: 'application/json'
           }
@@ -588,7 +593,18 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
         const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
         const parsed = JSON.parse(cleaned);
         if (parsed && Array.isArray(parsed.exercises) && parsed.exercises.length > 0) {
-          generatedData = parsed;
+          generatedData = {
+            ...parsed,
+            targetSets,
+            targetReps,
+            restBetweenSets,
+            exercises: parsed.exercises.map((e: any) => ({
+              ...e,
+              sets: e.sets || targetSets,
+              reps: e.reps || targetReps,
+              restSeconds: e.restSeconds || restBetweenSets
+            }))
+          };
         }
       } catch (geminiErr) {
         console.warn("Gemini direct call error, utilizing dynamic fallback:", geminiErr);
@@ -601,7 +617,18 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
     }
 
     const fallback = getDynamicWorkoutFallback(prompt, language);
-    res.json(fallback);
+    res.json({
+      ...fallback,
+      targetSets,
+      targetReps,
+      restBetweenSets,
+      exercises: fallback.exercises.map((e: any) => ({
+        ...e,
+        sets: targetSets,
+        reps: targetReps,
+        restSeconds: restBetweenSets
+      }))
+    });
   } catch (error: any) {
     console.error("API error generate-workout:", error);
     const fallback = getDynamicWorkoutFallback(prompt, language);
