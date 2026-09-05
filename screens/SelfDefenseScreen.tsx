@@ -79,7 +79,7 @@ const TechniqueDetailView: React.FC<{ technique: AnyTechnique; onBack: () => voi
     const effectiveModelUrl = technique.modelUrl || SIFU_MODEL_URL;
 
     return (
-        <div className={`fixed inset-0 z-[200] ${studioTheme === 'dark' ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-900'} flex flex-col animate-fadeIn font-['Poppins'] select-none`}>
+        <div className="fixed inset-0 z-[200] bg-black text-white flex flex-col font-['Poppins'] select-none">
             {/* Header: Clean, high contrast, uncluttered */}
             <header className="p-3 sm:p-5 flex items-center justify-between border-b border-gray-900/60 bg-black/90 backdrop-blur-md z-30 shrink-0">
                 <button 
@@ -422,7 +422,7 @@ export const SelfDefenseScreen: React.FC = () => {
     const currentLevel = programData.levels[selectedLevelIdx];
 
     return (
-        <div className="animate-fadeIn p-6 pb-32 max-w-2xl mx-auto w-full font-['Poppins']">
+        <div className="animate-fadeIn bg-black text-white min-h-screen p-6 pb-32 max-w-2xl mx-auto w-full font-['Poppins']">
             {selectedTech && <TechniqueDetailView technique={selectedTech} onBack={() => setSelectedTech(null)} />}
             
             <header className="flex items-center mb-8">

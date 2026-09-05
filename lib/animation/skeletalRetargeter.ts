@@ -3,7 +3,16 @@ import {
   HumanoidBoneName,
   HUNYUAN_TO_HUMANOID_MAP,
   ANATOMICAL_LIMITS,
+  TOPOLOGICAL_BONE_ORDER,
 } from './humanoidBones.ts';
+
+export interface HumanoidFramePose {
+  hipsOffset: [number, number, number];
+  proneAngle?: number;       // Horizontal pitch for pushup/plank
+  groundOffsetY?: number;    // Vertical ground anchor
+  groundOffsetZ?: number;    // Sagittal ground anchor
+  bones: Partial<Record<HumanoidBoneName, { pitch: number; yaw: number; roll: number }>>;
+}
 
 export interface CalibratedBone {
   name: HumanoidBoneName;
@@ -11,13 +20,11 @@ export interface CalibratedBone {
   restLocalQ: THREE.Quaternion;
   restLocalPos: THREE.Vector3;
   restWorldQ: THREE.Quaternion;
-  // Local coordinate correction matrix to translate standard anatomical rotations to bone space
-  correctionQ: THREE.Quaternion;
+  parentBone: THREE.Bone | null;
 }
 
 export class HunyuanSkeletalRetargeter {
   public bones: Map<HumanoidBoneName, CalibratedBone> = new Map();
-  public rootBone: THREE.Bone | null = null;
   public hipsBone: THREE.Bone | null = null;
   public isCalibrated: boolean = false;
   public characterHeight: number = 1.70;
@@ -31,31 +38,36 @@ export class HunyuanSkeletalRetargeter {
     this.bones.clear();
     scene.updateMatrixWorld(true);
 
-    // 1. Traverse and identify all bones
+    // 1. Identify all mapped humanoid bones (support both instanceof and .isBone flag)
     scene.traverse((child) => {
-      if (child instanceof THREE.Bone) {
+      const isBone = Boolean((child as any).isBone || child instanceof THREE.Bone || child.type === 'Bone');
+      if (isBone) {
         const stdName = HUNYUAN_TO_HUMANOID_MAP[child.name];
         if (stdName) {
           const wq = new THREE.Quaternion();
           child.getWorldQuaternion(wq);
 
+          const isParentBone = Boolean(
+            child.parent && ((child.parent as any).isBone || child.parent instanceof THREE.Bone || child.parent.type === 'Bone')
+          );
+
           this.bones.set(stdName, {
             name: stdName,
-            bone: child,
+            bone: child as THREE.Bone,
             restLocalQ: child.quaternion.clone(),
             restLocalPos: child.position.clone(),
             restWorldQ: wq.clone(),
-            correctionQ: new THREE.Quaternion(), // Will be calibrated below
+            parentBone: isParentBone ? (child.parent as THREE.Bone) : null,
           });
 
           if (stdName === 'Hips') {
-            this.hipsBone = child;
+            this.hipsBone = child as THREE.Bone;
           }
         }
       }
     });
 
-    // 2. Determine character dimensions and unit scale
+    // 2. Calibrate height and scale
     const headData = this.bones.get('Head');
     const leftFootData = this.bones.get('LeftFoot');
     const rightFootData = this.bones.get('RightFoot');
@@ -72,26 +84,11 @@ export class HunyuanSkeletalRetargeter {
       this.unitScale = measuredHeight / 1.70;
     }
 
-    // 3. Calibrate anatomical coordinate corrections for each bone
-    // This solves the fundamental problem of non-standard local bone axes in Hunyuan rigs
-    this.calibrateBoneCorrections();
-
-    this.isCalibrated = true;
-  }
-
-  private calibrateBoneCorrections(): void {
-    // Calibrate rest world and local orientations
-    this.bones.forEach((calibrated) => {
-      const wq = new THREE.Quaternion();
-      calibrated.bone.getWorldQuaternion(wq);
-      calibrated.restWorldQ.copy(wq);
-      calibrated.restLocalQ.copy(calibrated.bone.quaternion);
-      calibrated.restLocalPos.copy(calibrated.bone.position);
-    });
+    this.isCalibrated = this.bones.size > 0;
   }
 
   /**
-   * Reset all bones strictly to bind pose
+   * Reset all bones strictly to bind / rest pose
    */
   public resetToRestPose(): void {
     this.bones.forEach((calibrated) => {
@@ -101,14 +98,39 @@ export class HunyuanSkeletalRetargeter {
   }
 
   /**
+   * Applies a complete humanoid pose to the Hunyuan skeleton in topological order
+   */
+  public applyPose(pose: HumanoidFramePose): void {
+    if (!this.isCalibrated) return;
+
+    // 1. Reset all bones to rest pose first
+    this.resetToRestPose();
+
+    // 2. Apply root/hips translation
+    if (this.hipsBone && pose.hipsOffset) {
+      const calibratedHips = this.bones.get('Hips');
+      if (calibratedHips) {
+        this.hipsBone.position.x = calibratedHips.restLocalPos.x + pose.hipsOffset[0] * this.unitScale;
+        this.hipsBone.position.y = calibratedHips.restLocalPos.y + pose.hipsOffset[1] * this.unitScale;
+        this.hipsBone.position.z = calibratedHips.restLocalPos.z + pose.hipsOffset[2] * this.unitScale;
+      }
+    }
+
+    // 3. Process every bone in strict topological order (parents before children)
+    for (const boneName of TOPOLOGICAL_BONE_ORDER) {
+      const rot = pose.bones[boneName];
+      if (!rot) continue;
+
+      this.setAnatomicalRotation(boneName, rot.pitch, rot.yaw, rot.roll);
+      const calibrated = this.bones.get(boneName);
+      if (calibrated) {
+        calibrated.bone.updateMatrixWorld(true);
+      }
+    }
+  }
+
+  /**
    * Apply anatomical rotation to a bone with physiological constraints.
-   * Uses mathematical reference-frame mapping from anatomical space to Hunyuan bone-local space:
-   * delta_local = Q_rest_world^(-1) * delta_anatomical * Q_rest_world
-   * 
-   * @param boneName Standard Humanoid bone name
-   * @param pitch Sagittal flexion/extension (+ forward flexion, - backward extension)
-   * @param yaw Axial twist (+ turn right, - turn left)
-   * @param roll Coronal tilt / abduction (+ abduct/tilt, - adduct)
    */
   public setAnatomicalRotation(
     boneName: HumanoidBoneName,
@@ -119,7 +141,7 @@ export class HunyuanSkeletalRetargeter {
     const calibrated = this.bones.get(boneName);
     if (!calibrated) return;
 
-    // Enforce anatomical limits
+    // Physiological joint limits
     const limits = ANATOMICAL_LIMITS[boneName];
     let clampedPitch = pitch;
     let clampedYaw = yaw;
@@ -131,52 +153,42 @@ export class HunyuanSkeletalRetargeter {
       clampedRoll = THREE.MathUtils.clamp(roll, limits.minRoll, limits.maxRoll);
     }
 
-    // World reference frame axes (Character space):
-    // +Z = Anterior (Front of character)
-    // -Z = Posterior (Back of character)
-    // +Y = Superior (Up)
-    // -Y = Inferior (Down)
-    // +X = Character Left
-    // -X = Character Right
-
-    // 1. Sagittal Axis (Pitch):
-    // Knees bend backward (-Z, +Y); all other joints flex forward (+Z)
+    // Joint rotation axes in character anatomical space
+    // 1. Sagittal (Pitch)
+    // Knee flexes backwards (+1); other joints flex forward (-1)
     let axisPitch = new THREE.Vector3(-1, 0, 0);
     if (boneName === 'LeftLeg' || boneName === 'RightLeg') {
       axisPitch = new THREE.Vector3(1, 0, 0);
     }
 
-    // 2. Transverse / Longitudinal Axis (Yaw):
-    // Axial twisting
+    // 2. Transverse (Yaw)
     const axisYaw = new THREE.Vector3(0, 1, 0);
 
-    // 3. Frontal / Coronal Axis (Roll):
-    // Lateral abduction lifts limbs outward away from body midline
+    // 3. Coronal (Roll) - lateral abduction
     let axisRoll = new THREE.Vector3(0, 0, 1);
     if (boneName === 'LeftArm') {
-      axisRoll = new THREE.Vector3(0, 0, -1); // Lift arm out to left (+X, +Y)
+      axisRoll = new THREE.Vector3(0, 0, -1);
     } else if (boneName === 'RightArm') {
-      axisRoll = new THREE.Vector3(0, 0, 1);  // Lift arm out to right (-X, +Y)
+      axisRoll = new THREE.Vector3(0, 0, 1);
     } else if (boneName === 'LeftUpLeg') {
-      axisRoll = new THREE.Vector3(0, 0, 1);  // Abduct leg out to left (+X)
+      axisRoll = new THREE.Vector3(0, 0, 1);
     } else if (boneName === 'RightUpLeg') {
-      axisRoll = new THREE.Vector3(0, 0, -1); // Abduct leg out to right (-X)
+      axisRoll = new THREE.Vector3(0, 0, -1);
     }
 
     const qPitch = new THREE.Quaternion().setFromAxisAngle(axisPitch, clampedPitch);
     const qYaw = new THREE.Quaternion().setFromAxisAngle(axisYaw, clampedYaw);
     const qRoll = new THREE.Quaternion().setFromAxisAngle(axisRoll, clampedRoll);
 
-    // Combined anatomical delta in character space: Roll * Yaw * Pitch
+    // Combined delta in character space
     const deltaWorldQ = qRoll.multiply(qYaw).multiply(qPitch);
 
-    // Exact bone-local transformation:
+    // Transform delta into bone-local space relative to rest world orientation:
     // delta_local = restWorldQ^(-1) * deltaWorldQ * restWorldQ
     const deltaLocal = calibrated.restWorldQ.clone().invert()
       .multiply(deltaWorldQ)
       .multiply(calibrated.restWorldQ);
 
-    // Apply relative to bind pose: Q_final = Q_rest * delta_local
     calibrated.bone.quaternion.copy(calibrated.restLocalQ.clone().multiply(deltaLocal));
   }
 

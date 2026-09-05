@@ -11,10 +11,13 @@ import { HumanoidMotionEngine } from '../../lib/animation/humanoidMotionEngine.t
 export type ExerciseCategory =
   | 'squat'
   | 'pushup'
+  | 'inverted_row'
   | 'jack'
   | 'lunge'
   | 'boxing'
   | 'plank'
+  | 'walk'
+  | 'run'
   | 'martial_mabu'
   | 'martial_punch'
   | 'martial_palm'
@@ -25,6 +28,15 @@ export type ExerciseCategory =
 export const getExerciseType = (name?: string): ExerciseCategory => {
   if (!name) return 'idle';
   const ex = name.toLowerCase();
+
+  // Inverted Row / Tirage horizontal / Suspension row / Australian pull-up
+  if (
+    ex.includes('row') || ex.includes('tirage') || ex.includes('inverted') ||
+    ex.includes('traction') || ex.includes('australian') || ex.includes('pull-up') ||
+    ex.includes('pullup') || ex.includes('dorsal') || ex.includes('dos')
+  ) {
+    return 'inverted_row';
+  }
 
   // Martial Arts / Self-Defense Techniques (Sifu Abdelwahid & Kung Fu / Tai Chi)
   if (ex.includes('mabu') || ex.includes('cavalier') || ex.includes('horse stance') || ex.includes('enracinement') || ex.includes('stance')) {
@@ -48,13 +60,22 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
     ex.includes('jack') || ex.includes('saut') || ex.includes('jump') ||
     ex.includes('skipping') || ex.includes('rope') || ex.includes('corde') ||
     ex.includes('burpee') || ex.includes('hiit') || ex.includes('hop') ||
-    ex.includes('climb') || ex.includes('mountain') || ex.includes('course') ||
-    ex.includes('foulée') || ex.includes('sprint')
+    ex.includes('climb') || ex.includes('mountain')
   ) {
     return 'jack';
   }
 
-  // 2. Push-ups / Pompes / Bench Press / Développé
+  // 2. Running / Sprint / Course
+  if (ex.includes('course') || ex.includes('courir') || ex.includes('sprint') || ex.includes('run') || ex.includes('jog') || ex.includes('foulée')) {
+    return 'run';
+  }
+
+  // 3. Walking / Marche
+  if (ex.includes('marche') || ex.includes('marcher') || ex.includes('walk') || ex.includes('pas') || ex.includes('deplacement')) {
+    return 'walk';
+  }
+
+  // 4. Push-ups / Pompes / Bench Press / Développé
   if (
     ex.includes('push') || ex.includes('pump') || ex.includes('pompe') ||
     ex.includes('press-up') || ex.includes('pressup') || ex.includes('appui') ||
@@ -63,7 +84,7 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
     return 'pushup';
   }
 
-  // 3. Lunges / Fentes
+  // 5. Lunges / Fentes
   if (
     ex.includes('lunge') || ex.includes('fente') || ex.includes('split squat') ||
     ex.includes('zancada') || ex.includes('afundo')
@@ -71,7 +92,7 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
     return 'lunge';
   }
 
-  // 4. Squats / Cuisses / Jambes
+  // 6. Squats / Cuisses / Jambes
   if (
     ex.includes('squat') || ex.includes('cuisse') ||
     ex.includes('flexion') || ex.includes('quad') || ex.includes('glute') ||
@@ -81,7 +102,7 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
     return 'squat';
   }
 
-  // 5. Boxing / Cardio Combat / Punches
+  // 7. Boxing / Cardio Combat / Punches
   if (
     ex.includes('punch') || ex.includes('boxe') || ex.includes('jab') ||
     ex.includes('cross') || ex.includes('crochet') || ex.includes('uppercut') ||
@@ -91,7 +112,7 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
     return 'boxing';
   }
 
-  // 6. Plank / Gainage / Core
+  // 8. Plank / Gainage / Core
   if (
     ex.includes('plank') || ex.includes('gainage') || ex.includes('planche') ||
     ex.includes('abdo') || ex.includes('core') || ex.includes('crunch') ||
@@ -218,82 +239,58 @@ const HunyuanRiggedCoach: React.FC<{
   timelineProgress?: number;
 }> = ({ scene, isPaused, exerciseName, isPrep, speed = 1.0, timelineProgress }) => {
   const groupRef = useRef<THREE.Group>(null);
-  const bodyPivotRef = useRef<THREE.Group>(null);
   const engineRef = useRef<HumanoidMotionEngine | null>(null);
+
+  // Adaptive model scale normalization and physical grounding for both Cyborg and Sifu Abdelwahid
+  const { modelScale, offsetPos } = useMemo(() => {
+    scene.updateMatrixWorld(true);
+
+    // Compute bounding box of the mesh in its rest pose
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    // Master unified human height in meters: 1.45m provides ideal framing on both mobile and desktop
+    const targetHeight = 1.45;
+    const rawH = size.y > 0.5 ? size.y : 5.7;
+    const scale = targetHeight / rawH;
+
+    // Podium surface level in studio space is Y = -0.889m
+    const podiumSurfaceY = -0.889;
+
+    // Center horizontally and place soles directly on the podium
+    const posX = -center.x * scale;
+    const posY = podiumSurfaceY - (box.min.y * scale);
+    const posZ = -center.z * scale;
+
+    return {
+      modelScale: scale,
+      offsetPos: [posX, posY, posZ] as [number, number, number],
+    };
+  }, [scene]);
 
   // Initialize skeletal retargeting & humanoid motion engine on model scene
   useEffect(() => {
     if (!scene) return;
     if (!engineRef.current) {
       engineRef.current = new HumanoidMotionEngine(scene);
-      const clipName = isPrep ? 'idle' : (exerciseName || 'idle');
-      engineRef.current.setAnimation(clipName, 0.0);
+      engineRef.current.setExercise(exerciseName || 'idle', 0.0, true);
     } else {
-      const clipName = isPrep ? 'idle' : (exerciseName || 'idle');
-      engineRef.current.setAnimation(clipName, 0.35);
+      engineRef.current.setExercise(exerciseName || 'idle', 0.35, false);
     }
-  }, [scene, exerciseName, isPrep]);
-
-  // Adaptive model scale normalization for both Cyborg (~4.82m) and Sifu Abdelwahid (~8.23m)
-  const { modelScale, rawHeight, unitScale } = useMemo(() => {
-    scene.updateMatrixWorld(true);
-    let headY: number | null = null;
-    let footY: number | null = null;
-    scene.traverse((child) => {
-      if (child.name === 'Head') {
-        const p = new THREE.Vector3();
-        child.getWorldPosition(p);
-        headY = p.y;
-      }
-      if (
-        child.name === 'LeftFoot' ||
-        child.name === 'LeftToeBase' ||
-        child.name === 'RightFoot' ||
-        child.name === 'RightToeBase'
-      ) {
-        const p = new THREE.Vector3();
-        child.getWorldPosition(p);
-        if (footY === null || p.y < footY) footY = p.y;
-      }
-    });
-
-    const h = (headY !== null && footY !== null && headY > footY) ? (headY - footY) : 4.82;
-    const targetHeight = 1.55; // Master calibrated human height in meters
-    return {
-      modelScale: targetHeight / h,
-      rawHeight: h,
-      unitScale: h / 1.70, // Physical distance conversion factor
-    };
-  }, [scene]);
+  }, [scene, exerciseName]);
 
   useFrame((_, delta) => {
     if (!scene || !engineRef.current) return;
 
+    // Strict countdown / prep separation: character stays in starting posture during countdown
     const effectiveDelta = isPaused ? 0 : Math.min(delta, 0.05);
-    engineRef.current.update(effectiveDelta, speed, timelineProgress);
-
-    // Apply prone horizontal orientation (pushups and planks)
-    if (bodyPivotRef.current) {
-      bodyPivotRef.current.rotation.x = engineRef.current.currentProneAngle;
-      const centerOffset = rawHeight * 0.5;
-      const isProne = engineRef.current.currentProneAngle > 0.05;
-      bodyPivotRef.current.position.set(
-        0,
-        engineRef.current.currentProneY * unitScale,
-        isProne ? -centerOffset : 0
-      );
-    }
-
-    if (groupRef.current) {
-      groupRef.current.position.y = -0.89;
-    }
+    engineRef.current.update(effectiveDelta, speed, timelineProgress, isPrep);
   });
 
   return (
-    <group ref={groupRef} scale={[modelScale, modelScale, modelScale]} position={[0, -0.89, 0]}>
-      <group ref={bodyPivotRef}>
-        <primitive object={scene} />
-      </group>
+    <group ref={groupRef} scale={[modelScale, modelScale, modelScale]} position={offsetPos}>
+      <primitive object={scene} />
     </group>
   );
 };
@@ -346,25 +343,32 @@ const CameraPresetHandler: React.FC<{
   controlsRef: React.RefObject<any>;
 }> = ({ preset, controlsRef }) => {
   const { camera } = useThree();
+  const prevPresetRef = useRef<string | undefined>(preset);
+
   useEffect(() => {
     if (!preset || preset === 'free') {
       if (controlsRef.current) {
         controlsRef.current.enabled = true;
       }
+      prevPresetRef.current = preset;
       return;
     }
-    if (preset === 'face') {
-      camera.position.set(0, 0.25, 3.1);
-      if (controlsRef.current) {
-        controlsRef.current.target.set(0, 0, 0);
-        controlsRef.current.update();
+
+    if (prevPresetRef.current !== preset) {
+      if (preset === 'face') {
+        camera.position.set(0, 0.05, 3.0);
+        if (controlsRef.current) {
+          controlsRef.current.target.set(0, -0.16, 0);
+          controlsRef.current.update();
+        }
+      } else if (preset === 'profile') {
+        camera.position.set(3.0, 0.05, 0);
+        if (controlsRef.current) {
+          controlsRef.current.target.set(0, -0.16, 0);
+          controlsRef.current.update();
+        }
       }
-    } else if (preset === 'profile') {
-      camera.position.set(3.1, 0.25, 0);
-      if (controlsRef.current) {
-        controlsRef.current.target.set(0, 0, 0);
-        controlsRef.current.update();
-      }
+      prevPresetRef.current = preset;
     }
   }, [preset, camera, controlsRef]);
   return null;
@@ -384,10 +388,14 @@ const CoachCanvas: React.FC<{
 }> = ({ finalUrl, isPaused, exerciseName, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset }) => {
   const controlsRef = useRef<any>(null);
 
+  const initialCameraPos = useMemo<[number, number, number]>(() => {
+    return cameraPreset === 'profile' ? [3.0, 0.05, 0] : [0, 0.05, 3.0];
+  }, [cameraPreset]);
+
   return (
     <Canvas
       gl={{ antialias: true, alpha: isTransparent, powerPreference: 'high-performance' }}
-      camera={{ position: [0, 0.25, 3.1], fov: 38 }}
+      camera={{ position: initialCameraPos, fov: 38 }}
       dpr={[1, 2]}
     >
       <CameraPresetHandler preset={cameraPreset} controlsRef={controlsRef} />
@@ -434,7 +442,7 @@ const CoachCanvas: React.FC<{
         enableZoom={true}
         enablePan={false}
         makeDefault
-        target={[0, 0.0, 0]}
+        target={[0, -0.16, 0]}
         minDistance={1.6}
         maxDistance={4.8}
         minPolarAngle={Math.PI / 4}
@@ -500,10 +508,13 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
   const categoryLabels: Record<ExerciseCategory, string> = {
     squat: 'Squats',
     pushup: 'Pompes',
+    inverted_row: 'Tirage Horizontal (Row)',
     jack: 'Jumping Jacks',
     lunge: 'Fentes',
     boxing: 'Shadow Boxing',
     plank: 'Gainage Planche',
+    walk: 'Marche Active',
+    run: 'Course Dynamique',
     martial_mabu: 'Posture du Cavalier (Ma Bu)',
     martial_punch: 'Frappes Directes (Kung Fu)',
     martial_palm: 'Paumes Ondulatoires',

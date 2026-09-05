@@ -56,6 +56,34 @@ export const HUNYUAN_TO_HUMANOID_MAP: Record<string, HumanoidBoneName> = {
 };
 
 /**
+ * Ordered list of bones so parent bones are guaranteed to be transformed before children
+ */
+export const TOPOLOGICAL_BONE_ORDER: HumanoidBoneName[] = [
+  'Hips',
+  'Spine',
+  'Spine1',
+  'Spine2',
+  'Neck',
+  'Head',
+  'LeftShoulder',
+  'LeftArm',
+  'LeftForeArm',
+  'LeftHand',
+  'RightShoulder',
+  'RightArm',
+  'RightForeArm',
+  'RightHand',
+  'LeftUpLeg',
+  'LeftLeg',
+  'LeftFoot',
+  'LeftToeBase',
+  'RightUpLeg',
+  'RightLeg',
+  'RightFoot',
+  'RightToeBase',
+];
+
+/**
  * Skeletal hierarchy child-to-parent relationships
  */
 export const HUMANOID_HIERARCHY: Record<HumanoidBoneName, HumanoidBoneName | null> = {
@@ -155,5 +183,39 @@ export const ANATOMICAL_LIMITS: Partial<Record<HumanoidBoneName, JointLimit>> = 
     maxYaw: THREE.MathUtils.degToRad(20),
     minRoll: THREE.MathUtils.degToRad(-15),
     maxRoll: THREE.MathUtils.degToRad(15),
+  },
+  // Ankle / Foot: Natural dorsiflexion (up towards shin, max 30 deg) and plantarflexion (down towards floor, max 45 deg)
+  LeftFoot: {
+    minPitch: THREE.MathUtils.degToRad(-45),
+    maxPitch: THREE.MathUtils.degToRad(30),
+    minYaw: THREE.MathUtils.degToRad(-15),
+    maxYaw: THREE.MathUtils.degToRad(15),
+    minRoll: THREE.MathUtils.degToRad(-15),
+    maxRoll: THREE.MathUtils.degToRad(15),
+  },
+  RightFoot: {
+    minPitch: THREE.MathUtils.degToRad(-45),
+    maxPitch: THREE.MathUtils.degToRad(30),
+    minYaw: THREE.MathUtils.degToRad(-15),
+    maxYaw: THREE.MathUtils.degToRad(15),
+    minRoll: THREE.MathUtils.degToRad(-15),
+    maxRoll: THREE.MathUtils.degToRad(15),
+  },
+  // Wrist / Hand: Normal range of motion (flexion / extension / deviation)
+  LeftHand: {
+    minPitch: THREE.MathUtils.degToRad(-60),
+    maxPitch: THREE.MathUtils.degToRad(60),
+    minYaw: THREE.MathUtils.degToRad(-20),
+    maxYaw: THREE.MathUtils.degToRad(20),
+    minRoll: THREE.MathUtils.degToRad(-30),
+    maxRoll: THREE.MathUtils.degToRad(30),
+  },
+  RightHand: {
+    minPitch: THREE.MathUtils.degToRad(-60),
+    maxPitch: THREE.MathUtils.degToRad(60),
+    minYaw: THREE.MathUtils.degToRad(-20),
+    maxYaw: THREE.MathUtils.degToRad(20),
+    minRoll: THREE.MathUtils.degToRad(-30),
+    maxRoll: THREE.MathUtils.degToRad(30),
   },
 };

@@ -1,688 +1,1059 @@
 import * as THREE from 'three';
 import { HumanoidBoneName } from './humanoidBones.ts';
+import { HumanoidFramePose } from './skeletalRetargeter.ts';
+import { resolveExerciseDefinition } from './exerciseDefinitions.ts';
 
-export interface AnatomicalBonePose {
-  pitch: number; // Sagittal flexion (+) / extension (-)
-  yaw: number;   // Transverse rotation (turn left/right)
-  roll: number;  // Coronal tilt / abduction
-}
-
-export interface HumanoidFramePose {
-  hipsOffset: [number, number, number]; // [x, y, z] in meters
-  // Prone body tilt for pushups / planks (0 for upright, Math.PI/2 for prone facing ground)
+export interface MotionKeyframe {
+  time: number; // 0.0 to 1.0 (normalized progress along timeline)
+  hipsOffset: [number, number, number];
   proneAngle?: number;
-  proneY?: number;
-  bones: Partial<Record<HumanoidBoneName, AnatomicalBonePose>>;
+  groundOffsetY?: number;
+  groundOffsetZ?: number;
+  bones: Partial<Record<HumanoidBoneName, { pitch: number; yaw: number; roll: number }>>;
 }
-
-export interface HumanoidClip {
-  name: string;
-  duration: number;
-  isLoop: boolean;
-  sample: (progress: number) => HumanoidFramePose;
-}
-
-// Smooth human easing helpers
-const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
-const humanStep = (phase: number) => (Math.sin(phase) + 1) * 0.5;
 
 /**
- * Biomechanically Correct Humanoid Motion Library
- * Coordinate Standards:
- * - Pitch > 0: Forward flexion for Spine, Thighs, Shoulders/Arms. Backward flexion for Knees.
- * - Pitch < 0: Backward extension for Spine, Thighs, Arms.
- * - Roll > 0: Outward lateral abduction away from midline (LeftArm to left, RightArm to right, LeftLeg to left, RightLeg to right).
- * - Yaw: Transverse axial rotation (+ turn right, - turn left).
+ * HumanoidMotionClip: Represents a continuous, keyframed human motion cycle.
+ * Samples exact biomechanical joint positions using cubic Hermite interpolation.
  */
-export const HUMANOID_CLIPS: Record<string, HumanoidClip> = {
-  // 1. IDLE: Natural breathing and micro-sway
-  idle: {
-    name: 'idle',
-    duration: 3.2,
-    isLoop: true,
-    sample: (p: number) => {
-      const angle = p * Math.PI * 2;
-      const breath = Math.sin(angle) * 0.035;
-      const sway = Math.sin(angle * 0.5) * 0.015;
+export class HumanoidMotionClip {
+  public id: string;
+  public name: string;
+  public duration: number; // in seconds
+  public keyframes: MotionKeyframe[];
 
-      return {
-        hipsOffset: [sway * 0.03, breath * 0.012, 0],
-        bones: {
-          Spine: { pitch: breath * 0.25, yaw: sway * 0.15, roll: sway * 0.15 },
-          Spine1: { pitch: breath * 0.20, yaw: sway * 0.10, roll: sway * 0.10 },
-          Spine2: { pitch: breath * 0.15, yaw: 0, roll: 0 },
-          Neck: { pitch: -breath * 0.12, yaw: -sway * 0.15, roll: 0 },
-          Head: { pitch: -breath * 0.08, yaw: -sway * 0.10, roll: 0 },
+  constructor(id: string, name: string, duration: number, keyframes: MotionKeyframe[]) {
+    this.id = id;
+    this.name = name;
+    this.duration = duration;
+    this.keyframes = keyframes.sort((a, b) => a.time - b.time);
+  }
 
-          // Natural relaxed arms at sides with soft elbow
-          LeftArm: { pitch: 0.05 + breath * 0.05, yaw: 0, roll: 0.12 },
-          RightArm: { pitch: 0.05 + breath * 0.05, yaw: 0, roll: -0.12 },
-          LeftForeArm: { pitch: 0.20 - breath * 0.03, yaw: 0, roll: 0 },
-          RightForeArm: { pitch: 0.20 - breath * 0.03, yaw: 0, roll: 0 },
+  /**
+   * Samples the motion at a normalized progress t in [0, 1]
+   */
+  public sample(t: number): HumanoidFramePose {
+    const kfs = this.keyframes;
+    if (kfs.length === 0) {
+      return { hipsOffset: [0, 0, 0], bones: {} };
+    }
+    if (kfs.length === 1) {
+      return this.clonePose(kfs[0]);
+    }
 
-          // Grounded feet
-          LeftUpLeg: { pitch: 0.01, yaw: 0.02, roll: 0.02 },
-          RightUpLeg: { pitch: 0.01, yaw: -0.02, roll: -0.02 },
-          LeftLeg: { pitch: 0.03, yaw: 0, roll: 0 },
-          RightLeg: { pitch: 0.03, yaw: 0, roll: 0 },
-          LeftFoot: { pitch: -0.01, yaw: 0, roll: 0 },
-          RightFoot: { pitch: -0.01, yaw: 0, roll: 0 },
-        },
-      };
-    },
-  },
+    // Wrap t into [0, 1]
+    const normT = ((t % 1.0) + 1.0) % 1.0;
 
-  // 2. WALK: Antiphase human gait cycle
-  walk: {
-    name: 'walk',
-    duration: 1.1,
-    isLoop: true,
-    sample: (p: number) => {
-      const angle = p * Math.PI * 2;
-      const legPhase = Math.sin(angle);
-      const legCos = Math.cos(angle);
-      const pelvicTilt = Math.sin(angle) * 0.04;
-      const pelvicDrop = Math.abs(Math.sin(angle * 2)) * 0.03;
+    // Find bounding keyframes
+    let k0 = kfs[kfs.length - 1];
+    let k1 = kfs[0];
 
-      return {
-        hipsOffset: [Math.sin(angle) * 0.03, -pelvicDrop, 0],
-        bones: {
-          Hips: { pitch: 0.03, yaw: -legPhase * 0.10, roll: pelvicTilt },
-          Spine: { pitch: 0.04, yaw: legPhase * 0.08, roll: -pelvicTilt * 0.5 },
-          Spine1: { pitch: 0.02, yaw: legPhase * 0.05, roll: 0 },
-          Spine2: { pitch: 0.02, yaw: legPhase * 0.04, roll: 0 },
-          Neck: { pitch: -0.02, yaw: -legPhase * 0.04, roll: 0 },
-
-          // Left/Right Leg alternation (pitch > 0 is forward stride)
-          LeftUpLeg: { pitch: legPhase * 0.45, yaw: 0, roll: 0.02 },
-          RightUpLeg: { pitch: -legPhase * 0.45, yaw: 0, roll: -0.02 },
-          LeftLeg: { pitch: Math.max(0, legCos * 0.60), yaw: 0, roll: 0 },
-          RightLeg: { pitch: Math.max(0, -legCos * 0.60), yaw: 0, roll: 0 },
-          LeftFoot: { pitch: -legPhase * 0.20, yaw: 0, roll: 0 },
-          RightFoot: { pitch: legPhase * 0.20, yaw: 0, roll: 0 },
-
-          // Counterbalancing arm swing (opposite to leg)
-          LeftArm: { pitch: -legPhase * 0.40, yaw: 0, roll: 0.08 },
-          RightArm: { pitch: legPhase * 0.40, yaw: 0, roll: -0.08 },
-          LeftForeArm: { pitch: Math.max(0.12, -legPhase * 0.30 + 0.22), yaw: 0, roll: 0 },
-          RightForeArm: { pitch: Math.max(0.12, legPhase * 0.30 + 0.22), yaw: 0, roll: 0 },
-        },
-      };
-    },
-  },
-
-  // 3. RUN: Dynamic sprint mechanics with high knee drive
-  run: {
-    name: 'run',
-    duration: 0.72,
-    isLoop: true,
-    sample: (p: number) => {
-      const angle = p * Math.PI * 2;
-      const stride = Math.sin(angle);
-      const strideCos = Math.cos(angle);
-      const bounce = Math.abs(Math.sin(angle)) * 0.07;
-
-      return {
-        hipsOffset: [0, bounce - 0.03, 0],
-        bones: {
-          Spine: { pitch: 0.14, yaw: stride * 0.14, roll: 0 },
-          Spine1: { pitch: 0.06, yaw: stride * 0.08, roll: 0 },
-          Neck: { pitch: -0.10, yaw: 0, roll: 0 },
-
-          // High knee lift and trailing leg drive
-          LeftUpLeg: { pitch: stride * 0.85, yaw: 0, roll: 0.04 },
-          RightUpLeg: { pitch: -stride * 0.85, yaw: 0, roll: -0.04 },
-          LeftLeg: { pitch: Math.max(0, -strideCos * 1.15 + 0.15), yaw: 0, roll: 0 },
-          RightLeg: { pitch: Math.max(0, strideCos * 1.15 + 0.15), yaw: 0, roll: 0 },
-          LeftFoot: { pitch: stride * 0.30, yaw: 0, roll: 0 },
-          RightFoot: { pitch: -stride * 0.30, yaw: 0, roll: 0 },
-
-          // Athletic 90-degree arm pump
-          LeftArm: { pitch: -stride * 0.70, yaw: 0, roll: 0.12 },
-          RightArm: { pitch: stride * 0.70, yaw: 0, roll: -0.12 },
-          LeftForeArm: { pitch: 1.45, yaw: 0, roll: 0 },
-          RightForeArm: { pitch: 1.45, yaw: 0, roll: 0 },
-        },
-      };
-    },
-  },
-
-  // 4. SQUAT: Biomechanical deep squat with forward arm counterbalance
-  squat: {
-    name: 'squat',
-    duration: 2.8,
-    isLoop: true,
-    sample: (p: number) => {
-      let depth = 0;
-      if (p < 0.44) {
-        depth = easeInOut(p / 0.44);
-      } else if (p < 0.54) {
-        depth = 1.0;
-      } else if (p < 0.94) {
-        depth = 1.0 - easeInOut((p - 0.54) / 0.40);
-      } else {
-        depth = 0.0;
+    for (let i = 0; i < kfs.length - 1; i++) {
+      if (normT >= kfs[i].time && normT <= kfs[i + 1].time) {
+        k0 = kfs[i];
+        k1 = kfs[i + 1];
+        break;
       }
+    }
 
-      return {
-        hipsOffset: [0, -0.42 * depth, -0.15 * depth],
-        bones: {
-          // Torso leans slightly forward to balance center of mass
-          Spine: { pitch: 0.32 * depth, yaw: 0, roll: 0 },
-          Spine1: { pitch: 0.08 * depth, yaw: 0, roll: 0 },
-          Neck: { pitch: -0.20 * depth, yaw: 0, roll: 0 },
+    // Normalized segment fraction with smooth hermite curve: 3x^2 - 2x^3
+    const span = k1.time - k0.time;
+    let alpha = span > 0 ? (normT - k0.time) / span : 0;
+    alpha = THREE.MathUtils.clamp(alpha, 0, 1);
+    const smoothAlpha = alpha * alpha * (3 - 2 * alpha);
 
-          // Thighs flex forward +0.95 and abduct slightly, knees flex backward
-          LeftUpLeg: { pitch: 0.95 * depth, yaw: 0.14 * depth, roll: 0.18 * depth },
-          RightUpLeg: { pitch: 0.95 * depth, yaw: -0.14 * depth, roll: -0.18 * depth },
-          LeftLeg: { pitch: 1.35 * depth, yaw: 0, roll: 0 },
-          RightLeg: { pitch: 1.35 * depth, yaw: 0, roll: 0 },
-          LeftFoot: { pitch: -0.35 * depth, yaw: 0, roll: 0 },
-          RightFoot: { pitch: -0.35 * depth, yaw: 0, roll: 0 },
+    // Interpolate hips translation
+    const hipsX = THREE.MathUtils.lerp(k0.hipsOffset[0], k1.hipsOffset[0], smoothAlpha);
+    const hipsY = THREE.MathUtils.lerp(k0.hipsOffset[1], k1.hipsOffset[1], smoothAlpha);
+    const hipsZ = THREE.MathUtils.lerp(k0.hipsOffset[2], k1.hipsOffset[2], smoothAlpha);
 
-          // Arms raise forward horizontally (+0.95 rad) for counterbalance
-          LeftArm: { pitch: 0.95 * depth, yaw: 0, roll: 0.10 },
-          RightArm: { pitch: 0.95 * depth, yaw: 0, roll: -0.10 },
-          LeftForeArm: { pitch: 0.20 * depth, yaw: 0, roll: 0 },
-          RightForeArm: { pitch: 0.20 * depth, yaw: 0, roll: 0 },
-        },
+    const proneAngle = THREE.MathUtils.lerp(k0.proneAngle ?? 0, k1.proneAngle ?? 0, smoothAlpha);
+    const groundOffsetY = THREE.MathUtils.lerp(k0.groundOffsetY ?? 0, k1.groundOffsetY ?? 0, smoothAlpha);
+    const groundOffsetZ = THREE.MathUtils.lerp(k0.groundOffsetZ ?? 0, k1.groundOffsetZ ?? 0, smoothAlpha);
+
+    // Interpolate all active bones
+    const bones: Partial<Record<HumanoidBoneName, { pitch: number; yaw: number; roll: number }>> = {};
+
+    // Collect all bones present in either keyframe
+    const allBoneNames = new Set([
+      ...Object.keys(k0.bones),
+      ...Object.keys(k1.bones),
+    ]) as Set<HumanoidBoneName>;
+
+    for (const bName of allBoneNames) {
+      const b0 = k0.bones[bName] || { pitch: 0, yaw: 0, roll: 0 };
+      const b1 = k1.bones[bName] || { pitch: 0, yaw: 0, roll: 0 };
+
+      bones[bName] = {
+        pitch: THREE.MathUtils.lerp(b0.pitch, b1.pitch, smoothAlpha),
+        yaw: THREE.MathUtils.lerp(b0.yaw, b1.yaw, smoothAlpha),
+        roll: THREE.MathUtils.lerp(b0.roll, b1.roll, smoothAlpha),
       };
+    }
+
+    return {
+      hipsOffset: [hipsX, hipsY, hipsZ],
+      proneAngle,
+      groundOffsetY,
+      groundOffsetZ,
+      bones,
+    };
+  }
+
+  private clonePose(kf: MotionKeyframe): HumanoidFramePose {
+    const bonesCopy: Partial<Record<HumanoidBoneName, { pitch: number; yaw: number; roll: number }>> = {};
+    for (const [k, v] of Object.entries(kf.bones)) {
+      bonesCopy[k as HumanoidBoneName] = { ...v };
+    }
+    return {
+      hipsOffset: [...kf.hipsOffset],
+      proneAngle: kf.proneAngle,
+      groundOffsetY: kf.groundOffsetY,
+      groundOffsetZ: kf.groundOffsetZ,
+      bones: bonesCopy,
+    };
+  }
+}
+
+// --------------------------------------------------------------------------
+// MASTER BIOMECHANICAL MOTION LIBRARY
+// --------------------------------------------------------------------------
+
+// 1. SQUAT: Biomechanical human trajectory
+const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 2.8, [
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.15, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
     },
   },
-
-  // 5. LUNGE: Alternating forward lunges with upright posture
-  lunge: {
-    name: 'lunge',
-    duration: 3.4,
-    isLoop: true,
-    sample: (p: number) => {
-      const isLeft = p < 0.5;
-      const subProg = (isLeft ? p : p - 0.5) * 2.0;
-      const depth = humanStep(subProg * Math.PI * 2);
-
-      return {
-        hipsOffset: [0, -0.38 * depth, 0.10 * depth],
-        bones: {
-          Spine: { pitch: 0.06 * depth, yaw: 0, roll: 0 },
-          Neck: { pitch: -0.04 * depth, yaw: 0, roll: 0 },
-
-          ...(isLeft
-            ? {
-                // Left lead leg (forward +0.90, knee 90°)
-                LeftUpLeg: { pitch: 0.90 * depth, yaw: 0.04, roll: 0.02 },
-                LeftLeg: { pitch: 1.40 * depth, yaw: 0, roll: 0 },
-                LeftFoot: { pitch: -0.45 * depth, yaw: 0, roll: 0 },
-                // Right trailing leg (backward, heel up)
-                RightUpLeg: { pitch: -0.30 * depth, yaw: -0.04, roll: -0.02 },
-                RightLeg: { pitch: 1.35 * depth, yaw: 0, roll: 0 },
-                RightFoot: { pitch: 0.50 * depth, yaw: 0, roll: 0 },
-
-                LeftArm: { pitch: -0.40 * depth, yaw: 0, roll: 0.10 },
-                LeftForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
-                RightArm: { pitch: 0.70 * depth, yaw: 0, roll: -0.10 },
-                RightForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
-              }
-            : {
-                // Right lead leg
-                RightUpLeg: { pitch: 0.90 * depth, yaw: -0.04, roll: -0.02 },
-                RightLeg: { pitch: 1.40 * depth, yaw: 0, roll: 0 },
-                RightFoot: { pitch: -0.45 * depth, yaw: 0, roll: 0 },
-                // Left trailing leg
-                LeftUpLeg: { pitch: -0.30 * depth, yaw: 0.04, roll: 0.02 },
-                LeftLeg: { pitch: 1.35 * depth, yaw: 0, roll: 0 },
-                LeftFoot: { pitch: 0.50 * depth, yaw: 0, roll: 0 },
-
-                LeftArm: { pitch: 0.70 * depth, yaw: 0, roll: 0.10 },
-                LeftForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
-                RightArm: { pitch: -0.40 * depth, yaw: 0, roll: -0.10 },
-                RightForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
-              }),
-        },
-      };
+  {
+    time: 0.25,
+    hipsOffset: [0, -0.18, -0.10],
+    bones: {
+      Spine: { pitch: 0.18, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.65, yaw: 0, roll: -0.05 },
+      RightArm: { pitch: 0.65, yaw: 0, roll: 0.05 },
+      LeftForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.50, yaw: 0.05, roll: 0.10 },
+      RightUpLeg: { pitch: 0.50, yaw: -0.05, roll: -0.10 },
+      LeftLeg: { pitch: 0.65, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.65, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.20, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.20, yaw: 0, roll: 0 },
     },
   },
-
-  // 6. PUSHUP: Anatomically true prone pushup
-  // - Body is in horizontal prone alignment (pivoted 90° to floor)
-  // - Hands anchored directly under shoulders
-  // - At top: arms extended supporting chest
-  // - At bottom: chest lowers to floor, elbows flare backward/outward at 45°
-  pushup: {
-    name: 'pushup',
-    duration: 2.2,
-    isLoop: true,
-    sample: (p: number) => {
-      // 0 = top plank, 1 = bottom chest at floor
-      const depth = humanStep(p * Math.PI * 2);
-
-      // Arm kinematics interpolated smoothly between top plank and bottom chest press:
-      const armPitch = THREE.MathUtils.lerp(1.35, 0.68, depth);
-      const armRoll = THREE.MathUtils.lerp(0.18, 0.45, depth);
-      const armYaw = THREE.MathUtils.lerp(0.0, -0.22, depth);
-      const elbowPitch = THREE.MathUtils.lerp(0.10, 1.45, depth);
-
-      return {
-        proneAngle: Math.PI * 0.5,
-        // Height above podium: 0.42m at top plank, 0.18m at chest-to-floor bottom
-        proneY: 0.42 - 0.22 * depth,
-        hipsOffset: [0, 0, 0],
-        bones: {
-          // Rigid plank spine
-          Spine: { pitch: 0.0, yaw: 0, roll: 0 },
-          Spine1: { pitch: 0.0, yaw: 0, roll: 0 },
-          Neck: { pitch: 0.05, yaw: 0, roll: 0 }, // Looking at floor between hands
-
-          // Legs locked straight with dorsiflexed toes
-          LeftUpLeg: { pitch: 0.0, yaw: 0, roll: 0.02 },
-          RightUpLeg: { pitch: 0.0, yaw: 0, roll: -0.02 },
-          LeftLeg: { pitch: 0.02, yaw: 0, roll: 0 },
-          RightLeg: { pitch: 0.02, yaw: 0, roll: 0 },
-          LeftFoot: { pitch: 1.25, yaw: 0, roll: 0 },
-          RightFoot: { pitch: 1.25, yaw: 0, roll: 0 },
-
-          // Arms: Support chest directly under shoulders, bending back 45° at bottom
-          LeftArm: { pitch: armPitch, yaw: armYaw, roll: armRoll },
-          RightArm: { pitch: armPitch, yaw: -armYaw, roll: -armRoll },
-          LeftForeArm: { pitch: elbowPitch, yaw: 0, roll: 0 },
-          RightForeArm: { pitch: elbowPitch, yaw: 0, roll: 0 },
-          LeftHand: { pitch: -1.25, yaw: 0, roll: 0 }, // Palms flat on floor
-          RightHand: { pitch: -1.25, yaw: 0, roll: 0 },
-        },
-      };
+  {
+    time: 0.50,
+    hipsOffset: [0, -0.36, -0.18],
+    bones: {
+      Spine: { pitch: 0.28, yaw: 0, roll: 0 },
+      Spine1: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.95, yaw: 0, roll: -0.05 },
+      RightArm: { pitch: 0.95, yaw: 0, roll: 0.05 },
+      LeftForeArm: { pitch: 0.35, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.35, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.95, yaw: 0.08, roll: 0.15 },
+      RightUpLeg: { pitch: 0.95, yaw: -0.08, roll: -0.15 },
+      LeftLeg: { pitch: 1.25, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 1.25, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.32, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.32, yaw: 0, roll: 0 },
     },
   },
-
-  // 7. PLANK: Isometric prone bridge on forearms
-  plank: {
-    name: 'plank',
-    duration: 3.0,
-    isLoop: true,
-    sample: (p: number) => {
-      const breath = Math.sin(p * Math.PI * 2) * 0.008;
-
-      return {
-        proneAngle: Math.PI * 0.5,
-        proneY: 0.28 + breath,
-        hipsOffset: [0, 0, 0],
-        bones: {
-          Spine: { pitch: 0.0, yaw: 0, roll: 0 },
-          Spine1: { pitch: 0.0, yaw: 0, roll: 0 },
-          Neck: { pitch: 0.05, yaw: 0, roll: 0 },
-
-          LeftUpLeg: { pitch: 0.0, yaw: 0, roll: 0.02 },
-          RightUpLeg: { pitch: 0.0, yaw: 0, roll: -0.02 },
-          LeftLeg: { pitch: 0.02, yaw: 0, roll: 0 },
-          RightLeg: { pitch: 0.02, yaw: 0, roll: 0 },
-          LeftFoot: { pitch: 1.25, yaw: 0, roll: 0 },
-          RightFoot: { pitch: 1.25, yaw: 0, roll: 0 },
-
-          // Forearms resting flat on floor under shoulders
-          LeftArm: { pitch: 1.35, yaw: 0, roll: 0.16 },
-          RightArm: { pitch: 1.35, yaw: 0, roll: -0.16 },
-          LeftForeArm: { pitch: 1.48, yaw: 0, roll: 0 },
-          RightForeArm: { pitch: 1.48, yaw: 0, roll: 0 },
-        },
-      };
+  {
+    time: 0.75,
+    hipsOffset: [0, -0.18, -0.10],
+    bones: {
+      Spine: { pitch: 0.18, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.65, yaw: 0, roll: -0.05 },
+      RightArm: { pitch: 0.65, yaw: 0, roll: 0.05 },
+      LeftForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.50, yaw: 0.05, roll: 0.10 },
+      RightUpLeg: { pitch: 0.50, yaw: -0.05, roll: -0.10 },
+      LeftLeg: { pitch: 0.65, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.65, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.20, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.20, yaw: 0, roll: 0 },
     },
   },
-
-  // 8. MARTIAL MA BU (Horse Stance): Deep, stable Kung Fu stance
-  martial_mabu: {
-    name: 'martial_mabu',
-    duration: 3.0,
-    isLoop: true,
-    sample: (p: number) => {
-      const breath = Math.sin(p * Math.PI * 2) * 0.015;
-
-      return {
-        hipsOffset: [0, -0.38 + breath, 0],
-        bones: {
-          Spine: { pitch: 0.04, yaw: 0, roll: 0 },
-          Spine1: { pitch: 0.02, yaw: 0, roll: 0 },
-          Neck: { pitch: -0.03, yaw: 0, roll: 0 },
-
-          // Wide stance, horizontal thighs (+0.95), knees out, feet gripped
-          LeftUpLeg: { pitch: 0.95, yaw: 0.18, roll: 0.35 },
-          RightUpLeg: { pitch: 0.95, yaw: -0.18, roll: -0.35 },
-          LeftLeg: { pitch: 1.25, yaw: 0, roll: 0 },
-          RightLeg: { pitch: 1.25, yaw: 0, roll: 0 },
-          LeftFoot: { pitch: -0.30, yaw: 0, roll: 0 },
-          RightFoot: { pitch: -0.30, yaw: 0, roll: 0 },
-
-          // Chambered fists at waist with elbows back
-          LeftArm: { pitch: -0.22, yaw: 0, roll: 0.12 },
-          RightArm: { pitch: -0.22, yaw: 0, roll: -0.12 },
-          LeftForeArm: { pitch: 1.55, yaw: 0, roll: 0 },
-          RightForeArm: { pitch: 1.55, yaw: 0, roll: 0 },
-        },
-      };
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.15, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
     },
   },
+]);
 
-  // 9. MARTIAL PUNCH: Alternating straight strikes with hip and torso rotation
-  martial_punch: {
-    name: 'martial_punch',
-    duration: 1.1,
-    isLoop: true,
-    sample: (p: number) => {
-      const isRight = p < 0.5;
-      const subProg = (isRight ? p : p - 0.5) * 2.0;
-      const strike = Math.sin(subProg * Math.PI); // 0 -> 1 -> 0
-
-      return {
-        hipsOffset: [0, -0.04, 0],
-        bones: {
-          // Hip and torso rotation drives the strike
-          Hips: { pitch: 0.04, yaw: (isRight ? 0.20 : -0.20) * strike, roll: 0 },
-          Spine: { pitch: 0.06, yaw: (isRight ? 0.25 : -0.25) * strike, roll: 0 },
-          Spine1: { pitch: 0.04, yaw: (isRight ? 0.20 : -0.20) * strike, roll: 0 },
-          Neck: { pitch: -0.04, yaw: (isRight ? -0.15 : 0.15) * strike, roll: 0 },
-
-          // Solid fighting stance
-          LeftUpLeg: { pitch: 0.20, yaw: 0.10, roll: 0.08 },
-          RightUpLeg: { pitch: -0.15, yaw: -0.10, roll: -0.08 },
-          LeftLeg: { pitch: 0.35, yaw: 0, roll: 0 },
-          RightLeg: { pitch: 0.30, yaw: 0, roll: 0 },
-
-          ...(isRight
-            ? {
-                // Right punch extends forward along Z (+1.45 rad)
-                RightArm: { pitch: 1.45 * strike, yaw: -0.12 * strike, roll: -0.06 },
-                RightForeArm: { pitch: 0.08 * (1 - strike) + 0.02, yaw: 0, roll: 0 },
-                // Left guard hand at chin
-                LeftArm: { pitch: 0.25, yaw: 0, roll: 0.15 },
-                LeftForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-              }
-            : {
-                // Left punch extends forward along Z (+1.45 rad)
-                LeftArm: { pitch: 1.45 * strike, yaw: 0.12 * strike, roll: 0.06 },
-                LeftForeArm: { pitch: 0.08 * (1 - strike) + 0.02, yaw: 0, roll: 0 },
-                // Right guard hand at chin
-                RightArm: { pitch: 0.25, yaw: 0, roll: -0.15 },
-                RightForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-              }),
-        },
-      };
+// 2. LUNGE: Authentic forward stepping alternating lunges
+const LUNGE_CLIP = new HumanoidMotionClip('lunge', 'Lunge', 3.6, [
+  // 0.00: Standing neutral
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.10, yaw: 0, roll: -0.08 },
+      RightArm: { pitch: 0.10, yaw: 0, roll: 0.08 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
     },
   },
-
-  // 10. MARTIAL KICK: Chamber -> Snap -> Recoil
-  martial_kick: {
-    name: 'martial_kick',
-    duration: 1.5,
-    isLoop: true,
-    sample: (p: number) => {
-      let chamber = 0;
-      let snap = 0;
-      if (p < 0.32) {
-        chamber = p / 0.32;
-      } else if (p < 0.52) {
-        chamber = 1.0;
-        snap = (p - 0.32) / 0.20;
-      } else if (p < 0.78) {
-        chamber = 1.0 - (p - 0.52) / 0.26;
-        snap = 1.0 - (p - 0.52) / 0.26;
-      }
-
-      return {
-        hipsOffset: [0, -0.04, 0],
-        bones: {
-          Spine: { pitch: -0.16 * chamber, yaw: -0.12 * chamber, roll: 0 }, // Counterbalance
-          Neck: { pitch: 0.10 * chamber, yaw: 0.12 * chamber, roll: 0 },
-
-          // Left support leg firmly rooted
-          LeftUpLeg: { pitch: -0.08, yaw: 0.08, roll: 0.04 },
-          LeftLeg: { pitch: 0.22, yaw: 0, roll: 0 },
-
-          // Right kicking leg: thigh lifts forward (+1.32), knee snaps straight
-          RightUpLeg: { pitch: 1.32 * chamber, yaw: -0.08, roll: -0.04 },
-          RightLeg: { pitch: (1.25 * chamber) * (1 - snap) + 0.08 * snap, yaw: 0, roll: 0 },
-          RightFoot: { pitch: -0.35 * snap, yaw: 0, roll: 0 },
-
-          // Guard hands
-          LeftArm: { pitch: 0.30, yaw: 0, roll: 0.18 },
-          LeftForeArm: { pitch: 1.25, yaw: 0, roll: 0 },
-          RightArm: { pitch: 0.20, yaw: 0, roll: -0.18 },
-          RightForeArm: { pitch: 1.20, yaw: 0, roll: 0 },
-        },
-      };
+  // 0.12: Right leg initiates forward step
+  {
+    time: 0.12,
+    hipsOffset: [0, -0.08, 0.15],
+    bones: {
+      Spine: { pitch: 0.05, yaw: -0.04, roll: 0 },
+      RightUpLeg: { pitch: 0.45, yaw: 0, roll: -0.02 },
+      RightLeg: { pitch: 0.35, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: -0.10, yaw: 0, roll: 0.04 },
+      LeftFoot: { pitch: 0.15, yaw: 0, roll: 0 }, // Ball of rear foot
+      LeftArm: { pitch: 0.45, yaw: 0, roll: -0.05 },
+      RightArm: { pitch: -0.20, yaw: 0, roll: 0.05 },
     },
   },
-
-  // 11. MARTIAL TAI CHI: Silk Reeling & Cloud Hands flowing posture
-  martial_taichi: {
-    name: 'martial_taichi',
-    duration: 4.8,
-    isLoop: true,
-    sample: (p: number) => {
-      const angle = p * Math.PI * 2;
-      const weightShift = Math.sin(angle);
-      const wave = Math.cos(angle);
-
-      return {
-        hipsOffset: [weightShift * 0.10, -0.08, 0],
-        bones: {
-          Hips: { pitch: 0.03, yaw: weightShift * 0.22, roll: weightShift * 0.04 },
-          Spine: { pitch: 0.04, yaw: weightShift * 0.30, roll: 0 },
-          Spine1: { pitch: 0.02, yaw: weightShift * 0.20, roll: 0 },
-          Neck: { pitch: -0.03, yaw: -weightShift * 0.18, roll: 0 },
-
-          // Smooth shifting knees
-          LeftUpLeg: { pitch: 0.25 + weightShift * 0.12, yaw: 0.10, roll: 0.14 },
-          RightUpLeg: { pitch: 0.25 - weightShift * 0.12, yaw: -0.10, roll: -0.14 },
-          LeftLeg: { pitch: 0.40 + weightShift * 0.15, yaw: 0, roll: 0 },
-          RightLeg: { pitch: 0.40 - weightShift * 0.15, yaw: 0, roll: 0 },
-
-          // Graceful cloud hands flowing across chest
-          LeftArm: { pitch: 0.65 + wave * 0.25, yaw: weightShift * 0.35, roll: 0.38 + wave * 0.15 },
-          LeftForeArm: { pitch: 0.85 + wave * 0.20, yaw: 0, roll: 0 },
-          RightArm: { pitch: 0.65 - wave * 0.25, yaw: weightShift * 0.35, roll: -0.38 - wave * 0.15 },
-          RightForeArm: { pitch: 0.85 - wave * 0.20, yaw: 0, roll: 0 },
-        },
-      };
+  // 0.25: Deep right forward lunge (90 deg front knee, rear knee hovering 8cm above floor)
+  {
+    time: 0.25,
+    hipsOffset: [0, -0.32, 0.18],
+    bones: {
+      Spine: { pitch: 0.04, yaw: -0.02, roll: 0 },
+      RightUpLeg: { pitch: 0.85, yaw: 0, roll: -0.02 },
+      RightLeg: { pitch: 1.15, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.25, yaw: 0, roll: 0 }, // Front foot flat
+      LeftUpLeg: { pitch: -0.22, yaw: 0, roll: 0.04 },
+      LeftLeg: { pitch: 1.05, yaw: 0, roll: 0 }, // Rear knee bent down hovering
+      LeftFoot: { pitch: 0.35, yaw: 0, roll: 0 }, // Rear foot on toes
+      LeftArm: { pitch: 0.65, yaw: 0, roll: -0.08 },
+      RightArm: { pitch: -0.25, yaw: 0, roll: 0.08 },
     },
   },
-
-  // 12. JUMP: Jumping Jacks with synchronized arm and leg abduction
-  jump: {
-    name: 'jump',
-    duration: 1.1,
-    isLoop: true,
-    sample: (p: number) => {
-      const angle = p * Math.PI * 2;
-      const spread = (Math.sin(angle) + 1) * 0.5; // 0 (feet together) to 1 (feet wide, arms up)
-      const bounce = Math.abs(Math.sin(angle * 2)) * 0.05;
-
-      return {
-        hipsOffset: [0, bounce - 0.02, 0],
-        bones: {
-          Spine: { pitch: 0.04, yaw: 0, roll: 0 },
-
-          // Legs abduct outward symmetrically
-          LeftUpLeg: { pitch: 0.02, yaw: 0, roll: 0.40 * spread },
-          RightUpLeg: { pitch: 0.02, yaw: 0, roll: -0.40 * spread },
-          LeftLeg: { pitch: 0.12 * (1 - spread), yaw: 0, roll: 0 },
-          RightLeg: { pitch: 0.12 * (1 - spread), yaw: 0, roll: 0 },
-
-          // Arms raise outward and overhead (roll up to 1.85 rad)
-          LeftArm: { pitch: 0.10, yaw: 0, roll: 0.15 + 1.70 * spread },
-          RightArm: { pitch: 0.10, yaw: 0, roll: -0.15 - 1.70 * spread },
-          LeftForeArm: { pitch: 0.20 * (1 - spread) + 0.10, yaw: 0, roll: 0 },
-          RightForeArm: { pitch: 0.20 * (1 - spread) + 0.10, yaw: 0, roll: 0 },
-        },
-      };
+  // 0.38: Push back through front heel
+  {
+    time: 0.38,
+    hipsOffset: [0, -0.10, 0.08],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: 0.25, yaw: 0, roll: -0.02 },
+      RightLeg: { pitch: 0.30, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      LeftLeg: { pitch: 0.10, yaw: 0, roll: 0 },
     },
   },
+  // 0.50: Center standing transition
+  {
+    time: 0.50,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.10, yaw: 0, roll: -0.08 },
+      RightArm: { pitch: 0.10, yaw: 0, roll: 0.08 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+    },
+  },
+  // 0.62: Left leg initiates forward step
+  {
+    time: 0.62,
+    hipsOffset: [0, -0.08, 0.15],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0.04, roll: 0 },
+      LeftUpLeg: { pitch: 0.45, yaw: 0, roll: 0.02 },
+      LeftLeg: { pitch: 0.35, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: -0.10, yaw: 0, roll: -0.04 },
+      RightFoot: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightArm: { pitch: 0.45, yaw: 0, roll: 0.05 },
+      LeftArm: { pitch: -0.20, yaw: 0, roll: -0.05 },
+    },
+  },
+  // 0.75: Deep left forward lunge
+  {
+    time: 0.75,
+    hipsOffset: [0, -0.32, 0.18],
+    bones: {
+      Spine: { pitch: 0.04, yaw: 0.02, roll: 0 },
+      LeftUpLeg: { pitch: 0.85, yaw: 0, roll: 0.02 },
+      LeftLeg: { pitch: 1.15, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.25, yaw: 0, roll: 0 }, // Front foot flat
+      RightUpLeg: { pitch: -0.22, yaw: 0, roll: -0.04 },
+      RightLeg: { pitch: 1.05, yaw: 0, roll: 0 }, // Rear knee hovering
+      RightFoot: { pitch: 0.35, yaw: 0, roll: 0 },
+      RightArm: { pitch: 0.65, yaw: 0, roll: 0.08 },
+      LeftArm: { pitch: -0.25, yaw: 0, roll: -0.08 },
+    },
+  },
+  // 0.88: Push back through left front heel
+  {
+    time: 0.88,
+    hipsOffset: [0, -0.10, 0.08],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.25, yaw: 0, roll: 0.02 },
+      LeftLeg: { pitch: 0.30, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      RightLeg: { pitch: 0.10, yaw: 0, roll: 0 },
+    },
+  },
+  // 1.00: Return to neutral standing
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.10, yaw: 0, roll: -0.08 },
+      RightArm: { pitch: 0.10, yaw: 0, roll: 0.08 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+    },
+  },
+]);
+
+// 3. PUSH-UP: Upright chest push-up demonstration facing front with full range of motion
+const PUSHUP_CLIP = new HumanoidMotionClip('pushup', 'Pushup', 2.4, [
+  // 0.00: Top lockout - arms extended forward at chest level
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.85, yaw: 0, roll: -0.15 },
+      RightArm: { pitch: -0.85, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      RightHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.05, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.05, yaw: 0, roll: -0.08 },
+      LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.25: Controlled descent - elbows bend back at 45 degrees, chest expands
+  {
+    time: 0.25,
+    hipsOffset: [0, -0.02, 0],
+    bones: {
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.45, yaw: 0, roll: -0.38 },
+      RightArm: { pitch: -0.45, yaw: 0, roll: 0.38 },
+      LeftForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      RightHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.06, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.06, yaw: 0, roll: -0.08 },
+    },
+  },
+  // 0.50: Bottom chest stretch - elbows fully retracted, pecs engaged
+  {
+    time: 0.50,
+    hipsOffset: [0, -0.04, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.20, yaw: 0, roll: -0.52 },
+      RightArm: { pitch: -0.20, yaw: 0, roll: 0.52 },
+      LeftForeArm: { pitch: 1.25, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.25, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      RightHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.08, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.08, yaw: 0, roll: -0.08 },
+    },
+  },
+  // 0.75: Concentric push - pecs and triceps driving hands forward
+  {
+    time: 0.75,
+    hipsOffset: [0, -0.02, 0],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.55, yaw: 0, roll: -0.30 },
+      RightArm: { pitch: -0.55, yaw: 0, roll: 0.30 },
+      LeftForeArm: { pitch: 0.60, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.60, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      RightHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.06, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.06, yaw: 0, roll: -0.08 },
+    },
+  },
+  // 1.00: Full lockout in front
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.85, yaw: 0, roll: -0.15 },
+      RightArm: { pitch: -0.85, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      RightHand: { pitch: -0.10, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.05, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.05, yaw: 0, roll: -0.08 },
+      LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
+// 4. INVERTED ROW: Upright rowing pull demonstration facing front
+const INVERTED_ROW_CLIP = new HumanoidMotionClip('inverted_row', 'Inverted Row', 2.8, [
+  // 0.00: Arms extended forward
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.80, yaw: 0, roll: -0.12 },
+      RightArm: { pitch: -0.80, yaw: 0, roll: 0.12 },
+      LeftForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.06, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.06, yaw: 0, roll: -0.08 },
+    },
+  },
+  // 0.50: Scapulae squeezed, elbows driven back past ribs
+  {
+    time: 0.50,
+    hipsOffset: [0, -0.03, 0],
+    bones: {
+      Spine: { pitch: -0.05, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.20, yaw: 0, roll: -0.35 },
+      RightArm: { pitch: 0.20, yaw: 0, roll: 0.35 },
+      LeftForeArm: { pitch: 1.30, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.30, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.08, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.08, yaw: 0, roll: -0.08 },
+    },
+  },
+  // 1.00: Return to extended reach
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.80, yaw: 0, roll: -0.12 },
+      RightArm: { pitch: -0.80, yaw: 0, roll: 0.12 },
+      LeftForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.06, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.06, yaw: 0, roll: -0.08 },
+    },
+  },
+]);
+
+// 5. PLANK: Upright rock-solid core isometric hold facing front
+const PLANK_CLIP = new HumanoidMotionClip('plank', 'Plank', 3.0, [
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.55, yaw: 0, roll: -0.22 },
+      RightArm: { pitch: -0.55, yaw: 0, roll: 0.22 },
+      LeftForeArm: { pitch: 1.30, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.30, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.05, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.05, yaw: 0, roll: -0.08 },
+      LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 0.5,
+    hipsOffset: [0, 0.005, 0],
+    bones: {
+      Spine: { pitch: 0.035, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.55, yaw: 0, roll: -0.22 },
+      RightArm: { pitch: -0.55, yaw: 0, roll: 0.22 },
+      LeftForeArm: { pitch: 1.30, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.30, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.05, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.05, yaw: 0, roll: -0.08 },
+      LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.55, yaw: 0, roll: -0.22 },
+      RightArm: { pitch: -0.55, yaw: 0, roll: 0.22 },
+      LeftForeArm: { pitch: 1.30, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.30, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.05, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.05, yaw: 0, roll: -0.08 },
+      LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
+// 6. MARTIAL MA BU (Horse Stance: Wide grounded feet, hips deep, vertical spine, chambered fists)
+const MARTIAL_MABU_CLIP = new HumanoidMotionClip('martial_mabu', 'Ma Bu', 3.2, [
+  {
+    time: 0.0,
+    hipsOffset: [0, -0.32, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.65, yaw: 0.10, roll: 0.38 },
+      RightUpLeg: { pitch: 0.65, yaw: -0.10, roll: -0.38 },
+      LeftLeg: { pitch: 0.90, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.90, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.28, yaw: 0.10, roll: -0.10 },
+      RightFoot: { pitch: -0.28, yaw: -0.10, roll: 0.10 },
+      LeftArm: { pitch: -0.25, yaw: 0, roll: -0.12 },
+      RightArm: { pitch: -0.25, yaw: 0, roll: 0.12 },
+      LeftForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 0.5,
+    hipsOffset: [0, -0.35, 0],
+    bones: {
+      Spine: { pitch: 0.06, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.70, yaw: 0.10, roll: 0.38 },
+      RightUpLeg: { pitch: 0.70, yaw: -0.10, roll: -0.38 },
+      LeftLeg: { pitch: 0.95, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.95, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.30, yaw: 0.10, roll: -0.10 },
+      RightFoot: { pitch: -0.30, yaw: -0.10, roll: 0.10 },
+      LeftArm: { pitch: -0.25, yaw: 0, roll: -0.12 },
+      RightArm: { pitch: -0.25, yaw: 0, roll: 0.12 },
+      LeftForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 1.0,
+    hipsOffset: [0, -0.32, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.65, yaw: 0.10, roll: 0.38 },
+      RightUpLeg: { pitch: 0.65, yaw: -0.10, roll: -0.38 },
+      LeftLeg: { pitch: 0.90, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.90, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.28, yaw: 0.10, roll: -0.10 },
+      RightFoot: { pitch: -0.28, yaw: -0.10, roll: 0.10 },
+      LeftArm: { pitch: -0.25, yaw: 0, roll: -0.12 },
+      RightArm: { pitch: -0.25, yaw: 0, roll: 0.12 },
+      LeftForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
+// 7. MARTIAL PUNCH (Kung Fu Fist: Kinetic chain from ground -> hips -> spine -> arm)
+const MARTIAL_PUNCH_CLIP = new HumanoidMotionClip('martial_punch', 'Kung Fu Fist', 1.4, [
+  // 0.00: Guard stance
+  {
+    time: 0.0,
+    hipsOffset: [0, -0.05, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: -0.15, roll: 0 },
+      LeftUpLeg: { pitch: 0.20, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: -0.10, yaw: 0, roll: -0.08 },
+      LeftArm: { pitch: 0.40, yaw: 0, roll: -0.15 },
+      RightArm: { pitch: -0.15, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 1.20, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.35: Kinetic wind-up
+  {
+    time: 0.35,
+    hipsOffset: [0, -0.06, -0.04],
+    bones: {
+      Hips: { pitch: 0, yaw: -0.35, roll: 0 },
+      Spine: { pitch: 0.05, yaw: -0.35, roll: 0 },
+      RightArm: { pitch: -0.30, yaw: 0, roll: 0.20 },
+      RightForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.55: Explosive punch extension
+  {
+    time: 0.55,
+    hipsOffset: [0, -0.06, 0.08],
+    bones: {
+      Hips: { pitch: 0, yaw: 0.35, roll: 0 },
+      Spine: { pitch: 0.10, yaw: 0.45, roll: 0 },
+      RightArm: { pitch: 0.95, yaw: 0, roll: 0.05 },
+      RightForeArm: { pitch: 0.08, yaw: 0, roll: 0 }, // Full extension
+      LeftArm: { pitch: -0.20, yaw: 0, roll: -0.15 }, // Chambered
+      LeftForeArm: { pitch: 1.45, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.78: Clean snap recoil
+  {
+    time: 0.78,
+    hipsOffset: [0, -0.05, 0.02],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0.10, roll: 0 },
+      RightArm: { pitch: 0.40, yaw: 0, roll: 0.15 },
+      RightForeArm: { pitch: 0.95, yaw: 0, roll: 0 },
+    },
+  },
+  // 1.00: Reset
+  {
+    time: 1.0,
+    hipsOffset: [0, -0.05, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: -0.15, roll: 0 },
+      LeftUpLeg: { pitch: 0.20, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: -0.10, yaw: 0, roll: -0.08 },
+      LeftArm: { pitch: 0.40, yaw: 0, roll: -0.15 },
+      RightArm: { pitch: -0.15, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 1.20, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
+// 8. MARTIAL KICK (Front snap kick: Rooted support foot, chamber, strike, clean recoil)
+const MARTIAL_KICK_CLIP = new HumanoidMotionClip('martial_kick', 'Kung Fu Kick', 2.2, [
+  // 0.00: Ready guard
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.45, yaw: 0, roll: -0.15 },
+      RightArm: { pitch: 0.45, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 1.25, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.25, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.06 },
+    },
+  },
+  // 0.22: Chamber knee up to chest
+  {
+    time: 0.22,
+    hipsOffset: [0, 0.02, -0.05],
+    bones: {
+      Spine: { pitch: -0.08, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.05, yaw: 0, roll: 0.06 }, // Support leg
+      LeftLeg: { pitch: 0.10, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: 1.25, yaw: 0, roll: -0.05 }, // High chamber
+      RightLeg: { pitch: 1.65, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.35, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.45: Full kick extension (toes pulled back)
+  {
+    time: 0.45,
+    hipsOffset: [0, 0.02, 0.02],
+    bones: {
+      Spine: { pitch: -0.15, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.05, yaw: 0, roll: 0.06 },
+      LeftLeg: { pitch: 0.12, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: 1.25, yaw: 0, roll: -0.02 },
+      RightLeg: { pitch: 0.10, yaw: 0, roll: 0 }, // Full snap extension
+      RightFoot: { pitch: -0.40, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.68: Recoil to chamber
+  {
+    time: 0.68,
+    hipsOffset: [0, 0.02, -0.05],
+    bones: {
+      Spine: { pitch: -0.08, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: 1.10, yaw: 0, roll: -0.05 },
+      RightLeg: { pitch: 1.50, yaw: 0, roll: 0 },
+    },
+  },
+  // 1.00: Return to ground
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.45, yaw: 0, roll: -0.15 },
+      RightArm: { pitch: 0.45, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 1.25, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.25, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.06 },
+    },
+  },
+]);
+
+// 9. MARTIAL PALM / DEFLECTION
+const MARTIAL_PALM_CLIP = new HumanoidMotionClip('martial_palm', 'Palm Deflection', 2.2, [
+  {
+    time: 0.0,
+    hipsOffset: [0, -0.08, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: -0.15, roll: 0 },
+      LeftArm: { pitch: 0.45, yaw: 0, roll: -0.20 },
+      RightArm: { pitch: 0.20, yaw: 0, roll: 0.20 },
+      LeftForeArm: { pitch: 1.15, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.25, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 0.50,
+    hipsOffset: [0, -0.10, 0.05],
+    bones: {
+      Spine: { pitch: 0.08, yaw: 0.25, roll: 0 },
+      LeftArm: { pitch: -0.10, yaw: 0, roll: -0.25 },
+      RightArm: { pitch: 0.85, yaw: 0, roll: 0.05 },
+      RightForeArm: { pitch: 0.35, yaw: 0, roll: 0 },
+      RightHand: { pitch: 1.25, yaw: 0, roll: 0 }, // Pushing palm
+    },
+  },
+  {
+    time: 1.0,
+    hipsOffset: [0, -0.08, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: -0.15, roll: 0 },
+      LeftArm: { pitch: 0.45, yaw: 0, roll: -0.20 },
+      RightArm: { pitch: 0.20, yaw: 0, roll: 0.20 },
+      LeftForeArm: { pitch: 1.15, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.25, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
+// 10. MARTIAL TAI CHI (Neo Tai Chi / Cloud Hands & Flow)
+const MARTIAL_TAICHI_CLIP = new HumanoidMotionClip('martial_taichi', 'Tai Chi Flow', 4.5, [
+  // 0.00: Wuji alignment
+  {
+    time: 0.0,
+    hipsOffset: [0, -0.05, 0],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.08, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.08, yaw: 0, roll: -0.08 },
+      LeftLeg: { pitch: 0.12, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.12, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.30, yaw: 0, roll: -0.15 },
+      RightArm: { pitch: 0.30, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 0.45, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.45, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.25: Qi Shi (Raising arms softly with breath)
+  {
+    time: 0.25,
+    hipsOffset: [0, -0.04, 0],
+    bones: {
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.85, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: 0.85, yaw: 0, roll: 0.10 },
+      LeftForeArm: { pitch: 0.30, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.30, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.50: Weight shift to right, cloud hands right
+  {
+    time: 0.50,
+    hipsOffset: [-0.08, -0.08, 0],
+    bones: {
+      Spine: { pitch: 0.04, yaw: 0.25, roll: 0 },
+      RightArm: { pitch: 0.70, yaw: 0, roll: 0.15 },
+      LeftArm: { pitch: 0.30, yaw: 0, roll: -0.20 },
+      RightForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      LeftForeArm: { pitch: 0.65, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.75: Weight shift to left, cloud hands left
+  {
+    time: 0.75,
+    hipsOffset: [0.08, -0.08, 0],
+    bones: {
+      Spine: { pitch: 0.04, yaw: -0.25, roll: 0 },
+      LeftArm: { pitch: 0.70, yaw: 0, roll: -0.15 },
+      RightArm: { pitch: 0.30, yaw: 0, roll: 0.20 },
+      LeftForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.65, yaw: 0, roll: 0 },
+    },
+  },
+  // 1.00: Return to Wuji
+  {
+    time: 1.0,
+    hipsOffset: [0, -0.05, 0],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.08, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: 0.08, yaw: 0, roll: -0.08 },
+      LeftLeg: { pitch: 0.12, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.12, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.30, yaw: 0, roll: -0.15 },
+      RightArm: { pitch: 0.30, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 0.45, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.45, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
+// 11. IDLE: Natural breathing posture
+const IDLE_CLIP = new HumanoidMotionClip('idle', 'Idle', 3.2, [
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.08, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: 0.08, yaw: 0, roll: 0.10 },
+      LeftForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+    },
+  },
+  {
+    time: 0.5,
+    hipsOffset: [0, 0.005, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      Spine1: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.10, yaw: 0, roll: -0.12 },
+      RightArm: { pitch: 0.10, yaw: 0, roll: 0.12 },
+      LeftForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+    },
+  },
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.08, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: 0.08, yaw: 0, roll: 0.10 },
+      LeftForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+    },
+  },
+]);
+
+// 12. RUN
+const RUN_CLIP = new HumanoidMotionClip('run', 'Run', 0.72, [
+  {
+    time: 0.0,
+    hipsOffset: [0, 0.04, 0],
+    bones: {
+      Spine: { pitch: 0.15, yaw: -0.10, roll: 0 },
+      LeftUpLeg: { pitch: 0.75, yaw: 0, roll: 0.04 },
+      LeftLeg: { pitch: 1.10, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: -0.35, yaw: 0, roll: -0.04 },
+      RightLeg: { pitch: 0.25, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.45, yaw: 0, roll: -0.10 },
+      LeftForeArm: { pitch: 1.45, yaw: 0, roll: 0 },
+      RightArm: { pitch: 0.75, yaw: 0, roll: 0.10 },
+      RightForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 0.50,
+    hipsOffset: [0, 0.04, 0],
+    bones: {
+      Spine: { pitch: 0.15, yaw: 0.10, roll: 0 },
+      RightUpLeg: { pitch: 0.75, yaw: 0, roll: -0.04 },
+      RightLeg: { pitch: 1.10, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: -0.35, yaw: 0, roll: 0.04 },
+      LeftLeg: { pitch: 0.25, yaw: 0, roll: 0 },
+      RightArm: { pitch: -0.45, yaw: 0, roll: 0.10 },
+      RightForeArm: { pitch: 1.45, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.75, yaw: 0, roll: -0.10 },
+      LeftForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 1.0,
+    hipsOffset: [0, 0.04, 0],
+    bones: {
+      Spine: { pitch: 0.15, yaw: -0.10, roll: 0 },
+      LeftUpLeg: { pitch: 0.75, yaw: 0, roll: 0.04 },
+      LeftLeg: { pitch: 1.10, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: -0.35, yaw: 0, roll: -0.04 },
+      RightLeg: { pitch: 0.25, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.45, yaw: 0, roll: -0.10 },
+      LeftForeArm: { pitch: 1.45, yaw: 0, roll: 0 },
+      RightArm: { pitch: 0.75, yaw: 0, roll: 0.10 },
+      RightForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
+// 13. WALK
+const WALK_CLIP = new HumanoidMotionClip('walk', 'Walk', 1.1, [
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: -0.05, roll: 0 },
+      LeftUpLeg: { pitch: 0.40, yaw: 0, roll: 0.03 },
+      LeftLeg: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: -0.25, yaw: 0, roll: -0.03 },
+      RightLeg: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.30, yaw: 0, roll: -0.08 },
+      RightArm: { pitch: 0.35, yaw: 0, roll: 0.08 },
+    },
+  },
+  {
+    time: 0.50,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0.05, roll: 0 },
+      RightUpLeg: { pitch: 0.40, yaw: 0, roll: -0.03 },
+      RightLeg: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: -0.25, yaw: 0, roll: 0.03 },
+      LeftLeg: { pitch: 0.10, yaw: 0, roll: 0 },
+      RightArm: { pitch: -0.30, yaw: 0, roll: 0.08 },
+      LeftArm: { pitch: 0.35, yaw: 0, roll: -0.08 },
+    },
+  },
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: -0.05, roll: 0 },
+      LeftUpLeg: { pitch: 0.40, yaw: 0, roll: 0.03 },
+      LeftLeg: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: -0.25, yaw: 0, roll: -0.03 },
+      RightLeg: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.30, yaw: 0, roll: -0.08 },
+      RightArm: { pitch: 0.35, yaw: 0, roll: 0.08 },
+    },
+  },
+]);
+
+// 14. JUMPING JACKS
+const JUMP_CLIP = new HumanoidMotionClip('jump', 'Jumping Jacks', 1.1, [
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      LeftArm: { pitch: 0.05, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: 0.05, yaw: 0, roll: 0.10 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+    },
+  },
+  {
+    time: 0.50,
+    hipsOffset: [0, 0.08, 0],
+    bones: {
+      LeftArm: { pitch: 0.15, yaw: 0, roll: -1.75 }, // Overhead clap
+      RightArm: { pitch: 0.15, yaw: 0, roll: 1.75 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.38 }, // Wide legs
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.38 },
+      LeftLeg: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.15, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      LeftArm: { pitch: 0.05, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: 0.05, yaw: 0, roll: 0.10 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+    },
+  },
+]);
+
+// 15. BOXING
+const BOX_CLIP = new HumanoidMotionClip('box', 'Boxing', 1.4, [
+  {
+    time: 0.0,
+    hipsOffset: [0, -0.04, 0],
+    bones: {
+      Spine: { pitch: 0.08, yaw: -0.20, roll: 0 },
+      LeftArm: { pitch: 0.55, yaw: 0, roll: -0.15 },
+      LeftForeArm: { pitch: 1.45, yaw: 0, roll: 0 },
+      RightArm: { pitch: 0.30, yaw: 0, roll: 0.15 },
+      RightForeArm: { pitch: 1.55, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.20, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: -0.10, yaw: 0, roll: -0.06 },
+    },
+  },
+  {
+    time: 0.30,
+    hipsOffset: [0, -0.04, 0.06],
+    bones: {
+      Spine: { pitch: 0.10, yaw: 0.10, roll: 0 },
+      LeftArm: { pitch: 0.95, yaw: 0, roll: -0.05 }, // Left jab
+      LeftForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      RightArm: { pitch: 0.30, yaw: 0, roll: 0.15 },
+      RightForeArm: { pitch: 1.55, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 0.65,
+    hipsOffset: [0, -0.04, 0.08],
+    bones: {
+      Spine: { pitch: 0.12, yaw: 0.40, roll: 0 },
+      LeftArm: { pitch: 0.45, yaw: 0, roll: -0.15 },
+      LeftForeArm: { pitch: 1.45, yaw: 0, roll: 0 },
+      RightArm: { pitch: 0.95, yaw: 0, roll: 0.05 }, // Right cross
+      RightForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+    },
+  },
+  {
+    time: 1.0,
+    hipsOffset: [0, -0.04, 0],
+    bones: {
+      Spine: { pitch: 0.08, yaw: -0.20, roll: 0 },
+      LeftArm: { pitch: 0.55, yaw: 0, roll: -0.15 },
+      LeftForeArm: { pitch: 1.45, yaw: 0, roll: 0 },
+      RightArm: { pitch: 0.30, yaw: 0, roll: 0.15 },
+      RightForeArm: { pitch: 1.55, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.20, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: -0.10, yaw: 0, roll: -0.06 },
+    },
+  },
+]);
+
+export const CLIPS_REGISTRY: Record<string, HumanoidMotionClip> = {
+  squat: SQUAT_CLIP,
+  lunge: LUNGE_CLIP,
+  pushup: PUSHUP_CLIP,
+  inverted_row: INVERTED_ROW_CLIP,
+  plank: PLANK_CLIP,
+  martial_mabu: MARTIAL_MABU_CLIP,
+  martial_punch: MARTIAL_PUNCH_CLIP,
+  martial_kick: MARTIAL_KICK_CLIP,
+  martial_palm: MARTIAL_PALM_CLIP,
+  martial_taichi: MARTIAL_TAICHI_CLIP,
+  idle: IDLE_CLIP,
+  run: RUN_CLIP,
+  walk: WALK_CLIP,
+  jump: JUMP_CLIP,
+  box: BOX_CLIP,
 };
 
 /**
- * Universal Humanoid Clip Resolver
- * Maps exercise names, workout types, and multilingual techniques into the correct biomechanical clip.
+ * Universal Clip Resolver: Uses ExerciseDefinition to select the exact clip
  */
-export function resolveHumanoidClip(exerciseName?: string): HumanoidClip {
-  if (!exerciseName) return HUMANOID_CLIPS.idle;
-
-  // Normalize: lower case, strip accents, remove punctuation/hyphens
-  const raw = exerciseName.toLowerCase();
-  const normalized = raw
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[-_'/]/g, ' ')
-    .trim();
-
-  // Direct clip key match
-  if (HUMANOID_CLIPS[raw]) return HUMANOID_CLIPS[raw];
-  if (HUMANOID_CLIPS[normalized]) return HUMANOID_CLIPS[normalized];
-
-  // 1. PUSH-UP / POMPES
-  if (
-    normalized.includes('pompe') ||
-    normalized.includes('push') ||
-    normalized.includes('appui') ||
-    normalized.includes('developpe') ||
-    normalized.includes('chest press') ||
-    normalized.includes('отжимания')
-  ) {
-    return HUMANOID_CLIPS.pushup;
-  }
-
-  // 2. PLANK / GAINAGE
-  if (
-    normalized.includes('gainage') ||
-    normalized.includes('planche') ||
-    normalized.includes('plank') ||
-    normalized.includes('abdo') ||
-    normalized.includes('crunch') ||
-    normalized.includes('core') ||
-    normalized.includes('планка')
-  ) {
-    return HUMANOID_CLIPS.plank;
-  }
-
-  // 3. SQUAT
-  if (
-    normalized.includes('squat') ||
-    normalized.includes('accroupi') ||
-    normalized.includes('sentadilla') ||
-    normalized.includes('souleve') ||
-    normalized.includes('terre') ||
-    normalized.includes('cuisse') ||
-    normalized.includes('приседания')
-  ) {
-    return HUMANOID_CLIPS.squat;
-  }
-
-  // 4. LUNGE / FENTES
-  if (
-    normalized.includes('fente') ||
-    normalized.includes('lunge') ||
-    normalized.includes('zancada') ||
-    normalized.includes('выпады')
-  ) {
-    return HUMANOID_CLIPS.lunge;
-  }
-
-  // 5. RUN / SPRINT
-  if (
-    normalized.includes('course') ||
-    normalized.includes('courir') ||
-    normalized.includes('sprint') ||
-    normalized.includes('footing') ||
-    normalized.includes('run') ||
-    normalized.includes('jog') ||
-    normalized.includes('бег')
-  ) {
-    return HUMANOID_CLIPS.run;
-  }
-
-  // 6. WALK / MARCHE
-  if (
-    normalized.includes('marche') ||
-    normalized.includes('marcher') ||
-    normalized.includes('walk') ||
-    normalized.includes('pas') ||
-    normalized.includes('deplacement') ||
-    normalized.includes('hodba') ||
-    normalized.includes('ходьба')
-  ) {
-    return HUMANOID_CLIPS.walk;
-  }
-
-  // 7. JUMP / JUMPING JACKS / BURPEES
-  if (
-    normalized.includes('jump') ||
-    normalized.includes('saut') ||
-    normalized.includes('jack') ||
-    normalized.includes('burpee') ||
-    normalized.includes('corde') ||
-    normalized.includes('прыжки')
-  ) {
-    return HUMANOID_CLIPS.jump;
-  }
-
-  // 8. MARTIAL MA BU / HORSE STANCE / ENRACINEMENT
-  if (
-    normalized.includes('cavalier') ||
-    normalized.includes('cheval') ||
-    normalized.includes('mabu') ||
-    normalized.includes('ma bu') ||
-    normalized.includes('enracinement') ||
-    normalized.includes('wuji') ||
-    normalized.includes('originelle') ||
-    normalized.includes('posture')
-  ) {
-    return HUMANOID_CLIPS.martial_mabu;
-  }
-
-  // 9. MARTIAL PUNCH / FRAPPES / POING / BOXING
-  if (
-    normalized.includes('punch') ||
-    normalized.includes('poing') ||
-    normalized.includes('box') ||
-    normalized.includes('frappe') ||
-    normalized.includes('direct') ||
-    normalized.includes('jab') ||
-    normalized.includes('cross') ||
-    normalized.includes('buffle') ||
-    normalized.includes('combat') ||
-    normalized.includes('удар')
-  ) {
-    return HUMANOID_CLIPS.martial_punch;
-  }
-
-  // 10. MARTIAL KICK / COUPS DE PIED
-  if (
-    normalized.includes('kick') ||
-    normalized.includes('pied') ||
-    normalized.includes('balayage') ||
-    normalized.includes('fouette') ||
-    normalized.includes('chasse') ||
-    normalized.includes('пинок')
-  ) {
-    return HUMANOID_CLIPS.martial_kick;
-  }
-
-  // 11. MARTIAL TAI CHI / PALM / CLOUD HANDS / QI GONG
-  if (
-    normalized.includes('tai chi') ||
-    normalized.includes('taichi') ||
-    normalized.includes('paume') ||
-    normalized.includes('onde') ||
-    normalized.includes('nuage') ||
-    normalized.includes('qi') ||
-    normalized.includes('singe') ||
-    normalized.includes('moineau') ||
-    normalized.includes('respiration') ||
-    normalized.includes('flux') ||
-    normalized.includes('fluide') ||
-    normalized.includes('spirale') ||
-    normalized.includes('redirection') ||
-    normalized.includes('defense') ||
-    normalized.includes('тайчи')
-  ) {
-    return HUMANOID_CLIPS.martial_taichi;
-  }
-
-  // Default living breathing presence
-  return HUMANOID_CLIPS.idle;
+export function resolveHumanoidClip(query?: string | null): HumanoidMotionClip {
+  const def = resolveExerciseDefinition(query);
+  return CLIPS_REGISTRY[def.clipId] || CLIPS_REGISTRY.idle;
 }

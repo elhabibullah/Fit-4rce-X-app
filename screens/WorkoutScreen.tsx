@@ -150,7 +150,7 @@ const WorkoutScreen: React.FC = () => {
         const hasVideo = !!ex.videoUrl;
 
         return (
-            <div className={`fixed inset-0 z-[2500] ${displayMode === '3d' ? (studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white') : 'bg-neutral-950'} flex flex-col font-['Poppins'] animate-fadeIn overflow-hidden`}>
+            <div className={`fixed inset-0 z-[2500] ${displayMode === '3d' ? (studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white') : 'bg-neutral-950'} flex flex-col font-['Poppins'] overflow-hidden`}>
                 <div className={`relative flex-1 ${displayMode === '3d' ? (studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white') : 'bg-neutral-950'} overflow-hidden`}>
                     {/* VIDEO OR 3D COACH VIEW */}
                     {displayMode === 'video' && hasVideo ? (
@@ -174,7 +174,7 @@ const WorkoutScreen: React.FC = () => {
                                 modelUrl={ex.modelUrl} 
                                 isPaused={isPaused} 
                                 exerciseName={ex.name}
-                                isPrep={false}
+                                isPrep={isPrep}
                                 studioTheme={studioTheme}
                                 onToggleStudioTheme={(next) => {
                                     setStudioTheme(next);

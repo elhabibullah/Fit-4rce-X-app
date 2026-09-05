@@ -13,6 +13,19 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Standard health check route for container & control-plane orchestration
+app.get('/api/health', (req: express.Request, res: express.Response) => {
+  res.json({ status: 'ok' });
+});
+
+server.on('error', (err: any) => {
+  console.error('HTTP Server error:', err);
+});
+
+wss.on('error', (err: any) => {
+  console.error('WebSocket Server error:', err);
+});
+
 // Initialize GoogleGenAI on the server side - keeping the API key absolutely secure
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -851,7 +864,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.get('*all', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

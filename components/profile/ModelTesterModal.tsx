@@ -12,6 +12,7 @@ interface ModelTesterModalProps {
 
 const TEST_MOVEMENTS = [
   { id: 'pushup', label: 'Pompes (Push-up)' },
+  { id: 'inverted_row', label: 'Tirage Horizontal (Row)' },
   { id: 'squat', label: 'Squats' },
   { id: 'lunge', label: 'Fentes (Lunges)' },
   { id: 'plank', label: 'Gainage (Plank)' },
@@ -28,10 +29,10 @@ const TEST_MOVEMENTS = [
 const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) => {
   const [selectedModel, setSelectedModel] = useState<string>(SIFU_MODEL_URL);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
-  const [exerciseName, setExerciseName] = useState<string>('pushup');
+  const [exerciseName, setExerciseName] = useState<string>('martial_mabu');
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [speed, setSpeed] = useState<number>(1.0);
-  const [cameraPreset, setCameraPreset] = useState<'face' | 'profile' | 'free'>('profile');
+  const [cameraPreset, setCameraPreset] = useState<'face' | 'profile' | 'free'>('face');
   const [studioTheme, setStudioTheme] = useState<'white' | 'dark'>('white');
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
