@@ -61,8 +61,8 @@ export class GroundContactSolver {
       }
 
       // In prone position, feet are extended with toes contacting the floor
-      this.orientFootForFloorContact(leftFoot, leftToe);
-      this.orientFootForFloorContact(rightFoot, rightToe);
+      this.orientFootForFloorContact(retargeter, leftToe);
+      this.orientFootForFloorContact(retargeter, rightToe);
 
       result.hipsElevationAdjust = 0;
       return result;
@@ -87,15 +87,10 @@ export class GroundContactSolver {
   }
 
   /**
-   * Sets the ankle / toe bone so the foot contacts the floor naturally
+   * Sets the toe bone so the foot contacts the floor naturally
    */
-  private orientFootForFloorContact(foot: CalibratedBone | undefined, toe: CalibratedBone | undefined): void {
-    if (!foot) return;
-    // Slight plantarflexion / dorsiflexion neutral stabilization
-    if (toe) {
-      // Keep toe flexed 45 deg to simulate ball-of-foot floor contact
-      const qToe = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(40));
-      toe.bone.quaternion.copy(toe.restLocalQ).multiply(qToe);
-    }
+  private orientFootForFloorContact(retargeter: HunyuanSkeletalRetargeter, toe: CalibratedBone | undefined): void {
+    if (!toe) return;
+    retargeter.setAnatomicalRotation(toe.name, 0.65, 0, 0);
   }
 }

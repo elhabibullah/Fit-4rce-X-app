@@ -219,7 +219,7 @@ export const SpinningScreen: React.FC = () => {
           {isPrepPhase && (
              <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center animate-fadeIn p-4 text-center">
                  <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.4em] mb-4 drop-shadow-[0_0_10px_#00FFFF]">
-                    {language === 'fr' ? 'INITIALISATION DU MOTEUR' : 'ENGINE INITIALIZING'}
+                    {translate('spinning.engine_init')}
                  </h4>
                  <div className="text-8xl sm:text-[12rem] font-black text-white leading-none drop-shadow-[0_0_40px_rgba(0,255,255,0.7)]">{countdown}</div>
              </div>
@@ -230,7 +230,7 @@ export const SpinningScreen: React.FC = () => {
           <div className="flex justify-between items-center gap-2 sm:gap-4 max-w-xl mx-auto">
                 <div className="flex-1 bg-black/70 backdrop-blur-2xl border border-white/10 p-3 sm:p-5 rounded-2xl sm:rounded-3xl text-center shadow-2xl">
                     <p className="text-[8px] sm:text-[9px] text-[#00FFFF] font-normal uppercase tracking-widest mb-0.5 sm:mb-1">
-                        {language === 'fr' ? 'TEMPS' : 'ELAPSED'}
+                        {translate('spinning.elapsed')}
                     </p>
                     <p className="text-xl sm:text-3xl font-black text-white font-mono tracking-tighter">{formatTime(elapsedTime)}</p>
                 </div>
@@ -242,13 +242,13 @@ export const SpinningScreen: React.FC = () => {
                 <button 
                     onClick={openDeviceModal}
                     className="flex-1 bg-black/70 backdrop-blur-2xl border border-white/10 p-3 sm:p-5 rounded-2xl sm:rounded-3xl text-center shadow-2xl transition-all active:scale-95 hover:border-purple-500/50"
-                    title={isDeviceConnected ? "Bracelet EMS Synchronisé" : "Cliquez pour connecter la bande EMS"}
+                    title={translate(isDeviceConnected ? 'device.status.connected_tooltip' : 'device.status.connect_tooltip')}
                 >
                     <p className="text-[8px] sm:text-[9px] text-red-400 font-bold uppercase tracking-widest mb-0.5 sm:mb-1">
-                        {isDeviceConnected ? (language === 'fr' ? 'POULS' : 'HEART RATE') : (language === 'fr' ? 'BANDE EMS' : 'EMS BAND')}
+                        {isDeviceConnected ? translate('spinning.heart_rate') : translate('spinning.ems_band')}
                     </p>
                     <p className={`text-xl sm:text-3xl font-black font-mono tracking-tighter ${isDeviceConnected ? 'text-white' : 'text-purple-300 text-xs sm:text-sm py-1 font-bold animate-pulse'}`}>
-                        {isDeviceConnected ? deviceMetrics.heartRate : (language === 'fr' ? '+ CONNECTER' : '+ CONNECT')}
+                        {isDeviceConnected ? deviceMetrics.heartRate : translate('spinning.connect')}
                     </p>
                 </button>
           </div>

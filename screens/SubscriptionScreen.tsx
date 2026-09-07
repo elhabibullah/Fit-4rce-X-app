@@ -7,6 +7,17 @@ import { DURATION_OPTIONS } from '../lib/constants.ts';
 import { DurationOption } from '../types.ts';
 import { CURRENCY_MAP } from './currency.ts';
 
+const PER_MONTH_LABELS: Record<string, string> = {
+  en: '/mo',
+  fr: '/mois',
+  ar: '/شهر',
+  es: '/mes',
+  pt: '/mês',
+  ja: '/月',
+  zh: '/月',
+  ru: '/мес'
+};
+
 interface SubscriptionScreenProps {
   onPaymentSuccess?: () => void;
   isManaging?: boolean;
@@ -116,7 +127,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ onPaymentSucces
                   className="glow-content p-8 !items-start !justify-start"
                 >
                   <h2 className="text-xl font-light uppercase tracking-widest text-white">{translate(`sub.plan.${plan.id === 'silver' ? 'silver' : 'gold'}.name`)}</h2>
-                  <p className="text-5xl font-light mt-4 text-white tracking-tighter">{currencyInfo.symbol}{getDisplayPrice(plan.id)}<span className="text-lg font-light text-zinc-500">/{language === 'ar' ? 'شهر' : 'mo'}</span></p>
+                  <p className="text-5xl font-light mt-4 text-white tracking-tighter">{currencyInfo.symbol}{getDisplayPrice(plan.id)}<span className="text-lg font-light text-zinc-500">{PER_MONTH_LABELS[language] || '/mo'}</span></p>
                   <ul className="mt-8 space-y-4">
                     {(plan.id === 'silver' ? ['sub.feat.aiWorkout', 'sub.feat.3dModels', 'sub.feat.store'] : ['sub.feat.allSilver', 'sub.feat.nutriAI', 'sub.feat.holoCardio', 'sub.feat.defense']).map((fKey, i) => (
                         <li key={i} className="flex items-center text-white text-xs font-light uppercase tracking-widest text-left">

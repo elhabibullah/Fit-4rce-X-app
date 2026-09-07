@@ -175,10 +175,7 @@ const DietAlDashboard: React.FC = () => {
                     <div className="relative inline-block">
                          <div className="text-6xl font-black text-white tracking-tighter">{Math.round(dailyMacros?.calories.current || 0)}</div>
                          <div className="text-[10px] font-bold text-gray-600 uppercase mt-1 tracking-widest">
-                            {language === 'ru' || language === 'ja' || language === 'zh' 
-                                ? translate('nutrition.dashboard.of')
-                                : `${translate('nutrition.dashboard.of')} ${calorieGoal} ${translate('nutrition.unit.kcal')}`
-                            }
+                            {translate('nutrition.dashboard.of')} {calorieGoal} {translate('nutrition.unit.kcal')}
                          </div>
                     </div>
                     <div className="w-full bg-gray-900 h-1.5 rounded-full mt-8 overflow-hidden">

@@ -84,11 +84,9 @@ const WorkoutScreen: React.FC = () => {
     const [sessionDurationSeconds, setSessionDurationSeconds] = useState(0);
 
     const [customRequirements, setCustomRequirements] = useState('');
-    const [displayMode, setDisplayMode] = useState<'video' | '3d'>('3d');
     const [studioTheme, setStudioTheme] = useState<'white' | 'dark'>(() => {
         return (localStorage.getItem('f4x_studio_theme') as 'white' | 'dark') || 'white';
     });
-    const videoRef = useRef<HTMLVideoElement>(null);
 
     // Setup configuration:
     // Level rule:
@@ -271,18 +269,6 @@ const WorkoutScreen: React.FC = () => {
         return () => clearInterval(interval);
     }, [view, isPaused, phase, plan, handleCompleteSet, handleSkipRest, restBetweenSets]);
 
-    // Video play/pause synchronization
-    useEffect(() => {
-        const v = videoRef.current;
-        if (v) {
-            if (isPaused || phase === 'prep' || phase === 'rest') {
-                v.pause();
-            } else {
-                v.play().catch(e => console.log("Video playback error:", e));
-            }
-        }
-    }, [isPaused, phase, idx, view, displayMode]);
-
     // Generate workout with Gemini or high-performance fallback
     const handleGenerate = async () => {
         setView('loading');
@@ -329,7 +315,7 @@ const WorkoutScreen: React.FC = () => {
                 {translate('workout.loading.calculating')}
             </p>
             <div className="mt-4 px-4 py-2 bg-neutral-900/80 border border-neutral-800 rounded-full text-zinc-400 text-[11px] font-mono tracking-widest uppercase">
-                {intensity === 'low' ? '3x15 Séries' : intensity === 'high' ? '5x15 Séries' : '4x14 Séries'} • Pause {trainingGoal === 'power_training' ? '60s' : trainingGoal === 'mass_gaining' ? '45s' : '30s max'}
+                {intensity === 'low' ? `3×15 ${translate('workout.active.set')}s` : intensity === 'high' ? `5×15 ${translate('workout.active.set')}s` : `4×14 ${translate('workout.active.set')}s`} • {translate('workout.rest.pause')} {trainingGoal === 'power_training' ? '60s' : trainingGoal === 'mass_gaining' ? '45s' : '30s max'}
             </div>
         </div>
     );
@@ -338,46 +324,29 @@ const WorkoutScreen: React.FC = () => {
         const ex = plan.exercises[idx];
         if (!ex) return null;
         
-        const hasVideo = !!ex.videoUrl;
         const workProgress = ((45 - timer) / 45) * 100;
         const restProgress = ((restBetweenSets - restTimer) / restBetweenSets) * 100;
 
         return (
-            <div className={`fixed inset-0 z-[2500] ${displayMode === '3d' ? (studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white') : 'bg-neutral-950'} flex flex-col font-['Poppins'] overflow-hidden`}>
-                <div className={`relative flex-1 ${displayMode === '3d' ? (studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white') : 'bg-neutral-950'} overflow-hidden`}>
+            <div className={`fixed inset-0 z-[2500] ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'} flex flex-col font-['Poppins'] overflow-hidden`}>
+                <div className={`relative flex-1 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'} overflow-hidden`}>
                     
-                    {/* VIDEO OR 3D COACH VIEW */}
-                    {displayMode === 'video' && hasVideo ? (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
-                            <video
-                                ref={videoRef}
-                                key={ex.videoUrl}
-                                src={ex.videoUrl}
-                                className="w-full h-full object-cover"
-                                autoPlay
-                                loop
-                                muted
-                                playsInline
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
-                        </div>
-                    ) : (
-                        <div className={`absolute inset-0 z-10 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'}`}>
-                            <HolographicCoach 
-                                key="workout-holographic-coach"
-                                modelUrl={ex.modelUrl} 
-                                isPaused={isPaused || phase === 'rest'} 
-                                exerciseName={ex.name}
-                                isPrep={phase === 'prep'}
-                                studioTheme={studioTheme}
-                                onToggleStudioTheme={(next) => {
-                                    setStudioTheme(next);
-                                    localStorage.setItem('f4x_studio_theme', next);
-                                }}
-                                hideThemeToggle={true}
-                            />
-                        </div>
-                    )}
+                    {/* 3D HOLOGRAPHIC HUMANOID COACH IN STUDIO */}
+                    <div className={`absolute inset-0 z-10 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'}`}>
+                        <HolographicCoach 
+                            key="workout-holographic-coach"
+                            modelUrl={ex.modelUrl} 
+                            isPaused={isPaused || phase === 'rest'} 
+                            exerciseName={ex.name}
+                            isPrep={phase === 'prep'}
+                            studioTheme={studioTheme}
+                            onToggleStudioTheme={(next) => {
+                                setStudioTheme(next);
+                                localStorage.setItem('f4x_studio_theme', next);
+                            }}
+                            hideThemeToggle={true}
+                        />
+                    </div>
 
                     {/* TOP CONTROLS & HUD */}
                     <div className="absolute top-0 left-0 right-0 z-[500] p-3 sm:p-5 flex justify-between items-start pointer-events-none">
@@ -385,11 +354,11 @@ const WorkoutScreen: React.FC = () => {
                             <button 
                                 onClick={handleClose} 
                                 className={`p-2.5 rounded-full shadow-2xl active:scale-90 transition-transform border ${
-                                    studioTheme === 'dark' && displayMode === '3d'
+                                    studioTheme === 'dark'
                                         ? 'bg-neutral-900/90 text-white border-neutral-700'
                                         : 'bg-white/90 text-black border-zinc-200'
                                     }`}
-                                title="Fermer la séance"
+                                title={translate('workout.active.end_session')}
                             >
                                 <X size={18}/>
                             </button>
@@ -397,42 +366,29 @@ const WorkoutScreen: React.FC = () => {
                             {/* EMS BAND TRIGGER */}
                             <DeviceStatusTrigger showLabel />
 
-                            {/* TOGGLE VIDEO / 3D COACH */}
-                            {hasVideo && (
-                                <button 
-                                    onClick={() => setDisplayMode(prev => prev === 'video' ? '3d' : 'video')}
-                                    className="px-3 py-1.5 bg-black/70 backdrop-blur-md border border-purple-500/40 rounded-full text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg active:scale-95 transition-all"
-                                >
-                                    {displayMode === 'video' ? <Box size={13} className="text-purple-400" /> : <Video size={13} className="text-purple-400" />}
-                                    <span>{displayMode === 'video' ? 'Coach 3D' : 'Vidéo'}</span>
-                                </button>
-                            )}
-
-                            {/* STUDIO NIGHT / DAY MODE TOGGLE */}
-                            {displayMode === '3d' && (
-                                <button
-                                    onClick={() => {
-                                        const next = studioTheme === 'dark' ? 'white' : 'dark';
-                                        setStudioTheme(next);
-                                        localStorage.setItem('f4x_studio_theme', next);
-                                    }}
-                                    className={`px-3 py-1.5 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg active:scale-95 transition-all border ${
-                                        studioTheme === 'dark'
-                                            ? 'bg-neutral-900/90 border-neutral-700 text-white hover:bg-neutral-800'
-                                            : 'bg-white/90 border-zinc-200 text-neutral-800 hover:bg-neutral-100'
-                                    }`}
-                                    title={studioTheme === 'dark' ? "Passer au Studio Blanc" : "Passer en Mode Nuit (Studio Noir)"}
-                                >
-                                    {studioTheme === 'dark' ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-purple-600" />}
-                                    <span className="hidden sm:inline">{studioTheme === 'dark' ? 'Studio Blanc' : 'Mode Nuit'}</span>
-                                </button>
-                            )}
+                            {/* STUDIO NIGHT / DAY MODE TOGGLE FOR 3D COACH */}
+                            <button
+                                onClick={() => {
+                                    const next = studioTheme === 'dark' ? 'white' : 'dark';
+                                    setStudioTheme(next);
+                                    localStorage.setItem('f4x_studio_theme', next);
+                                }}
+                                className={`px-3 py-1.5 backdrop-blur-md rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg active:scale-95 transition-all border ${
+                                    studioTheme === 'dark'
+                                        ? 'bg-neutral-900/90 border-neutral-700 text-white hover:bg-neutral-800'
+                                        : 'bg-white/90 border-zinc-200 text-neutral-800 hover:bg-neutral-100'
+                                }`}
+                                title={studioTheme === 'dark' ? "Passer au Studio Blanc" : "Passer en Mode Nuit (Studio Noir)"}
+                            >
+                                {studioTheme === 'dark' ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-purple-600" />}
+                                <span className="hidden sm:inline">{studioTheme === 'dark' ? 'Studio Blanc' : 'Mode Nuit'}</span>
+                            </button>
 
                             {/* CURRENT PROTOCOL BADGE */}
                             <div className="px-2.5 py-1 bg-black/80 backdrop-blur-md border border-zinc-800 rounded-full text-white text-[10px] font-mono tracking-wider flex items-center gap-1.5 shadow-lg">
                                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                                 <span className="font-bold text-[#8A2BE2]">{targetSets}×{targetReps}</span>
-                                <span className="text-zinc-400">• Pause {restBetweenSets}s</span>
+                                <span className="text-zinc-400">• {translate('workout.rest.pause')} {restBetweenSets}s</span>
                             </div>
                         </div>
 
@@ -440,7 +396,7 @@ const WorkoutScreen: React.FC = () => {
                         <div className="flex flex-col items-end gap-2 pointer-events-auto">
                             <div className={`px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xl border ${
                                 phase === 'rest' 
-                                    ? 'bg-amber-500 text-black border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.5)]'
+                                    ? 'bg-amber-500 text-black border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.5)]' 
                                     : 'bg-[#8A2BE2] text-white border-purple-400 shadow-[0_0_20px_rgba(138,43,226,0.4)]'
                             }`}>
                                 <TimerIcon size={15} />
@@ -452,28 +408,28 @@ const WorkoutScreen: React.FC = () => {
                             <button 
                                 onClick={() => setIsPaused(!isPaused)} 
                                 className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all border ${
-                                    studioTheme === 'dark' && displayMode === '3d'
+                                    studioTheme === 'dark'
                                         ? 'bg-neutral-900 text-white border-neutral-700'
                                         : 'bg-white/95 text-black border-zinc-200'
                                 }`}
-                                title={isPaused ? "Reprendre" : "Mettre en pause"}
+                                title={isPaused ? translate('workout.action.resume') : translate('workout.action.pause')}
                             >
-                                {isPaused ? <Play size={18} fill={studioTheme === 'dark' && displayMode === '3d' ? "white" : "black"} className="ml-0.5"/> : <Pause size={18} fill={studioTheme === 'dark' && displayMode === '3d' ? "white" : "black"}/>}
+                                {isPaused ? <Play size={18} fill={studioTheme === 'dark' ? "white" : "black"} className="ml-0.5"/> : <Pause size={18} fill={studioTheme === 'dark' ? "white" : "black"}/>}
                             </button>
                         </div>
                     </div>
 
                     {/* PREP COUNTDOWN OVERLAY */}
                     {phase === 'prep' && (
-                        <div className={`absolute inset-0 z-[200] ${displayMode === '3d' ? 'bg-white/60 backdrop-blur-[3px]' : 'bg-zinc-950/60 backdrop-blur-[4px]'} flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4 text-center`}>
+                        <div className={`absolute inset-0 z-[200] ${studioTheme === 'dark' ? 'bg-zinc-950/60 backdrop-blur-[4px]' : 'bg-white/60 backdrop-blur-[3px]'} flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4 text-center`}>
                             <div className="px-4 py-1.5 bg-black/80 border border-purple-500/50 rounded-full text-[#8A2BE2] text-xs font-bold tracking-[0.2em] uppercase mb-2">
-                                Préparez-vous
+                                {translate('workout.active.prep')}
                             </div>
-                            <div className={`text-[7rem] sm:text-[11rem] font-black ${displayMode === '3d' ? 'text-purple-600 drop-shadow-[0_0_40px_rgba(138,43,226,0.35)]' : 'text-white drop-shadow-[0_0_40px_rgba(138,43,226,0.8)]'} leading-none tabular-nums animate-pulse`}>
+                            <div className={`text-[7rem] sm:text-[11rem] font-black ${studioTheme === 'dark' ? 'text-white drop-shadow-[0_0_40px_rgba(138,43,226,0.8)]' : 'text-purple-600 drop-shadow-[0_0_40px_rgba(138,43,226,0.35)]'} leading-none tabular-nums animate-pulse`}>
                                 {prepTimer}
                             </div>
                             <div className="px-6 py-3 bg-[#8A2BE2] text-white rounded-full font-bold uppercase tracking-wider text-xs sm:text-sm mt-6 shadow-[0_0_30px_rgba(138,43,226,0.6)] text-center max-w-[92%] break-words">
-                                {ex.name} • Série {currentSet}/{targetSets} ({targetReps} reps)
+                                {ex.name} • {translate('workout.active.set')} {currentSet}/{targetSets} ({targetReps} reps)
                             </div>
                         </div>
                     )}
@@ -497,12 +453,12 @@ const WorkoutScreen: React.FC = () => {
                                         {isPaused ? (
                                             <>
                                                 <Play size={12} fill="white" />
-                                                <span>Reprendre</span>
+                                                <span>{translate('workout.action.resume')}</span>
                                             </>
                                         ) : (
                                             <>
                                                 <Pause size={12} fill="white" />
-                                                <span>Pause</span>
+                                                <span>{translate('workout.action.pause')}</span>
                                             </>
                                         )}
                                     </button>
@@ -520,23 +476,23 @@ const WorkoutScreen: React.FC = () => {
                                 </div>
 
                                 {/* REST CONTEXT BADGE (POWER TRAINING VS MASS GAINING VS FITNESS) */}
-                                <div className="px-3.5 py-2 bg-neutral-900/90 border border-neutral-800 rounded-xl text-zinc-300 text-[11px] text-center max-w-sm">
+                                <div className="px-3.5 py-2 bg-neutral-900/90 border border-neutral-800 rounded-xl text-zinc-300 text-xs text-center max-w-sm">
                                     {trainingGoal === 'power_training' && (
-                                        <p className="flex items-center justify-center gap-1.5 font-medium">
+                                        <p className="flex items-center justify-center gap-1.5 font-normal">
                                             <Zap size={13} className="text-amber-400 shrink-0" />
-                                            <span><strong>Power Training</strong> : Récupération neuromusculaire complète (60s).</span>
+                                            <span><span className="font-semibold text-white">{translate('workout.goal.power_training.title')}</span> : {translate('workout.rest.hint.power_training')}</span>
                                         </p>
                                     )}
                                     {trainingGoal === 'mass_gaining' && (
-                                        <p className="flex items-center justify-center gap-1.5 font-medium">
+                                        <p className="flex items-center justify-center gap-1.5 font-normal">
                                             <Flame size={13} className="text-orange-400 shrink-0" />
-                                            <span><strong>Prise de Masse</strong> : Stress métabolique & hypertrophie optimaux (45s).</span>
+                                            <span><span className="font-semibold text-white">{translate('workout.goal.mass_gaining.title')}</span> : {translate('workout.rest.hint.mass_gaining')}</span>
                                         </p>
                                     )}
                                     {trainingGoal === 'fitness' && (
-                                        <p className="flex items-center justify-center gap-1.5 font-medium">
+                                        <p className="flex items-center justify-center gap-1.5 font-normal">
                                             <Activity size={13} className="text-purple-400 shrink-0" />
-                                            <span><strong>Fitness Standard</strong> : 30s pause max pour maintenir l'intensité.</span>
+                                            <span><span className="font-semibold text-white">{translate('workout.goal.fitness.title')}</span> : {translate('workout.rest.hint.fitness')}</span>
                                         </p>
                                     )}
                                 </div>
@@ -548,9 +504,9 @@ const WorkoutScreen: React.FC = () => {
                                     </span>
                                     <h3 className="text-xs sm:text-sm font-bold text-white uppercase leading-snug">
                                         {currentSet < targetSets ? (
-                                            <>Série {currentSet + 1} / {targetSets} <span className="text-purple-400">({targetReps} reps)</span> • {ex.name}</>
+                                            <>{translate('workout.active.set')} {currentSet + 1} / {targetSets} <span className="text-purple-400">({targetReps} reps)</span> • {ex.name}</>
                                         ) : (
-                                            <>Prochain Exercice : {plan.exercises[idx + 1]?.name || 'Fin de séance'}</>
+                                            <>{translate('workout.active.next_exercise')} : {plan.exercises[idx + 1]?.name || translate('workout.active.end_session')}</>
                                         )}
                                     </h3>
                                 </div>
@@ -568,7 +524,7 @@ const WorkoutScreen: React.FC = () => {
                                     <button
                                         onClick={handleAddRestTime}
                                         className="px-4 py-3 bg-neutral-900 border border-neutral-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-neutral-800 active:scale-95 transition-all"
-                                        title="Ajouter 10 secondes"
+                                        title={translate('workout.active.add_time')}
                                     >
                                         {translate('workout.active.add_time')}
                                     </button>
@@ -599,12 +555,12 @@ const WorkoutScreen: React.FC = () => {
                         <div className="flex-1 min-w-0 pr-2">
                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                 <span className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-[0.25em]">
-                                    Exercice {idx + 1} / {plan.exercises.length}
+                                    {translate('workout.active.exercise')} {idx + 1} / {plan.exercises.length}
                                 </span>
                                 
                                 {/* SERIES BADGE (e.g. SÉRIE 2 / 4) */}
                                 <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold uppercase tracking-wider">
-                                    Série {currentSet} / {targetSets}
+                                    {translate('workout.active.set')} {currentSet} / {targetSets}
                                 </span>
 
                                 {/* REPS BADGE */}
@@ -666,7 +622,7 @@ const WorkoutScreen: React.FC = () => {
 
                             <button 
                                 onClick={skipExercise} 
-                                title="Passer à l'exercice suivant"
+                                title={translate('workout.active.next_exercise')}
                                 className="bg-neutral-800 hover:bg-neutral-700 text-white w-11 h-11 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl shrink-0"
                             >
                                 <ChevronRight size={22} />
@@ -700,35 +656,35 @@ const WorkoutScreen: React.FC = () => {
                 {/* STATS SUMMARY RECAP */}
                 <div className="grid grid-cols-3 gap-3 w-full max-w-md mb-8">
                     <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 text-center">
-                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">Séries</span>
+                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{translate('workout.active.set')}s</span>
                         <span className="text-2xl font-black text-white font-mono">{totalSetsCalculated}</span>
                     </div>
                     <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 text-center">
-                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">Répétitions</span>
+                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{translate('workout.active.reps')}</span>
                         <span className="text-2xl font-black text-emerald-400 font-mono">{totalRepsCalculated}</span>
                     </div>
                     <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 text-center">
-                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">Pause Séries</span>
+                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{translate('workout.active.rest_between_sets')}</span>
                         <span className="text-2xl font-black text-amber-400 font-mono">{restBetweenSets}s</span>
                     </div>
                 </div>
 
                 <div className="bg-neutral-900/60 border border-zinc-800 rounded-2xl p-4 w-full max-w-md mb-8 text-left">
                     <div className="flex justify-between items-center text-xs mb-2">
-                        <span className="text-zinc-500 uppercase">Protocole appliqué :</span>
+                        <span className="text-zinc-500 uppercase">{translate('workout.summary.protocol')}</span>
                         <span className="font-bold text-purple-400">
-                            {targetSets}×{targetReps} ({intensity === 'low' ? 'Débutant 3x15' : intensity === 'high' ? 'Avancé 5x15' : 'Moyen 4x14'})
+                            {targetSets}×{targetReps} ({intensity === 'low' ? `${translate('workout.level.beginner')} 3×15` : intensity === 'high' ? `${translate('workout.level.advanced')} 5×15` : `${translate('workout.level.intermediate')} 4×14`})
                         </span>
                     </div>
                     <div className="flex justify-between items-center text-xs mb-2">
-                        <span className="text-zinc-500 uppercase">Objectif & Récupération :</span>
+                        <span className="text-zinc-500 uppercase">{translate('workout.summary.goal')}</span>
                         <span className="font-bold text-amber-400">
-                            {trainingGoal === 'power_training' ? 'Power Training (60s)' : trainingGoal === 'mass_gaining' ? 'Prise de Masse (45s)' : 'Fitness Standard (30s max)'}
+                            {trainingGoal === 'power_training' ? `${translate('workout.goal.power_training.title')} (60s)` : trainingGoal === 'mass_gaining' ? `${translate('workout.goal.mass_gaining.title')} (45s)` : `${translate('workout.goal.fitness.title')} (30s max)`}
                         </span>
                     </div>
                     {sessionDurationSeconds > 0 && (
                         <div className="flex justify-between items-center text-xs">
-                            <span className="text-zinc-500 uppercase">Temps total :</span>
+                            <span className="text-zinc-500 uppercase">{translate('workout.summary.total_time')}</span>
                             <span className="font-bold text-white font-mono">{minutes}m {seconds}s</span>
                         </div>
                     )}
@@ -783,19 +739,19 @@ const WorkoutScreen: React.FC = () => {
                     
                     <div className="grid grid-cols-2 gap-3">
                         {[
-                            { key: 'fitness', label: 'Fitness' },
-                            { key: 'calisthenics', label: 'Calisthénie' },
-                            { key: 'powerlifting', label: 'Powerlifting / Force' },
-                            { key: 'mass_gaining', label: 'Prise de Masse' },
-                            { key: 'pilates', label: 'Pilates' },
-                            { key: 'yoga', label: 'Yoga' }
-                        ].map(({ key, label }) => (
+                            { key: 'fitness', labelKey: 'workout_type.fitness' },
+                            { key: 'calisthenics', labelKey: 'workout_type.calisthenics' },
+                            { key: 'powerlifting', labelKey: 'workout_type.powerlifting' },
+                            { key: 'mass_gaining', labelKey: 'workout_type.mass_gaining' },
+                            { key: 'pilates', labelKey: 'workout_type.pilates' },
+                            { key: 'yoga', labelKey: 'workout_type.yoga' }
+                        ].map(({ key, labelKey }) => (
                             <div key={key} className={`glow-container w-full h-14 ${workoutType === key ? 'active' : ''}`}>
                                 <button 
                                     onClick={() => handleSelectWorkoutType(key)} 
                                     className="glow-content w-full h-full text-[9px] font-bold uppercase tracking-[0.2em] text-white px-2"
                                 >
-                                    {label}
+                                    {translate(labelKey)}
                                 </button>
                             </div>
                         ))}
@@ -813,26 +769,26 @@ const WorkoutScreen: React.FC = () => {
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
                         {[
-                            { level: 'low' as const, title: 'Débutant', desc: '3 Séries × 15' },
-                            { level: 'medium' as const, title: 'Moyen', desc: '4 Séries × 14' },
-                            { level: 'high' as const, title: 'Avancé', desc: '5 Séries × 15' }
-                        ].map(({ level, title, desc }) => (
+                            { level: 'low' as const, titleKey: 'workout.level.beginner', descKey: 'workout.level.sets_15_3' },
+                            { level: 'medium' as const, titleKey: 'workout.level.intermediate', descKey: 'workout.level.sets_14_4' },
+                            { level: 'high' as const, titleKey: 'workout.level.advanced', descKey: 'workout.level.sets_15_5' }
+                        ].map(({ level, titleKey, descKey }) => (
                             <button
                                 key={level}
                                 onClick={() => setIntensity(level)}
-                                className={`p-3 rounded-xl border text-center transition-all active:scale-95 ${
+                                className={`px-2 py-2 sm:px-3 sm:py-2.5 rounded-xl border text-center transition-all active:scale-95 flex flex-col items-center justify-center min-h-[54px] ${
                                     intensity === level
                                         ? 'bg-[#8A2BE2] text-white border-purple-400 shadow-[0_0_20px_rgba(138,43,226,0.4)]'
                                         : 'bg-zinc-900/80 text-zinc-400 border-zinc-800 hover:border-zinc-700'
                                 }`}
                             >
-                                <span className="block text-[11px] font-black uppercase tracking-wider mb-1 leading-tight">
-                                    {title}
+                                <span className={`block text-xs font-medium leading-snug truncate w-full ${intensity === level ? 'text-white' : 'text-zinc-200'}`}>
+                                    {translate(titleKey)}
                                 </span>
-                                <span className={`block text-[10px] font-mono ${intensity === level ? 'text-white' : 'text-zinc-500'}`}>
-                                    {desc}
+                                <span className={`block text-[11px] font-normal leading-snug truncate w-full ${intensity === level ? 'text-purple-100' : 'text-zinc-400'}`}>
+                                    {translate(descKey)}
                                 </span>
                             </button>
                         ))}
@@ -845,8 +801,8 @@ const WorkoutScreen: React.FC = () => {
                         <h3 className="text-[10px] font-light text-zinc-400 uppercase tracking-[0.4em]">
                             {translate('workout.setup.goal')}
                         </h3>
-                        <span className="text-[10px] font-bold text-amber-400 uppercase font-mono">
-                            Pause {trainingGoal === 'power_training' ? '60s' : trainingGoal === 'mass_gaining' ? '45s' : '30s max'}
+                        <span className="text-[10px] font-medium text-amber-400 font-mono">
+                            {translate('workout.rest.pause')} {trainingGoal === 'power_training' ? '60s' : trainingGoal === 'mass_gaining' ? '45s' : '30s max'}
                         </span>
                     </div>
 
@@ -854,49 +810,49 @@ const WorkoutScreen: React.FC = () => {
                         {[
                             { 
                                 goal: 'fitness' as const, 
-                                title: 'Fitness Standard', 
+                                titleKey: 'workout.goal.fitness.title', 
                                 pause: '30s max', 
-                                desc: 'Cadence dynamique & maintien du rythme métabolique' 
+                                descKey: 'workout.goal.fitness.desc' 
                             },
                             { 
                                 goal: 'mass_gaining' as const, 
-                                title: 'Prise de Masse (Hypertrophie)', 
+                                titleKey: 'workout.goal.mass_gaining.title', 
                                 pause: '45s', 
-                                desc: 'Accumulation du stress métabolique & recharge cellulaire' 
+                                descKey: 'workout.goal.mass_gaining.desc' 
                             },
                             { 
                                 goal: 'power_training' as const, 
-                                title: 'Power Training (Force & Puissance)', 
+                                titleKey: 'workout.goal.power_training.title', 
                                 pause: '60s', 
-                                desc: 'Récupération neuromusculaire complète & régénération ATP' 
+                                descKey: 'workout.goal.power_training.desc' 
                             }
-                        ].map(({ goal, title, pause, desc }) => (
+                        ].map(({ goal, titleKey, pause, descKey }) => (
                             <button
                                 key={goal}
                                 onClick={() => {
                                     setTrainingGoal(goal);
                                     setCustomRestSeconds(null);
                                 }}
-                                className={`w-full p-3.5 rounded-xl border text-left flex items-center justify-between transition-all active:scale-[0.98] ${
+                                className={`w-full p-3 sm:p-3.5 rounded-xl border text-left flex items-center justify-between transition-all active:scale-[0.98] ${
                                     trainingGoal === goal
                                         ? 'bg-neutral-900 text-white border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
                                         : 'bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:border-zinc-700'
                                 }`}
                             >
-                                <div className="min-w-0 pr-3">
+                                <div className="min-w-0 pr-3 flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className={`text-xs font-black uppercase tracking-wider ${trainingGoal === goal ? 'text-white' : 'text-zinc-300'}`}>
-                                            {title}
+                                        <span className={`text-xs sm:text-sm font-medium leading-snug ${trainingGoal === goal ? 'text-white' : 'text-zinc-200'}`}>
+                                            {translate(titleKey)}
                                         </span>
                                     </div>
-                                    <p className="text-[10px] text-zinc-500 mt-0.5 truncate">
-                                        {desc}
+                                    <p className="text-xs text-zinc-400 mt-0.5 truncate font-normal">
+                                        {translate(descKey)}
                                     </p>
                                 </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold shrink-0 ${
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${
                                     trainingGoal === goal
-                                        ? 'bg-amber-400 text-black shadow-[0_0_10px_rgba(245,158,11,0.5)]'
-                                        : 'bg-zinc-800 text-zinc-400'
+                                        ? 'bg-amber-400 text-black font-semibold shadow-sm'
+                                        : 'bg-zinc-800 text-zinc-400 font-medium'
                                 }`}>
                                     {pause}
                                 </span>
@@ -913,7 +869,7 @@ const WorkoutScreen: React.FC = () => {
                     <textarea 
                         value={customRequirements}
                         onChange={(e) => setCustomRequirements(e.target.value)}
-                        placeholder="Ex: accent sur les quadriceps, aucun matériel ou haltères légères..."
+                        placeholder={translate('workout.setup.requirements.placeholder')}
                         className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-white text-xs font-light tracking-wider focus:outline-none focus:border-purple-500/50 min-h-[90px] resize-none"
                     />
                 </section>

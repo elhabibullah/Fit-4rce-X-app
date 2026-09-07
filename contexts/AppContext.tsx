@@ -191,7 +191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const translate = useCallback((key: string, replacements?: { [key:string]: string | number }) => {
     const dict = TRANSLATIONS[language] || TRANSLATIONS[Language.EN];
-    let str = dict[key] || key;
+    let str = dict[key] || TRANSLATIONS[Language.EN]?.[key] || key;
     if (replacements) {
         Object.keys(replacements).forEach(k => {
             str = str.replace(`{{${k}}}`, String(replacements[k]));

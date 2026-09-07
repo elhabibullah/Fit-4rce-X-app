@@ -106,22 +106,49 @@ export class HunyuanSkeletalRetargeter {
     // 1. Reset all bones to rest pose first
     this.resetToRestPose();
 
+    const calibratedHips = this.bones.get('Hips');
+    const isProne = Boolean(pose.proneAngle && pose.proneAngle > 0.5);
+
     // 2. Apply root/hips translation
-    if (this.hipsBone && pose.hipsOffset) {
-      const calibratedHips = this.bones.get('Hips');
-      if (calibratedHips) {
-        this.hipsBone.position.x = calibratedHips.restLocalPos.x + pose.hipsOffset[0] * this.unitScale;
-        this.hipsBone.position.y = calibratedHips.restLocalPos.y + pose.hipsOffset[1] * this.unitScale;
-        this.hipsBone.position.z = calibratedHips.restLocalPos.z + pose.hipsOffset[2] * this.unitScale;
+    if (this.hipsBone && calibratedHips) {
+      if (isProne) {
+        // Floor exercises (Push-up, Plank):
+        // Lower hips to floor level and center horizontally on podium
+        const floorDrop = 2.05 * this.unitScale;
+        const forwardShift = 0.35 * this.unitScale;
+        this.hipsBone.position.x = calibratedHips.restLocalPos.x + (pose.hipsOffset[0] || 0) * this.unitScale;
+        this.hipsBone.position.y = calibratedHips.restLocalPos.y - floorDrop + (pose.hipsOffset[1] || 0) * this.unitScale;
+        this.hipsBone.position.z = calibratedHips.restLocalPos.z + forwardShift + (pose.hipsOffset[2] || 0) * this.unitScale;
+      } else {
+        // Standing / squatting / jumping / lunging / walking:
+        this.hipsBone.position.x = calibratedHips.restLocalPos.x + (pose.hipsOffset[0] || 0) * this.unitScale;
+        this.hipsBone.position.y = calibratedHips.restLocalPos.y + (pose.hipsOffset[1] || 0) * this.unitScale;
+        this.hipsBone.position.z = calibratedHips.restLocalPos.z + (pose.hipsOffset[2] || 0) * this.unitScale;
       }
+      this.hipsBone.updateMatrixWorld(true);
     }
 
     // 3. Process every bone in strict topological order (parents before children)
     for (const boneName of TOPOLOGICAL_BONE_ORDER) {
       const rot = pose.bones[boneName];
-      if (!rot) continue;
+      let pitch = rot ? rot.pitch : 0;
+      let yaw = rot ? rot.yaw : 0;
+      let roll = rot ? rot.roll : 0;
 
-      this.setAnatomicalRotation(boneName, rot.pitch, rot.yaw, rot.roll);
+      // In prone position, tilt hips/pelvis forward by proneAngle
+      if (boneName === 'Hips' && isProne) {
+        pitch += pose.proneAngle!;
+      }
+
+      if (pitch === 0 && yaw === 0 && roll === 0 && (!isProne || boneName !== 'Hips')) {
+        const calibrated = this.bones.get(boneName);
+        if (calibrated) {
+          calibrated.bone.updateMatrixWorld(true);
+        }
+        continue;
+      }
+
+      this.setAnatomicalRotation(boneName, pitch, yaw, roll);
       const calibrated = this.bones.get(boneName);
       if (calibrated) {
         calibrated.bone.updateMatrixWorld(true);
@@ -131,6 +158,9 @@ export class HunyuanSkeletalRetargeter {
 
   /**
    * Apply anatomical rotation to a bone with physiological constraints.
+   * Uses Parent-Inverse Forward Kinematics (FK) to guarantee that each joint
+   * rotates precisely in its anatomical reference frame without being skewed
+   * or distorted by parent transformations.
    */
   public setAnatomicalRotation(
     boneName: HumanoidBoneName,
@@ -153,26 +183,22 @@ export class HunyuanSkeletalRetargeter {
       clampedRoll = THREE.MathUtils.clamp(roll, limits.minRoll, limits.maxRoll);
     }
 
-    // Joint rotation axes in character anatomical space
+    // Joint rotation axes in character anatomical space:
     // 1. Sagittal (Pitch)
-    // Knee flexes backwards (+1); other joints flex forward (-1)
-    let axisPitch = new THREE.Vector3(-1, 0, 0);
-    if (boneName === 'LeftLeg' || boneName === 'RightLeg') {
-      axisPitch = new THREE.Vector3(1, 0, 0);
+    // LeftUpLeg, RightUpLeg, LeftArm, RightArm, LeftForeArm, RightForeArm flex forward around (-1, 0, 0)
+    // LeftLeg, RightLeg (knees) flex backward around (1, 0, 0)
+    // Spine, Spine1, Spine2, Neck, Head, Hips flex forward around (1, 0, 0)
+    let axisPitch = new THREE.Vector3(1, 0, 0);
+    if (['LeftUpLeg', 'RightUpLeg', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm'].includes(boneName)) {
+      axisPitch = new THREE.Vector3(-1, 0, 0);
     }
 
-    // 2. Transverse (Yaw)
+    // 2. Transverse (Yaw) - rotation around character vertical axis
     const axisYaw = new THREE.Vector3(0, 1, 0);
 
-    // 3. Coronal (Roll) - lateral abduction
+    // 3. Coronal (Roll) - lateral abduction away from body midline
     let axisRoll = new THREE.Vector3(0, 0, 1);
-    if (boneName === 'LeftArm') {
-      axisRoll = new THREE.Vector3(0, 0, -1);
-    } else if (boneName === 'RightArm') {
-      axisRoll = new THREE.Vector3(0, 0, 1);
-    } else if (boneName === 'LeftUpLeg') {
-      axisRoll = new THREE.Vector3(0, 0, 1);
-    } else if (boneName === 'RightUpLeg') {
+    if (boneName.startsWith('Right')) {
       axisRoll = new THREE.Vector3(0, 0, -1);
     }
 
@@ -180,16 +206,18 @@ export class HunyuanSkeletalRetargeter {
     const qYaw = new THREE.Quaternion().setFromAxisAngle(axisYaw, clampedYaw);
     const qRoll = new THREE.Quaternion().setFromAxisAngle(axisRoll, clampedRoll);
 
-    // Combined delta in character space
-    const deltaWorldQ = qRoll.multiply(qYaw).multiply(qPitch);
+    // Delta rotation in character anatomical space
+    const deltaWorldQ = qYaw.multiply(qRoll).multiply(qPitch);
+    const wantedWorldQ = deltaWorldQ.multiply(calibrated.restWorldQ.clone());
 
-    // Transform delta into bone-local space relative to rest world orientation:
-    // delta_local = restWorldQ^(-1) * deltaWorldQ * restWorldQ
-    const deltaLocal = calibrated.restWorldQ.clone().invert()
-      .multiply(deltaWorldQ)
-      .multiply(calibrated.restWorldQ);
-
-    calibrated.bone.quaternion.copy(calibrated.restLocalQ.clone().multiply(deltaLocal));
+    // Parent-inverse forward kinematics: eliminates parent world rotation so the
+    // bone exactly assumes wantedWorldQ in world space
+    if (calibrated.parentBone) {
+      const parentWorldQ = calibrated.parentBone.getWorldQuaternion(new THREE.Quaternion());
+      calibrated.bone.quaternion.copy(parentWorldQ.invert().multiply(wantedWorldQ));
+    } else {
+      calibrated.bone.quaternion.copy(wantedWorldQ);
+    }
   }
 
   /**

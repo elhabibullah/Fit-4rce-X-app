@@ -101,23 +101,23 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     ],
   },
 
-  // 3. PUSH-UP (Pompes - Démonstration debout face caméra avec amplitude complète)
+  // 3. PUSH-UP (Pompes au sol complètes avec posture allongée ventrale)
   pushup: {
     id: 'pushup',
     name: 'Pompes (Push-ups)',
     category: 'pushup',
     clipId: 'pushup',
-    startingPosture: 'standing',
+    startingPosture: 'prone',
     cycleDuration: 2.4,
     contacts: {
       leftFootGround: true,
       rightFootGround: true,
-      leftHandGround: false,
-      rightHandGround: false,
+      leftHandGround: true,
+      rightHandGround: true,
       feetSpacing: 0.24,
-      handOrientation: 'free',
+      handOrientation: 'flat_floor',
       preventFloorPenetration: true,
-      minKneeFloorClearance: 0.25,
+      minKneeFloorClearance: 0.08,
     },
     keywords: [
       'pushup', 'pushups', 'push-up', 'push-ups', 'pompe', 'pompes',
@@ -151,23 +151,23 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     ],
   },
 
-  // 5. PLANK (Gainage isométrique)
+  // 5. PLANK (Gainage isométrique ventral au sol)
   plank: {
     id: 'plank',
     name: 'Gainage (Plank)',
     category: 'plank',
     clipId: 'plank',
-    startingPosture: 'standing',
+    startingPosture: 'prone',
     cycleDuration: 3.0,
     contacts: {
       leftFootGround: true,
       rightFootGround: true,
-      leftHandGround: false,
-      rightHandGround: false,
+      leftHandGround: true,
+      rightHandGround: true,
       feetSpacing: 0.24,
-      handOrientation: 'free',
+      handOrientation: 'flat_floor',
       preventFloorPenetration: true,
-      minKneeFloorClearance: 0.25,
+      minKneeFloorClearance: 0.08,
     },
     keywords: [
       'plank', 'gainage', 'planche', 'core', 'abdos', 'abdo', 'isométrie',

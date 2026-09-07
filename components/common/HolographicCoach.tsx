@@ -6,6 +6,7 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { Sun, Moon } from 'lucide-react';
 import { COACH_MODEL_URL } from '../../lib/constants.ts';
 import { HumanoidMotionEngine } from '../../lib/animation/humanoidMotionEngine.ts';
+import type { HunyuanPuppeteerEngine } from '../../lib/puppeteer/hunyuanPuppeteer.ts';
 
 // Multi-language exercise name resolver for Hunyuan biomechanical animations
 export type ExerciseCategory =
@@ -237,7 +238,9 @@ const HunyuanRiggedCoach: React.FC<{
   isPrep?: boolean;
   speed?: number;
   timelineProgress?: number;
-}> = ({ scene, isPaused, exerciseName, isPrep, speed = 1.0, timelineProgress }) => {
+  puppeteerEngine?: HunyuanPuppeteerEngine | null;
+  isPuppeteerActive?: boolean;
+}> = ({ scene, isPaused, exerciseName, isPrep, speed = 1.0, timelineProgress, puppeteerEngine, isPuppeteerActive }) => {
   const groupRef = useRef<THREE.Group>(null);
   const engineRef = useRef<HumanoidMotionEngine | null>(null);
 
@@ -269,19 +272,37 @@ const HunyuanRiggedCoach: React.FC<{
     };
   }, [scene]);
 
-  // Initialize skeletal retargeting & humanoid motion engine on model scene
+  // Handle Puppeteer binding when live puppet mode is active
+  useEffect(() => {
+    if (!scene || !puppeteerEngine || !isPuppeteerActive) return;
+    puppeteerEngine.bindHunyuanRig(scene);
+    return () => {
+      puppeteerEngine.resetRigPose();
+    };
+  }, [scene, puppeteerEngine, isPuppeteerActive]);
+
+  // Initialize skeletal retargeting & humanoid motion engine on model scene for standard animations
   useEffect(() => {
     if (!scene) return;
+    if (isPuppeteerActive) return;
     if (!engineRef.current) {
       engineRef.current = new HumanoidMotionEngine(scene);
       engineRef.current.setExercise(exerciseName || 'idle', 0.0, true);
     } else {
       engineRef.current.setExercise(exerciseName || 'idle', 0.35, false);
     }
-  }, [scene, exerciseName]);
+  }, [scene, exerciseName, isPuppeteerActive]);
 
   useFrame((_, delta) => {
-    if (!scene || !engineRef.current) return;
+    if (!scene) return;
+
+    // If live MediaPipe puppeteer mode is active, update directly via puppeteer solver
+    if (isPuppeteerActive && puppeteerEngine) {
+      puppeteerEngine.updateHunyuanBones(delta);
+      return;
+    }
+
+    if (!engineRef.current) return;
 
     // Strict countdown / prep separation: character stays in starting posture during countdown
     const effectiveDelta = isPaused ? 0 : Math.min(delta, 0.05);
@@ -303,7 +324,9 @@ const UniversalModel: React.FC<{
   isPrep?: boolean;
   speed?: number;
   timelineProgress?: number;
-}> = ({ url, isPaused, exerciseName, isPrep, speed, timelineProgress }) => {
+  puppeteerEngine?: HunyuanPuppeteerEngine | null;
+  isPuppeteerActive?: boolean;
+}> = ({ url, isPaused, exerciseName, isPrep, speed, timelineProgress, puppeteerEngine, isPuppeteerActive }) => {
   const isFBX = url.toLowerCase().includes('.fbx') || url.includes('format=fbx');
 
   if (isFBX) {
@@ -318,6 +341,8 @@ const UniversalModel: React.FC<{
         isPrep={isPrep}
         speed={speed}
         timelineProgress={timelineProgress}
+        puppeteerEngine={puppeteerEngine}
+        isPuppeteerActive={isPuppeteerActive}
       />
     );
   }
@@ -333,6 +358,8 @@ const UniversalModel: React.FC<{
       isPrep={isPrep}
       speed={speed}
       timelineProgress={timelineProgress}
+      puppeteerEngine={puppeteerEngine}
+      isPuppeteerActive={isPuppeteerActive}
     />
   );
 };
@@ -385,12 +412,22 @@ const CoachCanvas: React.FC<{
   speed?: number;
   timelineProgress?: number;
   cameraPreset?: 'face' | 'profile' | 'free';
-}> = ({ finalUrl, isPaused, exerciseName, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset }) => {
+  puppeteerEngine?: HunyuanPuppeteerEngine | null;
+  isPuppeteerActive?: boolean;
+}> = ({ finalUrl, isPaused, exerciseName, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset, puppeteerEngine, isPuppeteerActive }) => {
   const controlsRef = useRef<any>(null);
 
+  const isFloorExercise = Boolean(
+    exerciseName?.toLowerCase().includes('push') || 
+    exerciseName?.toLowerCase().includes('pompe') ||
+    exerciseName?.toLowerCase().includes('plank') ||
+    exerciseName?.toLowerCase().includes('planche')
+  );
+
   const initialCameraPos = useMemo<[number, number, number]>(() => {
-    return cameraPreset === 'profile' ? [3.0, 0.05, 0] : [0, 0.05, 3.0];
-  }, [cameraPreset]);
+    if (cameraPreset === 'profile') return [3.2, isFloorExercise ? 0.25 : 0.05, 0];
+    return [0, isFloorExercise ? 0.35 : 0.05, isFloorExercise ? 3.4 : 3.0];
+  }, [cameraPreset, isFloorExercise]);
 
   return (
     <Canvas
@@ -433,6 +470,8 @@ const CoachCanvas: React.FC<{
           isPrep={isPrep}
           speed={speed}
           timelineProgress={timelineProgress}
+          puppeteerEngine={puppeteerEngine}
+          isPuppeteerActive={isPuppeteerActive}
         />
       </Suspense>
 
@@ -442,7 +481,7 @@ const CoachCanvas: React.FC<{
         enableZoom={true}
         enablePan={false}
         makeDefault
-        target={[0, -0.16, 0]}
+        target={[0, isFloorExercise ? -0.32 : -0.16, 0]}
         minDistance={1.6}
         maxDistance={4.8}
         minPolarAngle={Math.PI / 4}
@@ -465,6 +504,8 @@ export interface HolographicCoachProps {
   cameraPreset?: 'face' | 'profile' | 'free';
   hideBadge?: boolean;
   hideThemeToggle?: boolean;
+  puppeteerEngine?: HunyuanPuppeteerEngine | null;
+  isPuppeteerActive?: boolean;
 }
 
 // HolographicCoach Main Component
@@ -481,6 +522,8 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
   cameraPreset,
   hideBadge = false,
   hideThemeToggle = false,
+  puppeteerEngine,
+  isPuppeteerActive,
 }) => {
   const [internalStudioTheme, setInternalStudioTheme] = useState<'white' | 'dark'>(() => {
     return (localStorage.getItem('f4x_studio_theme') as 'white' | 'dark') || 'white';
@@ -579,6 +622,8 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
               speed={speed}
               timelineProgress={timelineProgress}
               cameraPreset={cameraPreset}
+              puppeteerEngine={puppeteerEngine}
+              isPuppeteerActive={isPuppeteerActive}
             />
           </div>
         </Suspense>

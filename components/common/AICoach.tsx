@@ -45,6 +45,39 @@ function parseVoiceWorkoutParams(text: string): WorkoutGenerationParams {
   };
 }
 
+const COACH_TITLE_PROMPTS: Record<Language, string> = {
+  [Language.FR]: "Parlez au micro pour démarrer votre séance",
+  [Language.ES]: "Habla por el micrófono para iniciar tu entrenamiento",
+  [Language.AR]: "تحدث عبر الميكروفون لبدء تمرينك",
+  [Language.PT]: "Fale no microfone para iniciar seu treino",
+  [Language.JA]: "マイクに向かって話してワークアウトを開始",
+  [Language.ZH]: "对着麦克风说话以开始您的训练",
+  [Language.RU]: "Говорите в микрофон, чтобы начать тренировку",
+  [Language.EN]: "Speak into the mic to start your workout"
+};
+
+const COACH_EXAMPLE_PROMPTS: Record<Language, string> = {
+  [Language.FR]: "Ex: « Je veux une séance de calisthénie », « Entraînement intense », « Je suis prêt »",
+  [Language.ES]: 'Ej: "Quiero una sesión de calistenia", "Entrenamiento intenso", "Estoy listo"',
+  [Language.AR]: 'مثال: "أريد تمرين كاليستنكس"، "تمرين مكثف"، "أنا جاهز"',
+  [Language.PT]: 'Ex: "Quero um treino de calistenia", "Treino intenso", "Estou pronto"',
+  [Language.JA]: '例:「自重トレーニングがしたい」「ハードな運動」「準備完了」',
+  [Language.ZH]: '例：“我想练自重动作”，“高强度训练”，“我准备好了”',
+  [Language.RU]: 'Пример: «Хочу тренировку по калистенике», «Интенсивный тренинг», «Я готов»',
+  [Language.EN]: 'Ex: "I want a calisthenics workout", "High intensity", "I\'m ready"'
+};
+
+const COACH_INPUT_PLACEHOLDERS: Record<Language, string> = {
+  [Language.FR]: "Ou écrivez votre demande ici...",
+  [Language.ES]: "O escribe tu solicitud aquí...",
+  [Language.AR]: "أو اكتب طلبك هنا...",
+  [Language.PT]: "Ou digite seu pedido aqui...",
+  [Language.JA]: "またはここにリクエストを入力...",
+  [Language.ZH]: "或者在此输入您的要求...",
+  [Language.RU]: "Или напишите свой запрос здесь...",
+  [Language.EN]: "Or type your request here..."
+};
+
 const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const { language, startWorkoutFromVoice, translate } = useApp();
   const [isListening, setIsListening] = useState(false);
@@ -443,22 +476,10 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         {messages.length === 0 && !currentTranscript && (
           <div className="text-center py-6">
             <p className="text-sm font-bold text-purple-300 tracking-wide">
-              {language === Language.FR 
-                ? "Parlez au micro pour démarrer votre séance" 
-                : language === Language.ES 
-                ? "Habla por el micrófono para iniciar tu entrenamiento"
-                : language === Language.AR
-                ? "تحدث عبر الميكروفون لبدء تمرينك"
-                : "Speak into the mic to start your workout"}
+              {COACH_TITLE_PROMPTS[language] || COACH_TITLE_PROMPTS[Language.EN]}
             </p>
             <p className="text-[11px] text-zinc-400 mt-2">
-              {language === Language.FR 
-                ? "Ex: « Je veux une séance de calisthénie », « Entraînement intense », « Je suis prêt »" 
-                : language === Language.ES
-                ? 'Ej: "Quiero una sesión de calistenia", "Entrenamiento intenso", "Estoy listo"'
-                : language === Language.AR
-                ? 'مثال: "أريد تمرين كاليستنكس"، "تمرين مكثف"، "أنا جاهز"'
-                : 'Ex: "I want a calisthenics workout", "High intensity", "I\'m ready"'}
+              {COACH_EXAMPLE_PROMPTS[language] || COACH_EXAMPLE_PROMPTS[Language.EN]}
             </p>
           </div>
         )}
@@ -549,7 +570,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder={language === Language.FR ? "Ou écrivez votre demande ici..." : "Or type your request here..."}
+          placeholder={COACH_INPUT_PLACEHOLDERS[language] || COACH_INPUT_PLACEHOLDERS[Language.EN]}
           className="flex-1 bg-zinc-900 border border-purple-500/30 rounded-full px-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-400 transition-colors"
         />
         <button

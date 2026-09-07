@@ -13,7 +13,7 @@ export const DeviceStatusTrigger: React.FC<DeviceStatusTriggerProps> = ({
   variant = 'pill',
   className = '' 
 }) => {
-  const { isDeviceConnected, openDeviceModal, language } = useApp();
+  const { isDeviceConnected, openDeviceModal, translate } = useApp();
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -30,8 +30,8 @@ export const DeviceStatusTrigger: React.FC<DeviceStatusTriggerProps> = ({
             ? 'bg-emerald-950/60 border-emerald-500 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]' 
             : 'bg-neutral-900/90 border-purple-500/40 text-purple-300 hover:text-white hover:border-purple-400 shadow-md'
         } ${className}`}
-        aria-label="Connecter Bracelet EMS"
-        title={isDeviceConnected ? "Bracelet EMS Connecté" : "Connecter le Bracelet EMS"}
+        aria-label={translate('device.status.connect')}
+        title={translate(isDeviceConnected ? 'device.status.connected_tooltip' : 'device.status.connect_tooltip')}
       >
         <Watch className={`w-4 h-4 sm:w-5 sm:h-5 ${isDeviceConnected ? 'animate-pulse' : ''}`} />
         <span className={`absolute -top-1 -right-1 text-[7px] font-black px-1 rounded-full uppercase leading-tight font-mono ${
@@ -51,8 +51,8 @@ export const DeviceStatusTrigger: React.FC<DeviceStatusTriggerProps> = ({
           ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.35)] hover:bg-emerald-900/50' 
           : 'bg-purple-950/40 border-purple-500/50 text-purple-200 hover:text-white hover:border-purple-400 hover:bg-purple-900/40 shadow-lg'
       } ${className}`}
-      aria-label="Connecter Bracelet EMS"
-      title={isDeviceConnected ? "Bracelet EMS Connecté & Synchronisé" : "Cliquez pour connecter vos bandes EMS"}
+      aria-label={translate('device.status.connect')}
+      title={translate(isDeviceConnected ? 'device.status.connected_tooltip' : 'device.status.connect_tooltip')}
     >
       <div className="relative flex items-center justify-center">
         <Watch className={`w-4 h-4 ${isDeviceConnected ? 'text-emerald-400 animate-pulse' : 'text-purple-400'}`} />
@@ -64,9 +64,7 @@ export const DeviceStatusTrigger: React.FC<DeviceStatusTriggerProps> = ({
       <div className="flex items-center gap-1.5 text-[10px]">
         <span className="font-black tracking-widest text-white">EMS</span>
         <span className={`text-[9px] font-mono ${isDeviceConnected ? 'text-emerald-400 font-bold' : 'text-purple-300'}`}>
-          {isDeviceConnected 
-            ? (language === 'fr' ? 'Actif' : 'Active') 
-            : (language === 'fr' ? 'Connecter' : 'Connect')}
+          {translate(isDeviceConnected ? 'device.status.active' : 'device.status.connect')}
         </span>
       </div>
     </button>

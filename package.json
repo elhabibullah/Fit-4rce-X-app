@@ -22,6 +22,7 @@
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
     "three": "^0.170.0",
+    "three-mediapipe-rig": "^0.1.41",
     "ws": "^8.21.0"
   },
   "overrides": {

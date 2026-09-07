@@ -50,7 +50,27 @@ const SPRINT_TRANSLATIONS: Record<string, Record<string, string>> = {
     toast_recovery_completed: "RECOVERY COMPLETED! Line up for the next sprint!",
     toast_time_logged: "Time of {time} logged! Recovery countdown initiated.",
     toast_recovery_skipped: "Recovery skipped. Ready to run!",
-    toast_workout_finished: "Congratulations on finishing this athletics session!"
+    toast_workout_finished: "Congratulations on finishing this athletics session!",
+    configure: "Configure",
+    exit: "Exit",
+    stopwatch_active_step: "Stopwatch & Active Step",
+    expand: "EXPAND ▲",
+    collapse: "COLLAPSE ▼",
+    active_roadmap: "ACTIVE ROADMAP STEP",
+    prev: "Previous",
+    next: "Next",
+    completed_label: "LOGGED:",
+    reset_label: "Reset",
+    confirm: "Confirm",
+    cancel: "Cancel",
+    quit_title: "Quit Workout Session?",
+    quit_desc: "Your current progress will not be logged if you quit now.",
+    quit_btn: "Quit",
+    complete_title: "Complete Session?",
+    resume_btn: "Resume",
+    sprint_reset: "Sprint reset",
+    session_saved: "Session logged to your profile!",
+    not_completed: "Not completed"
   },
   fr: {
     coach_clipboard: "PLANCHE DE CHRONO",
@@ -93,7 +113,27 @@ const SPRINT_TRANSLATIONS: Record<string, Record<string, string>> = {
     toast_recovery_completed: "RÉCUPÉRATION TERMINÉE ! Alignez-vous pour le sprint suivant !",
     toast_time_logged: "Temps de {time} enregistré ! Compte à rebours de récupération démarré.",
     toast_recovery_skipped: "Récupération écourtée. Prêt à courir !",
-    toast_workout_finished: "Félicitations pour cet entraînement d'athlétisme !"
+    toast_workout_finished: "Félicitations pour cet entraînement d'athlétisme !",
+    configure: "Configuration",
+    exit: "Quitter",
+    stopwatch_active_step: "Chronomètre & Étape Active",
+    expand: "AFFICHER ▲",
+    collapse: "MASQUER ▼",
+    active_roadmap: "FEUILLE DE ROUTE ACTIVE",
+    prev: "Précédent",
+    next: "Suivant",
+    completed_label: "COMPLÉTÉ :",
+    reset_label: "Annuler",
+    confirm: "Valider",
+    cancel: "Annuler",
+    quit_title: "Quitter la Séance ?",
+    quit_desc: "Votre progression actuelle ne sera pas enregistrée si vous quittez maintenant.",
+    quit_btn: "Quitter",
+    complete_title: "Finaliser la séance ?",
+    resume_btn: "Reprendre",
+    sprint_reset: "Sprint réinitialisé",
+    session_saved: "Séance enregistrée sur votre profil !",
+    not_completed: "Non complété"
   },
   ar: {
     coach_clipboard: "لوحة المدرب",
@@ -136,7 +176,27 @@ const SPRINT_TRANSLATIONS: Record<string, Record<string, string>> = {
     toast_recovery_completed: "انتهت الاستراحة! استعد للسباق التالي!",
     toast_time_logged: "تم تسجيل زمن {time}! بدأ العد التنازلي للراحة.",
     toast_recovery_skipped: "تم تخطي الراحة. جاهز للجري!",
-    toast_workout_finished: "تهانينا على إنهاء هذه الجلسة الرياضية!"
+    toast_workout_finished: "تهانينا على إنهاء هذه الجلسة الرياضية!",
+    configure: "الإعدادات",
+    exit: "خروج",
+    stopwatch_active_step: "ساعة التوقيت والخطوة النشطة",
+    expand: "عرض ▲",
+    collapse: "إخفاء ▼",
+    active_roadmap: "خطوة خطة العمل النشطة",
+    prev: "السابق",
+    next: "التالي",
+    completed_label: "مكتمل:",
+    reset_label: "إلغاء",
+    confirm: "تأكيد",
+    cancel: "إلغاء",
+    quit_title: "إنهاء جلسة التمرين؟",
+    quit_desc: "لن يتم حفظ تقدمك الحالي إذا غادرت الآن.",
+    quit_btn: "خروج",
+    complete_title: "إنهاء الجلسة؟",
+    resume_btn: "استئناف",
+    sprint_reset: "تمت إعادة ضبط السبرينت",
+    session_saved: "تم تسجيل الجلسة في ملفك الشخصي!",
+    not_completed: "غير مكتمل"
   },
   es: {
     coach_clipboard: "TABLA DE ENTRENADOR",
@@ -179,7 +239,27 @@ const SPRINT_TRANSLATIONS: Record<string, Record<string, string>> = {
     toast_recovery_completed: "¡RECUPERACIÓN COMPLETADA! ¡Alinéese para el próximo sprint!",
     toast_time_logged: "¡Tiempo de {time} registrado! Cuenta regresiva de recuperación iniciada.",
     toast_recovery_skipped: "Recuperación omitida. ¡Listo para correr!",
-    toast_workout_finished: "¡Felicitaciones por terminar esta sesión de atletismo!"
+    toast_workout_finished: "¡Felicitaciones por terminar esta sesión de atletismo!",
+    configure: "Configuración",
+    exit: "Salir",
+    stopwatch_active_step: "Cronómetro y Paso Activo",
+    expand: "EXPANDIR ▲",
+    collapse: "CONTRAER ▼",
+    active_roadmap: "PASO ACTIVO DE LA GUÍA",
+    prev: "Anterior",
+    next: "Siguiente",
+    completed_label: "COMPLETADO:",
+    reset_label: "Restablecer",
+    confirm: "Confirmar",
+    cancel: "Cancelar",
+    quit_title: "¿Salir de la Sesión?",
+    quit_desc: "Tu progreso actual no se registrará si sales ahora.",
+    quit_btn: "Salir",
+    complete_title: "¿Completar Sesión?",
+    resume_btn: "Reanudar",
+    sprint_reset: "Sprint restablecido",
+    session_saved: "¡Sesión registrada en tu perfil!",
+    not_completed: "No completado"
   },
   pt: {
     coach_clipboard: "PRANCHETA DO TREINADOR",
@@ -222,7 +302,27 @@ const SPRINT_TRANSLATIONS: Record<string, Record<string, string>> = {
     toast_recovery_completed: "RECUPERAÇÃO CONCLUÍDA! Alinhe-se para o próximo sprint!",
     toast_time_logged: "Tempo de {time} registrado! Contagem regressiva de recuperação iniciada.",
     toast_recovery_skipped: "Recuperação pulada. Pronto para correr!",
-    toast_workout_finished: "Parabéns por finalizar este treino de atletismo!"
+    toast_workout_finished: "Parabéns por finalizar este treino de atletismo!",
+    configure: "Configuração",
+    exit: "Sair",
+    stopwatch_active_step: "Cronômetro e Etapa Ativa",
+    expand: "EXPANDIR ▲",
+    collapse: "RECOLHER ▼",
+    active_roadmap: "ETAPA ATIVA DO ROTEIRO",
+    prev: "Anterior",
+    next: "Próximo",
+    completed_label: "CONCLUÍDO:",
+    reset_label: "Redefinir",
+    confirm: "Confirmar",
+    cancel: "Cancelar",
+    quit_title: "Sair da Sessão?",
+    quit_desc: "Seu progresso atual não será registrado se você sair agora.",
+    quit_btn: "Sair",
+    complete_title: "Concluir Sessão?",
+    resume_btn: "Retomar",
+    sprint_reset: "Sprint redefinido",
+    session_saved: "Sessão registrada no seu perfil!",
+    not_completed: "Não concluído"
   },
   ja: {
     coach_clipboard: "コーチのクリップボード",
@@ -265,7 +365,27 @@ const SPRINT_TRANSLATIONS: Record<string, Record<string, string>> = {
     toast_recovery_completed: "リカバリー完了！次のスプリントの準備をしてください！",
     toast_time_logged: "タイム {time} を記録！リカバリーを開始します。",
     toast_recovery_skipped: "リカバリーをスキップしました。走る準備をしましょう！",
-    toast_workout_finished: "陸上セッション完走おめでとうございます！"
+    toast_workout_finished: "陸上セッション完走おめでとうございます！",
+    configure: "設定",
+    exit: "終了",
+    stopwatch_active_step: "ストップウォッチとアクティブステップ",
+    expand: "展開 ▲",
+    collapse: "折りたたむ ▼",
+    active_roadmap: "アクティブなロードマップステップ",
+    prev: "前へ",
+    next: "次へ",
+    completed_label: "完了:",
+    reset_label: "リセット",
+    confirm: "確認",
+    cancel: "キャンセル",
+    quit_title: "セッションを終了しますか？",
+    quit_desc: "今終了すると現在の進捗は保存されません。",
+    quit_btn: "終了",
+    complete_title: "セッションを完了しますか？",
+    resume_btn: "再開",
+    sprint_reset: "スプリントをリセットしました",
+    session_saved: "プロフィールにセッションが記録されました！",
+    not_completed: "未完了"
   },
   zh: {
     coach_clipboard: "教练剪贴板",
@@ -308,7 +428,27 @@ const SPRINT_TRANSLATIONS: Record<string, Record<string, string>> = {
     toast_recovery_completed: "恢复完成！准备下一趟冲刺！",
     toast_time_logged: "已记录成绩 {time}！恢复倒计时开始。",
     toast_recovery_skipped: "已跳过恢复。准备起跑！",
-    toast_workout_finished: "恭喜完成本次田径训练课目！"
+    toast_workout_finished: "恭喜完成本次田径训练课目！",
+    configure: "配置",
+    exit: "退出",
+    stopwatch_active_step: "秒表与当前步骤",
+    expand: "展开 ▲",
+    collapse: "折叠 ▼",
+    active_roadmap: "当前路线步骤",
+    prev: "上一步",
+    next: "下一步",
+    completed_label: "已完成:",
+    reset_label: "重置",
+    confirm: "确认",
+    cancel: "取消",
+    quit_title: "退出训练？",
+    quit_desc: "如果现在退出，当前的进度将不会被记录。",
+    quit_btn: "退出",
+    complete_title: "完成训练？",
+    resume_btn: "继续",
+    sprint_reset: "冲刺已重置",
+    session_saved: "训练已记录至个人档案！",
+    not_completed: "未完成"
   },
   ru: {
     coach_clipboard: "КЛИПБОРД ТРЕНЕРА",
@@ -351,7 +491,27 @@ const SPRINT_TRANSLATIONS: Record<string, Record<string, string>> = {
     toast_recovery_completed: "ОТДЫХ ЗАВЕРШЕН! Приготовьтесь к следующему спринту!",
     toast_time_logged: "Время {time} записано! Запущен обратный отсчет отдыха.",
     toast_recovery_skipped: "Отдых пропущен. Готов к старту!",
-    toast_workout_finished: "Поздравляем с успешным завершением легкоатлетической тренировки!"
+    toast_workout_finished: "Поздравляем с успешным завершением легкоатлетической тренировки!",
+    configure: "Настройка",
+    exit: "Выход",
+    stopwatch_active_step: "Секундомер и текущий шаг",
+    expand: "РАЗВЕРНУТЬ ▲",
+    collapse: "СВЕРНУТЬ ▼",
+    active_roadmap: "ТЕКУЩИЙ ШАГ ПЛАНА",
+    prev: "Назад",
+    next: "Вперед",
+    completed_label: "ВЫПОЛНЕНО:",
+    reset_label: "Сброс",
+    confirm: "Подтвердить",
+    cancel: "Отмена",
+    quit_title: "Выйти из тренировки?",
+    quit_desc: "Ваш текущий прогресс не сохранится, если выйти сейчас.",
+    quit_btn: "Выйти",
+    complete_title: "Завершить тренировку?",
+    resume_btn: "Продолжить",
+    sprint_reset: "Спринт сброшен",
+    session_saved: "Тренировка записана в ваш профиль!",
+    not_completed: "Не завершено"
   }
 };
 
@@ -643,7 +803,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
     let recoverySecs = 180; // default 3 minutes
 
     if (matchingEx) {
-      const recStr = language === 'fr' ? (matchingEx.recoveryFr || '') : (matchingEx.recoveryEn || '');
+      const recStr = language === 'fr' ? (matchingEx.recoveryFr || '') : (matchingEx.recoveryEn || matchingEx.recoveryFr || '');
       // Try to parse number of minutes from recovery string (e.g., "3 min" or "5 to 6 minutes")
       const matches = recStr.match(/(\d+)\s*(min|minute)/i);
       if (matches && matches[1]) {
@@ -686,18 +846,14 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
     // 1. Format the logged info
     const numLogged = Object.keys(repLogs).length;
     const totalReps = reps.length;
-    const workoutTitle = language === 'fr' 
-      ? `Séance Athlé Sprint (${event})` 
-      : `Athletics Sprint Session (${event})`;
+    const workoutTitle = `${t('core_sprint_board')} (${event})`;
     
-    const workoutDesc = language === 'fr'
-      ? `Sprints complétés : ${numLogged}/${totalReps} répétitions avec récupération de repli actif (Niveau: ${level.toUpperCase()}).`
-      : `Sprints completed: ${numLogged}/${totalReps} reps with active recovery guidelines (Level: ${level.toUpperCase()}).`;
+    const workoutDesc = `${t('tab_sprints')}: ${numLogged}/${totalReps} (${level.toUpperCase()})`;
 
     // Formulate exercises structure for App history logging
     const exercisesForHistory = reps.map(r => ({
-      name: language === 'fr' ? r.nameFr : r.nameEn,
-      description: `${language === 'fr' ? r.notesFr : r.notesEn} - Chrono: ${repLogs[r.id] || "Non complété / Not completed"}`,
+      name: language === 'fr' ? r.nameFr : (r.nameEn || r.nameFr),
+      description: `${language === 'fr' ? r.notesFr : (r.notesEn || r.notesFr)} - Chrono: ${repLogs[r.id] || t('not_completed')}`,
       muscleGroups: ['Quadriceps', 'Hamstrings', 'Calves', 'Core'],
       modelUrl: '',
       difficulty: level as any
@@ -712,7 +868,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
 
     // 3. Play whistle & notify user
     playWhistle();
-    showStatus(language === 'fr' ? "Séance enregistrée sur votre profil !" : "Session logged to your profile!");
+    showStatus(t('session_saved'));
     
     // 3b. Clear session state from localStorage
     try {
@@ -748,7 +904,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
           className="flex items-center text-gray-400 hover:text-white font-bold uppercase text-[10px] tracking-widest transition-colors"
         >
           <ChevronLeft className="w-4 h-4 mr-1.5" />
-          {language === 'fr' ? 'Configuration' : 'Configure'}
+          {t('configure')}
         </button>
         <button 
           onClick={() => {
@@ -758,7 +914,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
           className="flex items-center text-red-500 hover:text-red-400 font-bold uppercase text-[10px] tracking-widest transition-colors bg-red-950/10 border border-red-900/20 px-3 py-1.5 rounded-lg"
         >
           <X className="w-4 h-4 mr-1.5" />
-          {language === 'fr' ? 'Quitter' : 'Exit'}
+          {t('exit')}
         </button>
       </div>
 
@@ -812,7 +968,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
         <div className="flex items-center gap-2">
           <Clock size={13} className="text-purple-400 animate-pulse" />
           <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">
-            {language === 'fr' ? 'Chronomètre & Étape Active' : 'Stopwatch & Active Step'}
+            {t('stopwatch_active_step')}
           </span>
           {isTimerPanelCollapsed && (
             <span className="ml-2 font-mono text-[10px] bg-purple-950/40 text-purple-400 px-2 py-0.5 border border-purple-900/30 rounded font-black shadow-inner">
@@ -829,11 +985,11 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
         >
           {isTimerPanelCollapsed ? (
             <>
-              {language === 'fr' ? 'AFFICHER ▲' : 'EXPAND ▲'}
+              {t('expand')}
             </>
           ) : (
             <>
-              {language === 'fr' ? 'MASQUER ▼' : 'COLLAPSE ▼'}
+              {t('collapse')}
             </>
           )}
         </button>
@@ -891,7 +1047,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                 <div className="flex items-center justify-between mb-1.5 gap-2">
                   <span className="text-[8px] font-black uppercase text-purple-400 tracking-[0.2em] flex items-center gap-1 whitespace-nowrap">
                     <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse shadow-[0_0_8px_#a855f7]"></span>
-                    {language === 'fr' ? 'FEUILLE DE ROUTE ACTIVE' : 'ACTIVE ROADMAP STEP'}
+                    {t('active_roadmap')}
                   </span>
                   
                   {/* PREVIOUS / NEXT BROWSING BUTTONS */}
@@ -904,7 +1060,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                         setSelectedRepId(reps[activeRepIndex - 1].id);
                       }}
                       className="p-1 rounded bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                      title={language === 'fr' ? 'Précédent' : 'Previous'}
+                      title={t('prev')}
                     >
                       <ChevronLeft size={10} strokeWidth={3} />
                     </button>
@@ -919,7 +1075,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                         setSelectedRepId(reps[activeRepIndex + 1].id);
                       }}
                       className="p-1 rounded bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                      title={language === 'fr' ? 'Suivant' : 'Next'}
+                      title={t('next')}
                     >
                       <ChevronRight size={10} strokeWidth={3} />
                     </button>
@@ -927,24 +1083,24 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                 </div>
                 
                 <h4 className="text-xs font-black text-white uppercase tracking-wider leading-tight">
-                  {language === 'fr' ? activeRep.nameFr : activeRep.nameEn}
+                  {language === 'fr' ? activeRep.nameFr : (activeRep.nameEn || activeRep.nameFr)}
                 </h4>
                 
                 <p className="text-[9px] text-neutral-400 mt-1.5 leading-relaxed bg-neutral-950/40 p-2 rounded-xl border border-neutral-900">
-                  <span className="text-[8px] font-bold uppercase text-neutral-500 tracking-wider block mb-0.5">Focus technique / Coaching :</span>
-                  {language === 'fr' ? activeRep.notesFr : activeRep.notesEn}
+                  <span className="text-[8px] font-bold uppercase text-neutral-500 tracking-wider block mb-0.5">{t('coaching_focus')}</span>
+                  {language === 'fr' ? activeRep.notesFr : (activeRep.notesEn || activeRep.notesFr)}
                 </p>
               </div>
 
               <div className="mt-2.5 pt-2 border-t border-neutral-900/80 flex items-center justify-between gap-4">
                 <div className="flex flex-col">
                   <div className="flex gap-2 text-[9px] text-neutral-500 font-bold uppercase">
-                    <span>CIBLE : <span className="font-mono text-amber-500 font-black">{language === 'fr' ? activeRep.targetTimeFr : activeRep.targetTimeEn}</span></span>
-                    <span>RÉCUP : <span className="font-mono text-purple-400 font-black">{language === 'fr' ? activeRep.recoveryFr : activeRep.recoveryEn}</span></span>
+                    <span>{t('col_target')} : <span className="font-mono text-amber-500 font-black">{language === 'fr' ? activeRep.targetTimeFr : (activeRep.targetTimeEn || activeRep.targetTimeFr)}</span></span>
+                    <span>{t('rest_label')} <span className="font-mono text-purple-400 font-black">{language === 'fr' ? activeRep.recoveryFr : (activeRep.recoveryEn || activeRep.recoveryFr)}</span></span>
                   </div>
                   {repLogs[activeRep.id] && (
                     <span className="text-[8px] text-emerald-400 font-black uppercase mt-1.5 font-mono">
-                      ✓ {language === 'fr' ? 'COMPLÉTÉ : ' : 'LOGGED: '} {repLogs[activeRep.id]}
+                      ✓ {t('completed_label')} {repLogs[activeRep.id]}
                     </span>
                   )}
                 </div>
@@ -953,14 +1109,14 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     playClickSound(800, 0.05);
-                    const target = language === 'fr' ? activeRep.targetTimeFr : activeRep.targetTimeEn;
+                    const target = language === 'fr' ? activeRep.targetTimeFr : (activeRep.targetTimeEn || activeRep.targetTimeFr);
                     if (repLogs[activeRep.id]) {
                       setRepLogs(prev => {
                         const next = { ...prev };
                         delete next[activeRep.id];
                         return next;
                       });
-                      showStatus(language === 'fr' ? "Sprint réinitialisé" : "Sprint reset");
+                      showStatus(t('sprint_reset'));
                     } else {
                       handleLogActiveRep(activeRep.id, undefined, target);
                     }
@@ -968,7 +1124,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                   className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition-all ${repLogs[activeRep.id] ? 'bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-purple-600 text-white hover:bg-purple-500 shadow-md'}`}
                 >
                   <Check size={11} strokeWidth={4} />
-                  {repLogs[activeRep.id] ? (language === 'fr' ? 'Annuler' : 'Reset') : (language === 'fr' ? 'Valider' : 'Confirm')}
+                  {repLogs[activeRep.id] ? t('reset_label') : t('confirm')}
                 </button>
               </div>
             </div>
@@ -1138,11 +1294,11 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                   {reps.map((rep, idx) => {
                     const isSelected = selectedRepId === rep.id;
                     const loggedTime = repLogs[rep.id];
-                    const repTitle = language === 'fr' ? rep.nameFr : rep.nameEn;
-                    const intensity = language === 'fr' ? rep.intensityFr : rep.intensityEn;
-                    const target = language === 'fr' ? rep.targetTimeFr : rep.targetTimeEn;
-                    const recovery = language === 'fr' ? rep.recoveryFr : rep.recoveryEn;
-                    const notes = language === 'fr' ? rep.notesFr : rep.notesEn;
+                    const repTitle = language === 'fr' ? rep.nameFr : (rep.nameEn || rep.nameFr);
+                    const intensity = language === 'fr' ? rep.intensityFr : (rep.intensityEn || rep.intensityFr);
+                    const target = language === 'fr' ? rep.targetTimeFr : (rep.targetTimeEn || rep.targetTimeFr);
+                    const recovery = language === 'fr' ? rep.recoveryFr : (rep.recoveryEn || rep.recoveryFr);
+                    const notes = language === 'fr' ? rep.notesFr : (rep.notesEn || rep.notesFr);
 
                     return (
                       <div 
@@ -1168,7 +1324,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                                   delete next[rep.id];
                                   return next;
                                 });
-                                showStatus(language === 'fr' ? "Sprint réinitialisé" : "Sprint reset");
+                                showStatus(t('sprint_reset'));
                               } else {
                                 // Fast check-off (vink/tick) using the target time!
                                 handleLogActiveRep(rep.id, undefined, target); 
@@ -1365,12 +1521,10 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                {language === 'fr' ? "Quitter la Séance ?" : "Quit Workout Session?"}
+                {t('quit_title')}
               </h3>
               <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
-                {language === 'fr' 
-                  ? "Votre progression actuelle ne sera pas enregistrée si vous quittez maintenant." 
-                  : "Your current progress will not be logged if you quit now."}
+                {t('quit_desc')}
               </p>
             </div>
             <div className="flex gap-3 pt-2">
@@ -1381,7 +1535,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                 }}
                 className="flex-1 py-2.5 bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-neutral-400 transition-all active:scale-95"
               >
-                {language === 'fr' ? 'Annuler' : 'Cancel'}
+                {t('cancel')}
               </button>
               <button 
                 onClick={() => {
@@ -1391,7 +1545,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                 }}
                 className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg shadow-red-900/20"
               >
-                {language === 'fr' ? 'Quitter' : 'Quit'}
+                {t('quit_btn')}
               </button>
             </div>
           </div>
@@ -1407,7 +1561,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                {language === 'fr' ? "Finaliser la séance ?" : "Complete Session?"}
+                {t('complete_title')}
               </h3>
               <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
                 {t('confirm_early_complete')}
@@ -1421,7 +1575,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                 }}
                 className="flex-1 py-2.5 bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-neutral-400 transition-all active:scale-95"
               >
-                {language === 'fr' ? 'Reprendre' : 'Resume'}
+                {t('resume_btn')}
               </button>
               <button 
                 onClick={() => {
@@ -1431,7 +1585,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                 }}
                 className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg shadow-purple-900/20"
               >
-                {language === 'fr' ? 'Valider' : 'Confirm'}
+                {t('confirm')}
               </button>
             </div>
           </div>

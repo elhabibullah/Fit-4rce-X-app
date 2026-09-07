@@ -28,6 +28,39 @@ const mapToModel = (eq: string): string => {
     return MODEL_LIBRARY.bodyweight;
 };
 
+const FALLBACK_TRAINING_TITLES: Record<string, string> = {
+    fr: "Entraînement Haute Performance",
+    en: "High-Performance Training",
+    es: "Entrenamiento de Alto Rendimiento",
+    pt: "Treinamento de Alto Desempenho",
+    ar: "تدريب عالي الأداء",
+    ja: "ハイパフォーマンストレーニング",
+    zh: "高水平体能训练",
+    ru: "Высокоинтенсивная тренировка"
+};
+
+const FALLBACK_TRAINING_DESCRIPTIONS: Record<string, string> = {
+    fr: "Séance personnalisée générée par l'IA.",
+    en: "Custom AI workout session.",
+    es: "Sesión de entrenamiento personalizada con IA.",
+    pt: "Sessão de treino personalizada com IA.",
+    ar: "جلسة تمرين مخصصة تم إنشاؤها بالذكاء الاصطناعي.",
+    ja: "AIによって生成されたカスタムワークアウトセッション。",
+    zh: "由AI定制的个性化训练课目。",
+    ru: "Индивидуальная тренировка, сгенерированная ИИ."
+};
+
+const FALLBACK_ACK_MESSAGES: Record<string, string> = {
+    fr: "Bien reçu ! Je prépare vos exercices.",
+    en: "Great! Preparing your exercises.",
+    es: "¡Perfecto! Preparando tus ejercicios.",
+    pt: "Recebido! Preparando seus exercícios.",
+    ar: "ممتاز! جاري تجهيز التمارين.",
+    ja: "了解しました！エクササイズを準備しています。",
+    zh: "收到！正在为您准备训练动作。",
+    ru: "Принято! Готовлю ваши упражнения."
+};
+
 export interface WorkoutConfigOptions {
     level?: 'beginner' | 'medium' | 'advanced' | string;
     goal?: 'fitness' | 'mass_gaining' | 'power_training' | string;
@@ -113,8 +146,8 @@ export const generateWorkout = async (
         }));
 
         return {
-            title: data.title || (language === Language.FR ? "Entraînement Haute Performance" : "High-Performance Training"),
-            description: data.description || (language === Language.FR ? "Séance personnalisée générée par l'IA." : "Custom AI workout session."),
+            title: data.title || FALLBACK_TRAINING_TITLES[language] || FALLBACK_TRAINING_TITLES['en'],
+            description: data.description || FALLBACK_TRAINING_DESCRIPTIONS[language] || FALLBACK_TRAINING_DESCRIPTIONS['en'],
             exercises: exercises,
             level: options?.level || 'medium',
             goal: options?.goal || 'fitness',
@@ -233,9 +266,10 @@ export const getChatbotResponse = async (msg: string, language: string = 'en', h
         });
         if (!response.ok) throw new Error('Chatbot response failed');
         const data = await response.json();
-        return data.text || (language === 'fr' ? "Bien reçu ! Je prépare vos exercices." : (language === 'es' ? "¡Perfecto! Preparando tus ejercicios." : (language === 'ar' ? "ممتاز! جاري تجهيز التمارين." : "Great! Preparing your exercises.")));
+        const fallbackMsg = FALLBACK_ACK_MESSAGES[language] || FALLBACK_ACK_MESSAGES['en'];
+        return data.text || fallbackMsg;
     } catch (e) {
-        return language === 'fr' ? "Bien reçu ! Je prépare vos exercices." : (language === 'es' ? "¡Perfecto! Preparando tus ejercicios." : (language === 'ar' ? "ممتاز! جاري تجهيز التمارين." : "Great! Preparing your exercises."));
+        return FALLBACK_ACK_MESSAGES[language] || FALLBACK_ACK_MESSAGES['en'];
     }
 };
 

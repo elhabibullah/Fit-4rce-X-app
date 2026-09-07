@@ -1,12 +1,13 @@
 import React, { useRef, useState } from 'react';
 import Card from '../components/common/Card.tsx';
-import { ChevronRight, CreditCard, Globe, MessageSquareQuote, Watch, Info, Camera, Lock, User, History, Bookmark, RefreshCw, Shield } from 'lucide-react';
+import { ChevronRight, CreditCard, Globe, MessageSquareQuote, Watch, Info, Camera, Lock, User, History, Bookmark, RefreshCw, Shield, Bot } from 'lucide-react';
 import { useApp } from '../hooks/useApp.ts';
 import { Screen } from '../types.ts';
 import Button from '../components/common/Button.tsx';
 import PrivacyModal from '../components/profile/PrivacyModal.tsx';
 import ImageCropper from '../components/profile/ImageCropper.tsx';
 import { SensorsPermissionBanner } from '../components/common/SensorsPermissionBanner.tsx';
+import ModelTesterModal from '../components/profile/ModelTesterModal.tsx';
 
 const ProfileOption: React.FC<{ icon: React.ElementType; title: string; onClick?: () => void; disabled?: boolean; subtitle?: string }> = ({ icon: Icon, title, onClick, disabled = false, subtitle }) => {
     const IconComp = Icon as any;
@@ -34,6 +35,7 @@ const ProfileScreen: React.FC = () => {
         updateUserProfile, language, openDeviceModal
     } = useApp();
     const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+    const [isModelTesterOpen, setIsModelTesterOpen] = useState(false);
     const [imageToCrop, setImageToCrop] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,6 +95,7 @@ const ProfileScreen: React.FC = () => {
             <SensorsPermissionBanner />
 
             <div className="space-y-2 pt-2">
+                <ProfileOption icon={Bot} title="Studio 3D & Miroir Humanoïde" subtitle="Cyborg F4X • Sifu • Biomécanique" onClick={() => setIsModelTesterOpen(true)} />
                 <ProfileOption icon={Watch} title={translate('profile.gear.title')} onClick={openDeviceModal} />
                 <ProfileOption icon={CreditCard} title={translate('profile.subscription.title')} onClick={() => setScreen(Screen.SubscriptionManagement)} />
                 <ProfileOption icon={Info} title={translate('intro.header')} subtitle={translate('home.cardio.spinning.desc')} onClick={() => updateUserProfile({ onboarding_complete: false, onboarding_step: 'intro' })} />
@@ -121,6 +124,7 @@ const ProfileScreen: React.FC = () => {
             </div>
 
             <PrivacyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
+            <ModelTesterModal isOpen={isModelTesterOpen} onClose={() => setIsModelTesterOpen(false)} />
             {imageToCrop && <ImageCropper src={imageToCrop} onSave={handleCropSave} onClose={() => setImageToCrop(null)} />}
         </div>
     );

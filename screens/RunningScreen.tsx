@@ -16,6 +16,28 @@ import { SprintDashboard } from '../components/running/SprintDashboard.tsx';
 
 type RunningView = 'config' | 'generating' | 'briefing' | 'environment_select' | 'active';
 
+const PHOTO_LABELS: Record<string, string> = {
+  en: 'Photo',
+  fr: 'Photo',
+  es: 'Foto',
+  pt: 'Foto',
+  ar: 'صورة',
+  ja: '写真',
+  zh: '照片',
+  ru: 'Фото'
+};
+
+const VIDEO_LABELS: Record<string, string> = {
+  en: 'Video',
+  fr: 'Vidéo',
+  es: 'Vídeo',
+  pt: 'Vídeo',
+  ar: 'فيديو',
+  ja: '動画',
+  zh: '视频',
+  ru: 'Видео'
+};
+
 const RunningScreen: React.FC = () => {
   const { translate, isDeviceConnected, deviceMetrics, language, setScreen, setIsGeneratingWorkout, setSelectedPlan, showStatus, logWorkout } = useApp();
   const [view, setView] = useState<RunningView>('config');
@@ -117,21 +139,21 @@ const RunningScreen: React.FC = () => {
                       {['100m', '200m', '400m', '800m'].includes(event) && (
                           <section className="animate-fadeIn">
                               <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4 px-1 text-center">
-                                  {language === 'fr' ? "Composants de l'Entraînement" : 'Training Components'}
+                                  {translate('running.sprint_components')}
                               </h3>
                               <div className="grid grid-cols-2 gap-3">
                                   {[
-                                      { id: 'combination', labelFr: 'Combinaison (Elite)', labelEn: 'Complete Combination' },
-                                      { id: 'running', labelFr: 'Sprints seuls', labelEn: 'Only Sprints' },
-                                      { id: 'plyo', labelFr: 'Pliométrie seule', labelEn: 'Only Plyometrics' },
-                                      { id: 'power', labelFr: 'Force / Power seul', labelEn: 'Only Power' }
+                                      { id: 'combination', labelKey: 'running.opt.combination' },
+                                      { id: 'running', labelKey: 'running.opt.running' },
+                                      { id: 'plyo', labelKey: 'running.opt.plyo' },
+                                      { id: 'power', labelKey: 'running.opt.power' }
                                   ].map(opt => (
                                       <button
                                           key={opt.id}
                                           onClick={() => setSprintOption(opt.id as any)}
                                           className={`p-4 rounded-xl text-[10px] font-bold uppercase border transition-all ${sprintOption === opt.id ? 'bg-purple-900/20 border-purple-500 text-white shadow-[0_0_15px_rgba(138,43,226,0.2)]' : 'bg-gray-900 border-gray-800 text-gray-500'}`}
                                       >
-                                          {language === 'fr' ? opt.labelFr : opt.labelEn}
+                                          {translate(opt.labelKey)}
                                       </button>
                                   ))}
                               </div>
@@ -167,11 +189,11 @@ const RunningScreen: React.FC = () => {
               {/* EXIT / NAVIGATION BAR */}
               <div className="flex-none flex items-center justify-between mb-6 border-b border-gray-900 pb-3">
                   <button onClick={() => setView('config')} className="flex items-center text-gray-400 hover:text-white font-normal uppercase text-[10px] tracking-widest">
-                      <ChevronLeft className="w-5 h-5 mr-1" />{language === 'fr' ? 'Configuration' : 'Configure'}
+                      <ChevronLeft className="w-5 h-5 mr-1" />{translate('running.config.title')}
                   </button>
                   <DeviceStatusTrigger />
                   <button onClick={() => setScreen(Screen.Home)} className="flex items-center text-red-500 hover:text-red-400 font-normal uppercase text-[10px] tracking-widest">
-                      <X className="w-4 h-4 mr-1" />{language === 'fr' ? 'Quitter' : 'Exit'}
+                      <X className="w-4 h-4 mr-1" />{translate('running.exit')}
                   </button>
               </div>
 
@@ -184,15 +206,15 @@ const RunningScreen: React.FC = () => {
                     {['100m', '200m', '400m', '800m'].includes(event) ? (
                         <div className="space-y-6">
                             <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-line font-medium italic border-l-2 border-purple-500 pl-3">
-                                {language === 'fr' ? generatedPlan?.descriptionFr : generatedPlan?.descriptionEn}
+                                {language === 'fr' ? generatedPlan?.descriptionFr : (generatedPlan?.descriptionEn || generatedPlan?.descriptionFr)}
                             </p>
                             
                             <section>
                                 <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">
-                                    {language === 'fr' ? "1. Échauffement Dynamique" : "1. Dynamic Warm-up"}
+                                    {translate('running.step.warmup')}
                                 </h4>
                                 <ul className="list-disc list-inside text-gray-300 text-xs space-y-1 pl-1">
-                                    {(language === 'fr' ? generatedPlan?.warmupFr : generatedPlan?.warmupEn)?.map((w: string, idx: number) => (
+                                    {(language === 'fr' ? generatedPlan?.warmupFr : (generatedPlan?.warmupEn || generatedPlan?.warmupFr))?.map((w: string, idx: number) => (
                                         <li key={idx}>{w}</li>
                                     ))}
                                 </ul>
@@ -200,10 +222,10 @@ const RunningScreen: React.FC = () => {
 
                             <section>
                                 <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">
-                                    {language === 'fr' ? "2. Éducatifs Techniques" : "2. Stride Drills"}
+                                    {translate('running.step.drills')}
                                 </h4>
                                 <ul className="list-disc list-inside text-gray-300 text-xs space-y-1 pl-1">
-                                    {(language === 'fr' ? generatedPlan?.drillsFr : generatedPlan?.drillsEn)?.map((d: string, idx: number) => (
+                                    {(language === 'fr' ? generatedPlan?.drillsFr : (generatedPlan?.drillsEn || generatedPlan?.drillsFr))?.map((d: string, idx: number) => (
                                         <li key={idx}>{d}</li>
                                     ))}
                                 </ul>
@@ -211,14 +233,14 @@ const RunningScreen: React.FC = () => {
 
                             <section>
                                 <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">
-                                    {language === 'fr' ? "3. Corps de Séance (Feuille de Route)" : "3. Core Sprint Protocol (Roadmap)"}
+                                    {translate('running.step.roadmap')}
                                 </h4>
                                 <div className="space-y-2 border border-neutral-800 rounded-xl p-3 bg-black/40">
                                     {generatedPlan?.mainExercises?.map((ex: any, idx: number) => (
                                         <div key={idx} className="flex justify-between items-start text-xs border-b border-neutral-900/40 pb-1.5 last:border-0 last:pb-0">
                                             <div>
                                                 <span className="font-bold text-white block">
-                                                    {language === 'fr' ? ex.nameFr : ex.nameEn}
+                                                    {language === 'fr' ? ex.nameFr : (ex.nameEn || ex.nameFr)}
                                                 </span>
                                                 <span className="text-[10px] text-neutral-400">
                                                     {ex.distance && <span className="bg-neutral-900 px-1 py-0.2 rounded font-mono font-black text-[9px] border border-neutral-800 text-purple-400">{ex.distance}</span>}
@@ -227,10 +249,10 @@ const RunningScreen: React.FC = () => {
                                             </div>
                                             <div className="text-right font-mono text-[10px]">
                                                 <span className="text-amber-500 font-bold block">
-                                                    {language === 'fr' ? ex.targetTimeFr : ex.targetTimeEn}
+                                                    {language === 'fr' ? ex.targetTimeFr : (ex.targetTimeEn || ex.targetTimeFr)}
                                                 </span>
                                                 <span className="text-neutral-500 text-[9px]">
-                                                    {language === 'fr' ? "Récup : " + ex.recoveryFr : "Rest: " + ex.recoveryEn}
+                                                    {translate('workout.rest.pause')}: {language === 'fr' ? ex.recoveryFr : (ex.recoveryEn || ex.recoveryFr)}
                                                 </span>
                                             </div>
                                         </div>
@@ -293,7 +315,7 @@ const RunningScreen: React.FC = () => {
                     }} 
                     className="w-full py-6 font-black uppercase tracking-widest shadow-[0_0_30px_rgba(138,43,226,0.2)]"
                 >
-                    {['100m', '200m', '400m', '800m'].includes(event) ? (language === 'fr' ? "DÉMARRER LA SESSION DE SPRINT" : "START SPRINT SESSION") : "INITIALIZE ENVIRONMENT"}
+                    {['100m', '200m', '400m', '800m'].includes(event) ? translate('running.btn.start_sprint') : "INITIALIZE ENVIRONMENT"}
                 </Button>
               </div>
           </div>
@@ -313,7 +335,7 @@ const RunningScreen: React.FC = () => {
                       <ChevronLeft className="w-5 h-5 mr-1" />{translate('back')}
                   </button>
                   <button onClick={() => setScreen(Screen.Home)} className="flex items-center text-red-500 hover:text-red-400 font-normal uppercase text-[10px] tracking-widest">
-                      <X className="w-4 h-4 mr-1" />{language === 'fr' ? 'Quitter' : 'Exit'}
+                      <X className="w-4 h-4 mr-1" />{translate('running.exit')}
                   </button>
                </header>
                <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight sm:tracking-tighter mb-12 text-center"># {translate('running.env.title')}</h1>
@@ -373,7 +395,7 @@ const RunningScreen: React.FC = () => {
                 }} 
                 className="p-3 bg-black/60 backdrop-blur-xl rounded-full text-red-500 border border-white/10 shadow-2xl active:scale-90 transition-all flex items-center gap-1.5 px-4 font-bold text-[10px] tracking-widest uppercase"
             >
-                <X size={14}/> {language === 'fr' ? 'QUITTER / ENREGISTRER' : 'EXIT / SAVE'}
+                <X size={14}/> {translate('running.btn.save_exit')}
             </button>
             <div className="flex items-center gap-3">
                 {['100m', '200m', '400m', '800m'].includes(event) ? (
@@ -382,13 +404,13 @@ const RunningScreen: React.FC = () => {
                             onClick={() => setEnv('track')}
                             className={`px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all ${env === 'track' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(138,43,226,0.4)]' : 'text-gray-400'}`}
                         >
-                            {language === 'fr' ? 'Photo' : 'Photo'}
+                            {PHOTO_LABELS[language] || PHOTO_LABELS['en']}
                         </button>
                         <button
                             onClick={() => setEnv('field')}
                             className={`px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all ${env === 'field' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(138,43,226,0.4)]' : 'text-gray-400'}`}
                         >
-                            {language === 'fr' ? 'Vidéo' : 'Video'}
+                            {VIDEO_LABELS[language] || VIDEO_LABELS['en']}
                         </button>
                     </div>
                 ) : (
@@ -460,12 +482,10 @@ const RunningScreen: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-black text-white uppercase tracking-tight">
-                  {language === 'fr' ? "Enregistrer & Quitter ?" : "Save & Exit Run?"}
+                  {translate('running.dialog.save_title')}
                 </h3>
                 <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-                  {language === 'fr' 
-                    ? "Voulez-vous enregistrer cette séance de course à pied de " + event + " dans votre historique d'entraînement ?" 
-                    : "Would you like to save this " + event + " running session to your training history?"}
+                  {translate('running.dialog.save_desc')}
                 </p>
               </div>
               <div className="flex flex-col gap-2 pt-2">
@@ -473,18 +493,16 @@ const RunningScreen: React.FC = () => {
                   onClick={() => {
                     setShowExitConfirm(false);
                     logWorkout({
-                        title: language === 'fr' ? `Course à pied (${event})` : `Running Session (${event})`,
-                        description: language === 'fr' 
-                            ? `Course de ${event} complétée en ${Math.floor(time/60)}m ${time%60}s.`
-                            : `Course of ${event} completed in ${Math.floor(time/60)}m ${time%60}s.`,
+                        title: `${translate('running.track.generate')} (${event})`,
+                        description: `${event} - ${Math.floor(time/60)}m ${time%60}s`,
                         exercises: []
                     });
-                    showStatus(language === 'fr' ? "Course enregistrée !" : "Run saved!");
+                    showStatus(translate('running.dialog.saved'));
                     setScreen(Screen.Home);
                   }}
                   className="w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg shadow-purple-900/20"
                 >
-                  {language === 'fr' ? 'ENREGISTRER & QUITTER' : 'SAVE & EXIT'}
+                  {translate('running.btn.save_exit')}
                 </button>
                 <button 
                   onClick={() => {
@@ -493,7 +511,7 @@ const RunningScreen: React.FC = () => {
                   }}
                   className="w-full py-3 bg-neutral-900 hover:bg-neutral-850 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-red-500 transition-all active:scale-95"
                 >
-                  {language === 'fr' ? 'QUITTER SANS ENREGISTRER' : 'QUIT WITHOUT SAVING'}
+                  {translate('running.btn.quit_no_save')}
                 </button>
                 <button 
                   onClick={() => {
@@ -501,7 +519,7 @@ const RunningScreen: React.FC = () => {
                   }}
                   className="w-full py-3 bg-black hover:bg-neutral-950 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-400 transition-all active:scale-95 text-center"
                 >
-                  {language === 'fr' ? 'REPRENDRE LA COURSE' : 'RESUME RUN'}
+                  {translate('running.btn.resume_run')}
                 </button>
               </div>
             </div>
