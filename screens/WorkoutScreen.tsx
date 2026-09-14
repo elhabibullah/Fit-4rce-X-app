@@ -328,8 +328,11 @@ const WorkoutScreen: React.FC = () => {
         const restProgress = ((restBetweenSets - restTimer) / restBetweenSets) * 100;
 
         return (
-            <div className={`fixed inset-0 z-[2500] ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'} flex flex-col font-['Poppins'] overflow-hidden`}>
-                <div className={`relative flex-1 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'} overflow-hidden`}>
+            <div 
+                className={`fixed inset-0 z-[2500] ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'} flex flex-col font-['Poppins'] overflow-y-auto max-h-screen custom-scrollbar`}
+                style={{ height: '100vh', maxHeight: '100vh' }}
+            >
+                <div className={`relative flex-1 min-h-[52vh] sm:min-h-0 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'} overflow-hidden shrink-0`}>
                     
                     {/* 3D HOLOGRAPHIC HUMANOID COACH IN STUDIO */}
                     <div className={`absolute inset-0 z-10 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'}`}>
@@ -535,7 +538,10 @@ const WorkoutScreen: React.FC = () => {
                 </div>
 
                 {/* BOTTOM EXERCISE & SETS HUD BAR */}
-                <div className="bg-zinc-950 px-4 sm:px-8 py-4 sm:py-6 z-[300] relative flex flex-col justify-center border-t border-zinc-900 shadow-[0_-10px_30px_rgba(0,0,0,0.6)]">
+                <div 
+                    className="bg-zinc-950 px-4 sm:px-8 pt-4 sm:pt-6 pb-28 sm:pb-8 z-[300] relative flex flex-col justify-center border-t border-zinc-900 shadow-[0_-10px_30px_rgba(0,0,0,0.6)] shrink-0"
+                    style={{ paddingBottom: '100px' }}
+                >
                     
                     {/* PROGRESS BAR */}
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-zinc-900 overflow-hidden">

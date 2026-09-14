@@ -107,12 +107,12 @@ export class HunyuanSkeletalRetargeter {
     this.resetToRestPose();
 
     const calibratedHips = this.bones.get('Hips');
-    const isProne = Boolean(pose.proneAngle && pose.proneAngle > 0.5);
+    const isFloor = Boolean(pose.proneAngle && Math.abs(pose.proneAngle) > 0.5);
 
     // 2. Apply root/hips translation
     if (this.hipsBone && calibratedHips) {
-      if (isProne) {
-        // Floor exercises (Push-up, Plank):
+      if (isFloor) {
+        // Floor exercises (Push-up, Plank, Superman, Glute Bridge, Crunch):
         // Lower hips to floor level and center horizontally on podium
         const floorDrop = 2.05 * this.unitScale;
         const forwardShift = 0.35 * this.unitScale;
@@ -135,12 +135,12 @@ export class HunyuanSkeletalRetargeter {
       let yaw = rot ? rot.yaw : 0;
       let roll = rot ? rot.roll : 0;
 
-      // In prone position, tilt hips/pelvis forward by proneAngle
-      if (boneName === 'Hips' && isProne) {
+      // In floor position, tilt hips/pelvis by proneAngle
+      if (boneName === 'Hips' && isFloor) {
         pitch += pose.proneAngle!;
       }
 
-      if (pitch === 0 && yaw === 0 && roll === 0 && (!isProne || boneName !== 'Hips')) {
+      if (pitch === 0 && yaw === 0 && roll === 0 && (!isFloor || boneName !== 'Hips')) {
         const calibrated = this.bones.get(boneName);
         if (calibrated) {
           calibrated.bone.updateMatrixWorld(true);

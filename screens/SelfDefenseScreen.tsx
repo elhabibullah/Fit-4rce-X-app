@@ -93,7 +93,10 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
     const effectiveModelUrl = technique.modelUrl || SIFU_MODEL_URL;
 
     return (
-        <div className="fixed inset-0 z-[200] bg-black text-white flex flex-col font-['Poppins'] select-none">
+        <div 
+            className="fixed inset-0 z-[200] bg-black text-white flex flex-col font-['Poppins'] select-none overflow-y-auto max-h-screen custom-scrollbar"
+            style={{ height: '100vh', maxHeight: '100vh' }}
+        >
             {/* Header: High contrast, top controls with EMS trigger */}
             <header className="p-3 sm:p-4 flex items-center justify-between border-b border-gray-900/80 bg-black/95 backdrop-blur-md z-30 shrink-0">
                 <button 
@@ -128,10 +131,12 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
             {/* Main Content Area */}
             <div className={`flex-1 flex flex-col ${isFullscreen ? 'p-0 overflow-hidden' : 'p-2 sm:p-4 overflow-y-auto custom-scrollbar'}`}>
                 {/* 3D CINEMA PLAYER VIEWPORT: EXPANDED DOMINANT HERO STUDIO */}
-                <div className={`w-full relative transition-all duration-300 ${
+                <div 
+                    style={{ touchAction: 'pan-y' }}
+                    className={`w-full relative transition-all duration-300 ${
                     isFullscreen 
                         ? 'flex-1 h-full rounded-none border-none' 
-                        : 'h-[62vh] min-h-[440px] sm:h-[70vh] sm:min-h-[520px] rounded-3xl border shadow-2xl overflow-hidden shrink-0'
+                        : 'h-[50vh] min-h-[360px] sm:h-[60vh] sm:min-h-[460px] rounded-3xl border shadow-2xl overflow-hidden shrink-0'
                 } ${studioTheme === 'white' ? 'bg-white border-neutral-300/80 shadow-[0_10px_40px_rgba(0,0,0,0.08)]' : 'bg-black border-[#DAA520]/40 shadow-[0_0_50px_rgba(218,165,32,0.15)]'}`}>
                     
                     {/* 3D Model of Sifu with full viewport space */}
@@ -386,13 +391,13 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                         </div>
 
                         {/* Start Training Button */}
-                        <div className="pb-8">
+                        <div className="pb-28 sm:pb-32" style={{ paddingBottom: '110px' }}>
                             <Button 
                                 onClick={() => {
                                     setIsPrep(true);
                                     setCountdown(10);
                                 }} 
-                                className="w-full py-3 bg-[#DAA520] hover:bg-[#c5961d] border-[#DAA520] text-black font-black uppercase text-xs tracking-[0.15em] shadow-[0_0_20px_rgba(218,165,32,0.3)] active:scale-95 transition-all"
+                                className="w-full py-3.5 bg-[#DAA520] hover:bg-[#c5961d] border-[#DAA520] text-black font-black uppercase text-xs tracking-[0.15em] shadow-[0_0_20px_rgba(218,165,32,0.3)] active:scale-95 transition-all"
                             >
                                 LANCER LE DRILL SIFU (10s D'INSTALLATION)
                             </Button>

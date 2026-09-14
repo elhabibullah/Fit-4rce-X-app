@@ -401,6 +401,44 @@ const CameraPresetHandler: React.FC<{
   return null;
 };
 
+// Dynamic Automatic Camera Tracking: Centers on character's center of gravity (hips)
+const CameraHipsTracker: React.FC<{
+  controlsRef: React.RefObject<any>;
+}> = ({ controlsRef }) => {
+  const { scene, camera } = useThree();
+  const hipsBoneRef = useRef<THREE.Bone | null>(null);
+  const tempPos = useRef(new THREE.Vector3());
+
+  useFrame(() => {
+    if (!hipsBoneRef.current) {
+      scene.traverse((obj) => {
+        if (!hipsBoneRef.current && ((obj as any).isBone || obj.type === 'Bone')) {
+          const name = obj.name.toLowerCase();
+          if (name.includes('hip') || name.includes('pelvis') || name.includes('bip01')) {
+            hipsBoneRef.current = obj as THREE.Bone;
+          }
+        }
+      });
+    }
+
+    if (hipsBoneRef.current) {
+      hipsBoneRef.current.getWorldPosition(tempPos.current);
+      if (controlsRef.current) {
+        const target = controlsRef.current.target;
+        // Smoothly adapt target to follow hips center of gravity (standing, squatting, or floor)
+        target.y = THREE.MathUtils.lerp(target.y, tempPos.current.y, 0.08);
+        target.x = THREE.MathUtils.lerp(target.x, tempPos.current.x, 0.08);
+        target.z = THREE.MathUtils.lerp(target.z, tempPos.current.z, 0.08);
+        controlsRef.current.update();
+      } else {
+        camera.lookAt(tempPos.current);
+      }
+    }
+  });
+
+  return null;
+};
+
 // 3D Canvas Studio Viewport
 const CoachCanvas: React.FC<{
   finalUrl: string;
@@ -417,17 +455,10 @@ const CoachCanvas: React.FC<{
 }> = ({ finalUrl, isPaused, exerciseName, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset, puppeteerEngine, isPuppeteerActive }) => {
   const controlsRef = useRef<any>(null);
 
-  const isFloorExercise = Boolean(
-    exerciseName?.toLowerCase().includes('push') || 
-    exerciseName?.toLowerCase().includes('pompe') ||
-    exerciseName?.toLowerCase().includes('plank') ||
-    exerciseName?.toLowerCase().includes('planche')
-  );
-
   const initialCameraPos = useMemo<[number, number, number]>(() => {
-    if (cameraPreset === 'profile') return [3.2, isFloorExercise ? 0.25 : 0.05, 0];
-    return [0, isFloorExercise ? 0.35 : 0.05, isFloorExercise ? 3.4 : 3.0];
-  }, [cameraPreset, isFloorExercise]);
+    if (cameraPreset === 'profile') return [3.2, 0.1, 0];
+    return [0, 0.1, 3.1];
+  }, [cameraPreset]);
 
   return (
     <Canvas
@@ -436,6 +467,7 @@ const CoachCanvas: React.FC<{
       dpr={[1, 2]}
     >
       <CameraPresetHandler preset={cameraPreset} controlsRef={controlsRef} />
+      <CameraHipsTracker controlsRef={controlsRef} />
 
       {/* Background color */}
       {!isTransparent && (
@@ -475,13 +507,13 @@ const CoachCanvas: React.FC<{
         />
       </Suspense>
 
-      {/* Fluid 360-degree Orbit Controls */}
+      {/* Fluid 360-degree Orbit Controls with wheel/touch propagation to page scroll */}
       <OrbitControls
         ref={controlsRef}
-        enableZoom={true}
+        enableZoom={false}
         enablePan={false}
         makeDefault
-        target={[0, isFloorExercise ? -0.32 : -0.16, 0]}
+        target={[0, -0.16, 0]}
         minDistance={1.6}
         maxDistance={4.8}
         minPolarAngle={Math.PI / 4}
@@ -611,7 +643,22 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
             </div>
           }
         >
-          <div className="w-full h-full">
+          <div 
+            className="w-full h-full"
+            style={{ touchAction: 'pan-y' }}
+            onWheel={(e) => {
+              let el: HTMLElement | null = e.currentTarget.parentElement;
+              while (el && el !== document.body) {
+                const overflowY = window.getComputedStyle(el).overflowY;
+                if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+                  el.scrollBy({ top: e.deltaY, behavior: 'auto' });
+                  return;
+                }
+                el = el.parentElement;
+              }
+              window.scrollBy({ top: e.deltaY, behavior: 'auto' });
+            }}
+          >
             <CoachCanvas
               finalUrl={finalUrl}
               isPaused={isPaused}

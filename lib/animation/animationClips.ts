@@ -2,6 +2,12 @@ import * as THREE from 'three';
 import { HumanoidBoneName } from './humanoidBones.ts';
 import { HumanoidFramePose } from './skeletalRetargeter.ts';
 import { resolveExerciseDefinition } from './exerciseDefinitions.ts';
+import { getGithubJsonClip, loadGithubExercisesJson } from './githubExercisesLoader.ts';
+
+// Kick off eager preload of the 35 GitHub exercises in background
+if (typeof window !== 'undefined') {
+  loadGithubExercisesJson().catch(() => {});
+}
 
 export interface MotionKeyframe {
   time: number; // 0.0 to 1.0 (normalized progress along timeline)
@@ -1059,9 +1065,18 @@ export const CLIPS_REGISTRY: Record<string, HumanoidMotionClip> = {
 };
 
 /**
- * Universal Clip Resolver: Uses ExerciseDefinition to select the exact clip
+ * Universal Clip Resolver: Checks GitHub JSON clips first, then fallback to built-in registry
  */
 export function resolveHumanoidClip(query?: string | null): HumanoidMotionClip {
+  if (!query) return CLIPS_REGISTRY.idle;
+
+  // 1. Try to get real 3D bone keyframe clip from GitHub exercices-json
+  const githubClip = getGithubJsonClip(query);
+  if (githubClip) {
+    return githubClip;
+  }
+
+  // 2. Fallback to built-in registry
   const def = resolveExerciseDefinition(query);
   return CLIPS_REGISTRY[def.clipId] || CLIPS_REGISTRY.idle;
 }

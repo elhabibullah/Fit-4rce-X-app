@@ -70,7 +70,7 @@ export interface PuppeteerTrackingStats {
   isHandsDetected: boolean;
   detectedJointsCount: number;
   hipsHeightDelta: number;
-  detectedPosture: 'standing' | 'squat' | 'pushup' | 'lunge' | 'ground';
+  detectedPosture: 'standing' | 'squat' | 'pushup' | 'lunge' | 'ground' | 'prone';
   bodyPitchDeg: number;
 }
 
@@ -154,10 +154,12 @@ function solveBoneWorldQ(
  */
 interface BoneBindData {
   bone: THREE.Bone;
-  bindWorldQuat: THREE.Quaternion;
+  bindWorldMatrix: THREE.Matrix4;
+  restWorldQ: THREE.Quaternion;
   bindWorldPos: THREE.Vector3;
   bindLocalQuat: THREE.Quaternion;
   bindLocalPos: THREE.Vector3;
+  bindLocalQOffset: THREE.Quaternion;
   bindDir: THREE.Vector3;
   bindPole: THREE.Vector3;
 }
@@ -182,7 +184,6 @@ export class HunyuanPuppeteerEngine {
   // Calibration & Baselines
   private baselineStandingHipY: number | null = null;
   private baselineSpineLength: number | null = null;
-  private userPushupBaseHipsY: number | null = null;
   public isCalibrated: boolean = false;
 
   // Smoothing & Tuning
@@ -302,7 +303,7 @@ export class HunyuanPuppeteerEngine {
       this.restHipsLocalPos.copy(b.hips.position);
     }
 
-    // Helper to capture bone bind data
+    // Helper to capture bone bind data & rest pose matrices
     const bindBoneSegment = (
       bone: THREE.Bone | undefined,
       refChild: THREE.Object3D | undefined,
@@ -311,7 +312,8 @@ export class HunyuanPuppeteerEngine {
     ) => {
       if (!bone) return;
 
-      const bindWorldQuat = bone.getWorldQuaternion(new THREE.Quaternion());
+      const bindWorldMatrix = bone.matrixWorld.clone();
+      const restWorldQ = bone.getWorldQuaternion(new THREE.Quaternion());
       const bindWorldPos = bone.getWorldPosition(new THREE.Vector3());
       const bindLocalQuat = bone.quaternion.clone();
       const bindLocalPos = bone.position.clone();
@@ -327,12 +329,25 @@ export class HunyuanPuppeteerEngine {
 
       const bindPole = defaultPole.clone().normalize();
 
+      // Formula: localQ = inv(parentWorldQ) * wantedWorldQ * bindLocalQOffset
+      // At bind rest pose: wantedWorldQ == restWorldQ, localQ == bindLocalQuat
+      // Therefore: bindLocalQOffset = inv(inv(parentWorldQ) * restWorldQ) * bindLocalQuat
+      const parentWorldQ = (bone.parent && ((bone.parent as any).isBone || bone.parent.type === 'Bone'))
+        ? bone.parent.getWorldQuaternion(new THREE.Quaternion())
+        : (rig.getWorldQuaternion(new THREE.Quaternion()));
+      
+      const invParent = parentWorldQ.clone().invert();
+      const uncalibratedLocal = new THREE.Quaternion().multiplyQuaternions(invParent, restWorldQ);
+      const bindLocalQOffset = uncalibratedLocal.clone().invert().multiply(bindLocalQuat);
+
       this.boneData.set(bone, {
         bone,
-        bindWorldQuat,
+        bindWorldMatrix,
+        restWorldQ,
         bindWorldPos,
         bindLocalQuat,
         bindLocalPos,
+        bindLocalQOffset,
         bindDir,
         bindPole,
       });
@@ -377,7 +392,6 @@ export class HunyuanPuppeteerEngine {
     bindBoneSegment(b.toesR, undefined, FORWARD, UP);
 
     this.baselineStandingHipY = null;
-    this.userPushupBaseHipsY = null;
     this.isCalibrated = false;
   }
 
@@ -386,7 +400,6 @@ export class HunyuanPuppeteerEngine {
    */
   public calibrateStandingPose(): void {
     this.baselineStandingHipY = null;
-    this.userPushupBaseHipsY = null;
     this.isCalibrated = true;
   }
 
@@ -521,37 +534,31 @@ export class HunyuanPuppeteerEngine {
     const j = this.smoothedJoints;
     if (!j.hips || !j.shoulders) return;
 
-    // 1. Biomechanical Analysis & Posture Classification
+    // 1. Biomechanical Analysis
     const torsoVec = j.shoulders.clone().sub(j.hips);
     const torsoDir = torsoVec.clone().normalize();
     const chestLateral = j.leftShoulder.clone().sub(j.rightShoulder).normalize();
     const hipsLateral = j.leftHip.clone().sub(j.rightHip).normalize();
-    const bodyNormal = new THREE.Vector3().crossVectors(torsoDir, chestLateral).normalize();
 
-    // Body pitch angle relative to vertical (0 deg = standing upright, 90 deg = horizontal push-up)
+    // Body pitch angle relative to vertical (for telemetry)
     const UP = new THREE.Vector3(0, 1, 0);
     const torsoDotUp = Math.max(-1, Math.min(1, torsoDir.dot(UP)));
     const bodyPitchDeg = Math.acos(torsoDotUp) * (180 / Math.PI);
     this.stats.bodyPitchDeg = Math.round(bodyPitchDeg);
 
-    // Prone / Push-up detection: body is horizontal (pitch > 55 deg) and chest faces ground
-    const chestFacingFloor = bodyNormal.dot(UP) < 0;
-    const isPushupOrProne = bodyPitchDeg > 55 && (chestFacingFloor || Math.abs(torsoDotUp) < 0.35);
-
-    // Squat detection: torso is mostly upright (pitch < 45 deg), knee angles flexed, hips drop
+    // Dynamic telemetry posture classification without altering solver
     const leftKneeAngle = this.calculateJointAngle(j.leftHip, j.leftKnee, j.leftAnkle);
     const rightKneeAngle = this.calculateJointAngle(j.rightHip, j.rightKnee, j.rightAnkle);
     const avgKneeAngle = (leftKneeAngle + rightKneeAngle) * 0.5;
-
-    if (isPushupOrProne) {
-      this.stats.detectedPosture = 'pushup';
+    if (bodyPitchDeg > 55) {
+      this.stats.detectedPosture = 'prone';
     } else if (avgKneeAngle < 125) {
       this.stats.detectedPosture = 'squat';
     } else {
       this.stats.detectedPosture = 'standing';
     }
 
-    // 2. Compute Desired World Quaternions for every segment
+    // 2. Compute Desired World Quaternions for every segment (vmc_mixamo / three-mediapipe-rig)
     const worldWanted: Map<THREE.Bone, THREE.Quaternion> = new Map();
 
     const solveBone = (
@@ -567,7 +574,7 @@ export class HunyuanPuppeteerEngine {
         data.bindPole,
         liveDir,
         livePole,
-        data.bindWorldQuat
+        data.restWorldQ
       );
       worldWanted.set(bone, qWanted);
     };
@@ -590,7 +597,6 @@ export class HunyuanPuppeteerEngine {
     // B. Left Arm Chain
     const leftUpperArmDir = j.leftElbow.clone().sub(j.leftShoulder).normalize();
     const leftForearmDir = j.leftWrist.clone().sub(j.leftElbow).normalize();
-    // Arm bend normal (elbow flex pole)
     const leftArmPole = new THREE.Vector3()
       .crossVectors(leftUpperArmDir, leftForearmDir)
       .normalize();
@@ -622,8 +628,8 @@ export class HunyuanPuppeteerEngine {
 
     solveBone(b.thighL, leftThighDir, leftKneePole);
     solveBone(b.shinL, leftShinDir, leftKneePole);
-    solveBone(b.footL, isPushupOrProne ? leftShinDir : leftToesDir, UP);
-    solveBone(b.toesL, isPushupOrProne ? leftShinDir : leftToesDir, UP);
+    solveBone(b.footL, leftToesDir, UP);
+    solveBone(b.toesL, leftToesDir, UP);
 
     // E. Right Leg Chain
     const rightThighDir = j.rightKnee.clone().sub(j.rightHip).normalize();
@@ -633,14 +639,14 @@ export class HunyuanPuppeteerEngine {
 
     solveBone(b.thighR, rightThighDir, rightKneePole);
     solveBone(b.shinR, rightShinDir, rightKneePole);
-    solveBone(b.footR, isPushupOrProne ? rightShinDir : rightToesDir, UP);
-    solveBone(b.toesR, isPushupOrProne ? rightShinDir : rightToesDir, UP);
+    solveBone(b.footR, rightToesDir, UP);
+    solveBone(b.toesR, rightToesDir, UP);
 
-    // 3. Single-Pass Hierarchical Retargeting via Parent Inverse (vmc_mixamo architecture)
-    // local = inv(parentEffectiveWorld) * worldWanted
+    // 3. Exact Mathematical Retargeting via Parent Inverse:
+    // localQ = inv(parentWorldQ) * wantedWorldQ * bindLocalQOffset
     const slerpFactor = Math.min(1.0, delta * this.smoothingSpeed);
 
-    // Traversal list in topological parent-before-child order
+    // Traversal list in strict topological parent-before-child order
     const hierarchyOrder: (THREE.Bone | undefined)[] = [
       b.hips,
       b.torso,
@@ -671,64 +677,54 @@ export class HunyuanPuppeteerEngine {
       const qWanted = worldWanted.get(bone);
       if (!qWanted) continue;
 
-      let qTargetLocal: THREE.Quaternion;
+      const data = this.boneData.get(bone);
+      if (!data) continue;
 
-      if (bone.parent && (bone.parent as any).isBone) {
-        // Parent is a bone: compute inv(parentWorld) * wantedWorld
-        const parentWorldQ = bone.parent.getWorldQuaternion(new THREE.Quaternion());
-        const invParentWorldQ = parentWorldQ.clone().invert();
-        qTargetLocal = new THREE.Quaternion().multiplyQuaternions(invParentWorldQ, qWanted);
+      // Parent world quaternion (rig container if root)
+      const parentWorldQ = (bone.parent && ((bone.parent as any).isBone || bone.parent.type === 'Bone'))
+        ? bone.parent.getWorldQuaternion(new THREE.Quaternion())
+        : (this.boundRig.getWorldQuaternion(new THREE.Quaternion()));
+
+      const invParentWorldQ = parentWorldQ.clone().invert();
+
+      // Exact mathematical retargeting formula:
+      // localQ = inv(parentWorldQ) * wantedWorldQ * bindLocalQOffset
+      const localQ = new THREE.Quaternion()
+        .multiplyQuaternions(invParentWorldQ, qWanted)
+        .multiply(data.bindLocalQOffset);
+
+      // Apply to bone.quaternion only (no position modifications)
+      if (slerpFactor >= 1.0) {
+        bone.quaternion.copy(localQ);
       } else {
-        // Root bone (Hips): relative to rig container
-        const rigWorldQ = this.boundRig.getWorldQuaternion(new THREE.Quaternion());
-        const invRigWorldQ = rigWorldQ.clone().invert();
-        qTargetLocal = new THREE.Quaternion().multiplyQuaternions(invRigWorldQ, qWanted);
+        bone.quaternion.slerp(localQ, slerpFactor);
       }
-
-      // Smooth local slerp interpolation
-      bone.quaternion.slerp(qTargetLocal, slerpFactor);
       bone.updateMatrixWorld(true);
     }
 
-    // 4. Pelvic 3D Translation (Height Modulation & Ground Alignment)
+    // 4. Pelvic 3D Translation: ONLY modify bone.position on Hips for vertical clearance
     if (this.enableVerticalDrive && b.hips) {
-      const currentHipY = j.hips.y;
+      const userGroundY = Math.min(
+        j.leftAnkle?.y ?? (j.hips.y - 0.85),
+        j.rightAnkle?.y ?? (j.hips.y - 0.85),
+        j.leftToes?.y ?? (j.hips.y - 0.85),
+        j.rightToes?.y ?? (j.hips.y - 0.85)
+      );
+      const userPelvicElevation = Math.max(0.08, j.hips.y - userGroundY);
 
-      if (isPushupOrProne) {
-        // User is doing push-ups: character lies horizontally near floor level
-        if (this.userPushupBaseHipsY === null) {
-          this.userPushupBaseHipsY = currentHipY;
-        }
-
-        // Horizontal push-up floor height in model units (around 1.95)
-        const pushupBaseModelY = this.restHipsLocalPos.y * 0.39;
-        // User's push-up rep vertical displacement (descente / remontée)
-        const repDisplacement = (currentHipY - this.userPushupBaseHipsY) * 2.2;
-        const targetLocalY = Math.max(0.6, pushupBaseModelY + repDisplacement);
-
-        b.hips.position.y = THREE.MathUtils.lerp(b.hips.position.y, targetLocalY, slerpFactor);
-        this.stats.hipsHeightDelta = repDisplacement;
-      } else {
-        // User is standing, squatting, or lunging
-        this.userPushupBaseHipsY = null;
-
-        if (this.baselineStandingHipY === null) {
-          this.baselineStandingHipY = currentHipY;
-          this.baselineSpineLength = torsoVec.length();
-        }
-
-        const deltaY = currentHipY - this.baselineStandingHipY;
-        this.stats.hipsHeightDelta = deltaY;
-
-        // Model height delta scaled proportionally
-        const scaleFactor = this.restHipsLocalPos.y / (this.baselineStandingHipY || 0.9);
-        const targetLocalY = Math.max(
-          this.restHipsLocalPos.y * 0.25,
-          this.restHipsLocalPos.y + deltaY * scaleFactor * 0.85
-        );
-
-        b.hips.position.y = THREE.MathUtils.lerp(b.hips.position.y, targetLocalY, slerpFactor);
+      if (this.baselineStandingHipY === null) {
+        this.baselineStandingHipY = userPelvicElevation;
       }
+
+      // Continuous proportional elevation ratio (1.0 = upright standing, 0.5 = squat, ~0.2 = ground)
+      const normalizedHeightRatio = Math.max(0.18, Math.min(1.25, userPelvicElevation / (this.baselineStandingHipY || 0.85)));
+
+      // Floor boundary limit: prevents dipping below podium surface
+      const minFloorY = this.restHipsLocalPos.y * 0.22;
+      const targetLocalY = Math.max(minFloorY, this.restHipsLocalPos.y * normalizedHeightRatio);
+
+      b.hips.position.y = THREE.MathUtils.lerp(b.hips.position.y, targetLocalY, slerpFactor);
+      this.stats.hipsHeightDelta = userPelvicElevation - this.baselineStandingHipY;
     }
   }
 

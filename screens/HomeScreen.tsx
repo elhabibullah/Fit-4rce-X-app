@@ -13,7 +13,7 @@ const DashboardScreen: React.FC = () => {
   const [isGeneratingWOTD, setIsGeneratingWOTD] = useState(false);
 
   const isPremium = planId === 'premium';
-  const F4X_LOGO_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/F4X_Nutrition_logo.png";
+  const F4X_LOGO_URL = "https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/refs/heads/main/F4X-logo.png";
   const ROBOT_IMAGE_URL = "https://ai-webbuilder-prod.s3.us-east-1.amazonaws.com/public/images/ad85aead516242b9b73a5140f6db62a1/1d87d3f1227c4419aca5c972544ab725.Screenshot_20251114-091219_Chrome.jpg";
 
   const handleCardioClick = (screen: Screen) => {
@@ -99,10 +99,14 @@ const DashboardScreen: React.FC = () => {
             className="w-full h-44 relative rounded-2xl overflow-hidden border border-red-600/30 bg-black group text-center p-0 flex flex-col items-center justify-center shadow-lg active:scale-95 transition-all"
           >
               <div className="absolute inset-0 bg-gradient-to-br from-red-900/30 to-transparent z-0"></div>
-              <div 
-                className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10 transition-transform duration-500 transform group-hover:scale-105"
-                style={{ backgroundImage: `url(${F4X_LOGO_URL})`, backgroundSize: '70%' }}
-              ></div>
+              <div className="relative z-10 w-full h-full flex items-center justify-center p-3">
+                <img 
+                  src={F4X_LOGO_URL} 
+                  alt="F4X Boutique" 
+                  referrerPolicy="no-referrer"
+                  className="max-w-[80%] max-h-[80%] object-contain transition-transform duration-500 transform group-hover:scale-105 drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]"
+                />
+              </div>
           </button>
 
           {/* SPINNING CARD */}

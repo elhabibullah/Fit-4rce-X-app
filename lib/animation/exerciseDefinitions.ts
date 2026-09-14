@@ -440,6 +440,17 @@ export function resolveExerciseDefinition(query?: string | null): ExerciseDefini
     return EXERCISE_DEFINITIONS[clean];
   }
 
+  // 1b. Match common exercises from GitHub exercices-json (e.g. push_up -> pushup)
+  if (clean === 'push_up' || clean === 'jump_push_up') {
+    return EXERCISE_DEFINITIONS.pushup;
+  }
+  if (clean === 'back_squat' || clean === 'overhead_squat' || clean === 'pistol_squat' || clean === 'sumo_squat') {
+    return EXERCISE_DEFINITIONS.squat;
+  }
+  if (clean === 'reverse_lunge') {
+    return EXERCISE_DEFINITIONS.lunge;
+  }
+
   // 2. High priority keyword scan
   for (const def of Object.values(EXERCISE_DEFINITIONS)) {
     if (def.id === 'idle') continue;

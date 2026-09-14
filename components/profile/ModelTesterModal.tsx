@@ -1,30 +1,44 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Card from '../common/Card.tsx';
 import Button from '../common/Button.tsx';
-import { X, Upload, Info, AlertCircle, Play, Pause, Camera, Eye, RotateCw, Video, VideoOff, Crosshair } from 'lucide-react';
+import { X, Upload, Info, AlertCircle, Play, Pause, Camera, Eye, RotateCw, Video, VideoOff, Crosshair, Sparkles } from 'lucide-react';
 import { HolographicCoach } from '../common/HolographicCoach.tsx';
 import { COACH_MODEL_URL, SIFU_MODEL_URL } from '../../lib/constants.ts';
 import { HunyuanPuppeteerEngine, type PuppeteerTrackingStats } from '../../lib/puppeteer/hunyuanPuppeteer.ts';
+import { loadGithubExercisesJson, getCachedGithubExercises, RawJsonExercise } from '../../lib/animation/githubExercisesLoader.ts';
 
 interface ModelTesterModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const TEST_MOVEMENTS = [
-  { id: 'pushup', label: 'Pompes (Push-up)' },
-  { id: 'inverted_row', label: 'Tirage Horizontal (Row)' },
-  { id: 'squat', label: 'Squats' },
-  { id: 'lunge', label: 'Fentes (Lunges)' },
-  { id: 'plank', label: 'Gainage (Plank)' },
-  { id: 'walk', label: 'Marche Humaine' },
-  { id: 'run', label: 'Course Dynamique' },
-  { id: 'jump', label: 'Jumping Jacks' },
-  { id: 'martial_mabu', label: 'Cavalier (Ma Bu)' },
-  { id: 'martial_punch', label: 'Frappes Directes' },
-  { id: 'martial_kick', label: 'Coups de Pied' },
-  { id: 'martial_taichi', label: 'Neo Tai Chi Flow' },
-  { id: 'idle', label: 'Posture & Respiration' },
+const DEFAULT_MOVEMENTS = [
+  { id: 'squat', label: 'Bodyweight Squat (GitHub)', badge: 'JSON' },
+  { id: 'push_up', label: 'Push-Up (GitHub)', badge: 'JSON' },
+  { id: 'lunge', label: 'Forward Lunge (GitHub)', badge: 'JSON' },
+  { id: 'plank', label: 'Plank (GitHub)', badge: 'JSON' },
+  { id: 'bicep_curl', label: 'Bicep Curl (GitHub)', badge: 'JSON' },
+  { id: 'hammer_curl', label: 'Hammer Curl (GitHub)', badge: 'JSON' },
+  { id: 'lateral_raise', label: 'Lateral Raise (GitHub)', badge: 'JSON' },
+  { id: 'front_raise', label: 'Front Raise (GitHub)', badge: 'JSON' },
+  { id: 'overhead_press', label: 'Overhead Press (GitHub)', badge: 'JSON' },
+  { id: 'dumbbell_shoulder_press', label: 'DB Shoulder Press (GitHub)', badge: 'JSON' },
+  { id: 'bent_over_row', label: 'Bent-Over Row (GitHub)', badge: 'JSON' },
+  { id: 'deadlift', label: 'Deadlift (GitHub)', badge: 'JSON' },
+  { id: 'romanian_deadlift', label: 'Romanian Deadlift (GitHub)', badge: 'JSON' },
+  { id: 'good_morning', label: 'Good Morning (GitHub)', badge: 'JSON' },
+  { id: 'glute_bridge', label: 'Glute Bridge (GitHub)', badge: 'JSON' },
+  { id: 'superman', label: 'Superman (GitHub)', badge: 'JSON' },
+  { id: 'crunch', label: 'Crunch (GitHub)', badge: 'JSON' },
+  { id: 'calf_raise', label: 'Calf Raise (GitHub)', badge: 'JSON' },
+  { id: 'jumping_jack', label: 'Jumping Jack (GitHub)', badge: 'JSON' },
+  { id: 'high_knees', label: 'High Knees (GitHub)', badge: 'JSON' },
+  { id: 'wall_sit', label: 'Wall Sit (GitHub)', badge: 'JSON' },
+  { id: 'martial_mabu', label: 'Cavalier (Ma Bu)', badge: 'Sifu' },
+  { id: 'martial_punch', label: 'Frappes Directes', badge: 'Sifu' },
+  { id: 'martial_kick', label: 'Coups de Pied', badge: 'Sifu' },
+  { id: 'martial_taichi', label: 'Neo Tai Chi Flow', badge: 'Sifu' },
+  { id: 'idle', label: 'Posture & Respiration', badge: 'Base' },
 ];
 
 const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) => {
@@ -42,6 +56,28 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
   const [isPuppeteerActive, setIsPuppeteerActive] = useState<boolean>(false);
   const [isPuppeteerLoading, setIsPuppeteerLoading] = useState<boolean>(false);
   const [stats, setStats] = useState<PuppeteerTrackingStats | null>(null);
+  const [githubExercises, setGithubExercises] = useState<Array<{ id: string; label: string; badge: string }>>(DEFAULT_MOVEMENTS);
+
+  useEffect(() => {
+    loadGithubExercisesJson().then((items) => {
+      if (items && items.length > 0) {
+        const mapped = items.map((it) => ({
+          id: it.id,
+          label: it.name || it.id,
+          badge: it.keyframes && it.keyframes.length > 0 ? 'Mocap JSON' : 'Draft',
+        }));
+        // Merge with built-in martial motions
+        setGithubExercises([
+          ...mapped,
+          { id: 'martial_mabu', label: 'Cavalier (Ma Bu)', badge: 'Sifu' },
+          { id: 'martial_punch', label: 'Frappes Directes', badge: 'Sifu' },
+          { id: 'martial_kick', label: 'Coups de Pied', badge: 'Sifu' },
+          { id: 'martial_taichi', label: 'Neo Tai Chi Flow', badge: 'Sifu' },
+          { id: 'idle', label: 'Posture & Respiration', badge: 'Base' },
+        ]);
+      }
+    }).catch(console.error);
+  }, []);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -421,8 +457,9 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
 
           {/* Movement List Sidebar */}
           <div className="w-full md:w-64 flex flex-col shrink-0 bg-neutral-900/60 rounded-2xl border border-neutral-800 p-3 overflow-hidden">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-2 px-1">
-              {isPuppeteerActive ? 'Miroir Mocap Humanoïde' : `Mouvements (${TEST_MOVEMENTS.length})`}
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-2 px-1 flex items-center justify-between">
+              <span>{isPuppeteerActive ? 'Miroir Mocap Humanoïde' : `Mouvements (${githubExercises.length})`}</span>
+              <span className="text-[10px] text-purple-400 font-normal">GitHub 35 JSON</span>
             </h3>
             {isPuppeteerActive ? (
               <div className="flex-1 p-3 bg-neutral-950/80 rounded-xl border border-emerald-500/20 text-xs text-gray-300 space-y-3">
@@ -446,7 +483,7 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
-                {TEST_MOVEMENTS.map((mov) => {
+                {githubExercises.map((mov) => {
                   const isActive = exerciseName === mov.id;
                   return (
                     <button
@@ -458,8 +495,19 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
                           : 'bg-neutral-800/80 text-gray-300 hover:bg-neutral-800 hover:text-white'
                       }`}
                     >
-                      <span>{mov.label}</span>
-                      {isActive && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
+                      <span className="truncate pr-1">{mov.label}</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono ${
+                          mov.badge === 'Mocap JSON' || mov.badge === 'JSON'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : mov.badge === 'Sifu'
+                            ? 'bg-[#DAA520]/20 text-[#DAA520] border border-[#DAA520]/30'
+                            : 'bg-neutral-700 text-gray-400'
+                        }`}>
+                          {mov.badge}
+                        </span>
+                        {isActive && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
+                      </div>
                     </button>
                   );
                 })}
