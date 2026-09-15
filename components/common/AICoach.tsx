@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Mic, MicOff, X, Volume2, Bot, Loader2, Send } from 'lucide-react';
+import { Mic, MicOff, X, Volume2, Bot, Loader2, Send, Play } from 'lucide-react';
 import { useApp } from '../../hooks/useApp.ts';
 import { Language, WorkoutGenerationParams } from '../../types.ts';
 import { getChatbotResponse } from '../../services/aiService.ts';
@@ -68,14 +68,14 @@ const COACH_EXAMPLE_PROMPTS: Record<Language, string> = {
 };
 
 const COACH_INPUT_PLACEHOLDERS: Record<Language, string> = {
-  [Language.FR]: "Ou écrivez votre demande ici...",
-  [Language.ES]: "O escribe tu solicitud aquí...",
-  [Language.AR]: "أو اكتب طلبك هنا...",
-  [Language.PT]: "Ou digite seu pedido aqui...",
-  [Language.JA]: "またはここにリクエストを入力...",
-  [Language.ZH]: "或者在此输入您的要求...",
-  [Language.RU]: "Или напишите свой запрос здесь...",
-  [Language.EN]: "Or type your request here..."
+  [Language.FR]: "Écrivez au coach ici (ou parlez au micro)...",
+  [Language.ES]: "Escribe al coach aquí (o habla por el micro)...",
+  [Language.AR]: "اكتب للمدرب هنا (أو تحدث بالميكروفون)...",
+  [Language.PT]: "Escreva para o treinador aqui (ou fale no microfone)...",
+  [Language.JA]: "ここにメッセージを入力（またはマイクで発话）...",
+  [Language.ZH]: "在此输入信息（或使用麦克风说话）...",
+  [Language.RU]: "Напишите тренеру здесь (или говорите в микрофон)...",
+  [Language.EN]: "Type to the coach here (or speak into the mic)..."
 };
 
 const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
@@ -357,9 +357,15 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     if (isReadyTrigger) {
       const confirmText = translate('workout.loading.calculating');
       setMessages(prev => [...prev, { role: 'assistant', text: confirmText }]);
-      speakVoice(confirmText, () => {
-        executeWorkoutLaunch(accumulatedContextRef.current);
-      });
+      let launched = false;
+      const doLaunch = () => {
+        if (!launched) {
+          launched = true;
+          executeWorkoutLaunch(accumulatedContextRef.current);
+        }
+      };
+      speakVoice(confirmText, doLaunch);
+      setTimeout(doLaunch, 1200);
       return;
     }
 
@@ -370,8 +376,26 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       const historyList = messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
       const aiReply = await getChatbotResponse(cleanText, language, historyList);
       
-      setMessages(prev => [...prev, { role: 'assistant', text: aiReply }]);
-      speakVoice(aiReply);
+      const shouldLaunch = aiReply.includes('[GENERATE_WORKOUT]') ||
+        /je (te|vous) g[eé]n[eè]re|g[eé]n[eé]ration de (tes|vos) exercices|je lance (ta|votre) s[eé]ance|g[eé]n[eè]re ta s[eé]ance|generating your|preparing your custom|prépare vos exercices/i.test(aiReply);
+
+      const displayText = aiReply.replace(/\[GENERATE_WORKOUT\]/g, '').trim();
+
+      setMessages(prev => [...prev, { role: 'assistant', text: displayText }]);
+
+      if (shouldLaunch) {
+        let launched = false;
+        const doLaunch = () => {
+          if (!launched) {
+            launched = true;
+            executeWorkoutLaunch(accumulatedContextRef.current);
+          }
+        };
+        speakVoice(displayText, doLaunch);
+        setTimeout(doLaunch, 1600);
+      } else {
+        speakVoice(displayText);
+      }
     } catch (err) {
       console.warn("AI Coach voice error:", err);
       if (isVisibleRef.current) {
@@ -472,7 +496,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       </div>
 
       {/* CONVERSATION HISTORY SCROLL */}
-      <div className="w-full max-w-md flex-1 overflow-y-auto px-2 py-4 space-y-3 flex flex-col justify-end">
+      <div className="w-full max-w-md flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-3 flex flex-col justify-end custom-scrollbar">
         {messages.length === 0 && !currentTranscript && (
           <div className="text-center py-6">
             <p className="text-sm font-bold text-purple-300 tracking-wide">
@@ -520,66 +544,68 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* CENTER GLOWING VOICE ORB */}
-      <div className="w-full max-w-md flex flex-col items-center justify-center py-4">
-        <div className="relative flex items-center justify-center">
-          {isListening && (
-            <div className="absolute w-36 h-36 rounded-full border border-purple-500/30 animate-ping pointer-events-none opacity-20" />
-          )}
-
-          {/* Core Interactive Microphone Orb */}
+      {/* COMPACT VOICE STATUS INDICATOR */}
+      <div className="w-full max-w-md flex flex-col items-center justify-center py-2 flex-shrink-0">
+        <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={toggleListening}
-            className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center relative z-10 transition-all duration-300 shadow-2xl active:scale-95 ${
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl active:scale-95 ${
               isAiSpeaking
-                ? 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 shadow-[0_0_50px_rgba(138,43,226,0.8)] scale-105 animate-pulse'
+                ? 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 shadow-[0_0_25px_rgba(138,43,226,0.8)] scale-105 animate-pulse'
                 : isListening
-                ? 'bg-gradient-to-tr from-purple-700 to-indigo-600 border-2 border-purple-300 shadow-[0_0_40px_rgba(138,43,226,0.6)] scale-105'
-                : 'bg-zinc-900 border-2 border-purple-500/40 hover:border-purple-400 shadow-[0_0_25px_rgba(138,43,226,0.3)] hover:scale-105'
+                ? 'bg-gradient-to-tr from-purple-700 to-indigo-600 border-2 border-purple-300 shadow-[0_0_20px_rgba(138,43,226,0.6)] scale-105'
+                : 'bg-zinc-900 border-2 border-purple-500/40 hover:border-purple-400 shadow-[0_0_15px_rgba(138,43,226,0.2)]'
             }`}
             aria-label={isListening ? "Stop listening" : "Start speaking"}
           >
             {isAiSpeaking ? (
-              <div className="flex items-end gap-1.5 h-7">
-                <div className="w-1.5 h-3 bg-white rounded-full animate-bounce"></div>
-                <div className="w-1.5 h-7 bg-white rounded-full animate-bounce [animation-delay:0.15s]"></div>
-                <div className="w-1.5 h-4 bg-white rounded-full animate-bounce [animation-delay:0.3s]"></div>
+              <div className="flex items-end gap-1 h-5">
+                <div className="w-1 h-2.5 bg-white rounded-full animate-bounce"></div>
+                <div className="w-1 h-5 bg-white rounded-full animate-bounce [animation-delay:0.15s]"></div>
+                <div className="w-1 h-3.5 bg-white rounded-full animate-bounce [animation-delay:0.3s]"></div>
               </div>
             ) : (
               <Mic 
-                size={36} 
+                size={22} 
                 className={`${isListening ? 'text-white scale-110' : 'text-purple-400'} transition-transform`} 
               />
             )}
           </button>
+          
+          <div className="text-left">
+            <p className="text-[11px] font-bold text-gray-200 uppercase tracking-wider">
+              {isAiSpeaking 
+                ? translate('coach.status.speaking') 
+                : isListening 
+                ? translate('coach.status.im_listening') 
+                : translate('coach.status.ready_voice')}
+            </p>
+            <p className="text-[10px] text-zinc-400">
+              {isListening ? "Parlez ou écrivez au clavier ci-dessous" : "Cliquez sur le micro pour parler ou écrivez"}
+            </p>
+          </div>
         </div>
-
-        {/* Status instruction */}
-        <p className="text-[11px] font-bold text-gray-300 uppercase tracking-widest mt-4 text-center">
-          {isAiSpeaking 
-            ? translate('coach.status.speaking') 
-            : isListening 
-            ? translate('coach.status.im_listening') 
-            : translate('coach.status.ready_voice')}
-        </p>
       </div>
 
-      {/* QUICK TEXT INPUT FALLBACK */}
-      <form onSubmit={handleManualSubmit} className="w-full max-w-md flex items-center gap-2 pb-2">
-        <input 
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder={COACH_INPUT_PLACEHOLDERS[language] || COACH_INPUT_PLACEHOLDERS[Language.EN]}
-          className="flex-1 bg-zinc-900 border border-purple-500/30 rounded-full px-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-400 transition-colors"
-        />
+      {/* FULL TEXT INPUT BAR WITH SEND & MIC */}
+      <form onSubmit={handleManualSubmit} className="w-full max-w-md flex items-center gap-2 pt-2 pb-1 flex-shrink-0">
+        <div className="flex-1 relative flex items-center">
+          <input 
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder={COACH_INPUT_PLACEHOLDERS[language] || COACH_INPUT_PLACEHOLDERS[Language.EN]}
+            className="w-full bg-zinc-900/95 border-2 border-purple-500/40 focus:border-purple-400 rounded-full px-4 py-3 text-xs text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all cursor-text select-text"
+          />
+        </div>
         <button
           type="submit"
           disabled={!inputText.trim()}
-          className="w-9 h-9 rounded-full bg-purple-600 disabled:opacity-40 text-white flex items-center justify-center shadow-lg active:scale-95 transition-all"
+          className="w-11 h-11 rounded-full bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center shadow-lg active:scale-95 transition-all flex-shrink-0"
           aria-label="Send"
         >
-          <Send size={15} />
+          <Send size={16} />
         </button>
       </form>
     </div>

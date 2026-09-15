@@ -3,7 +3,7 @@ import { DailyMacros, FastingPlan, Language, Meal, MealPlanSection, Screen, Trai
 import { getTranslatedConstants } from '../lib/i18n.ts';
 import { TRANSLATIONS } from '../lib/translations.ts';
 import { CURRENCY_MAP, DEFAULT_CURRENCY_INFO } from '../screens/currency.ts';
-import { generateWorkoutWithGemini } from '../services/aiService.ts';
+import { generateWorkoutWithGemini, buildFallbackWorkoutPlan } from '../services/aiService.ts';
 
 interface AppContextType {
   session: Session | null;
@@ -261,20 +261,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const startWorkoutFromVoice = useCallback(async (params: WorkoutGenerationParams) => {
     setIsCoachOpen(false);
     setIsGeneratingWorkout(true); 
-    setSelectedPlan(null); 
     const intent = `High intensity ${params.intensity || 'medium'} ${params.workoutType || 'fitness'} session. Equipment: ${params.equipment?.join(', ') || 'bodyweight'}. Focus: ${params.targetArea?.join(', ') || 'full body'}. ${params.customPrompt || ''}`;
     try {
-        const plan = await generateWorkoutWithGemini(intent, language);
-        if (plan) {
-            setSelectedPlan(plan);
-            setScreen(Screen.Workout);
+        let plan: WorkoutPlan | null = null;
+        try {
+            plan = await generateWorkoutWithGemini(intent, language);
+        } catch (genErr) {
+            console.warn("AI generation error, using guaranteed biomechanical plan:", genErr);
         }
+
+        if (!plan || !plan.exercises || plan.exercises.length === 0) {
+            plan = buildFallbackWorkoutPlan(language, { 
+                level: params.intensity || 'medium', 
+                goal: params.workoutType || 'fitness' 
+            });
+        }
+
+        setSelectedPlan(plan);
+        setScreen(Screen.Workout);
     } catch (e) {
-        showStatus("Connection error.");
+        console.error("Voice workout startup fallback:", e);
+        const fallbackPlan = buildFallbackWorkoutPlan(language, { 
+            level: params.intensity || 'medium', 
+            goal: params.workoutType || 'fitness' 
+        });
+        setSelectedPlan(fallbackPlan);
+        setScreen(Screen.Workout);
     } finally {
         setIsGeneratingWorkout(false);
     }
-  }, [language, showStatus, setScreen, setSelectedPlan, setIsGeneratingWorkout]);
+  }, [language, setScreen, setSelectedPlan, setIsGeneratingWorkout]);
 
   // ON MOUNT: LOADING STATUS ONLY
   useEffect(() => {

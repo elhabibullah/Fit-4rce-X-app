@@ -124,49 +124,48 @@ export interface JointLimit {
 }
 
 export const ANATOMICAL_LIMITS: Partial<Record<HumanoidBoneName, JointLimit>> = {
-  // Knee: Strict 1-degree of freedom hinge joint.
-  // Can only bend backwards (flexion: 0 to 145 deg). Absolutely NO hyperextension (< 0) and minimal axial twist.
+  // Knee: Anatomical hinge joint flexion (up to 160 deg).
   LeftLeg: {
-    minPitch: 0.0,
-    maxPitch: THREE.MathUtils.degToRad(145),
-    minYaw: THREE.MathUtils.degToRad(-5),
-    maxYaw: THREE.MathUtils.degToRad(5),
-    minRoll: THREE.MathUtils.degToRad(-5),
-    maxRoll: THREE.MathUtils.degToRad(5),
+    minPitch: THREE.MathUtils.degToRad(-5),
+    maxPitch: THREE.MathUtils.degToRad(160),
+    minYaw: THREE.MathUtils.degToRad(-10),
+    maxYaw: THREE.MathUtils.degToRad(10),
+    minRoll: THREE.MathUtils.degToRad(-10),
+    maxRoll: THREE.MathUtils.degToRad(10),
   },
   RightLeg: {
-    minPitch: 0.0,
-    maxPitch: THREE.MathUtils.degToRad(145),
-    minYaw: THREE.MathUtils.degToRad(-5),
-    maxYaw: THREE.MathUtils.degToRad(5),
-    minRoll: THREE.MathUtils.degToRad(-5),
-    maxRoll: THREE.MathUtils.degToRad(5),
-  },
-  // Elbow: Strict 1-DOF hinge joint. Flexion 0 to 140 deg.
-  LeftForeArm: {
-    minPitch: 0.0,
-    maxPitch: THREE.MathUtils.degToRad(140),
-    minYaw: THREE.MathUtils.degToRad(-20),
-    maxYaw: THREE.MathUtils.degToRad(20),
+    minPitch: THREE.MathUtils.degToRad(-5),
+    maxPitch: THREE.MathUtils.degToRad(160),
+    minYaw: THREE.MathUtils.degToRad(-10),
+    maxYaw: THREE.MathUtils.degToRad(10),
     minRoll: THREE.MathUtils.degToRad(-10),
     maxRoll: THREE.MathUtils.degToRad(10),
+  },
+  // Elbow: 1-DOF hinge joint flexion (up to 160 deg) with natural pronation/supination.
+  LeftForeArm: {
+    minPitch: THREE.MathUtils.degToRad(-10),
+    maxPitch: THREE.MathUtils.degToRad(160),
+    minYaw: THREE.MathUtils.degToRad(-45),
+    maxYaw: THREE.MathUtils.degToRad(45),
+    minRoll: THREE.MathUtils.degToRad(-60),
+    maxRoll: THREE.MathUtils.degToRad(60),
   },
   RightForeArm: {
-    minPitch: 0.0,
-    maxPitch: THREE.MathUtils.degToRad(140),
-    minYaw: THREE.MathUtils.degToRad(-20),
-    maxYaw: THREE.MathUtils.degToRad(20),
-    minRoll: THREE.MathUtils.degToRad(-10),
-    maxRoll: THREE.MathUtils.degToRad(10),
+    minPitch: THREE.MathUtils.degToRad(-10),
+    maxPitch: THREE.MathUtils.degToRad(160),
+    minYaw: THREE.MathUtils.degToRad(-45),
+    maxYaw: THREE.MathUtils.degToRad(45),
+    minRoll: THREE.MathUtils.degToRad(-60),
+    maxRoll: THREE.MathUtils.degToRad(60),
   },
-  // Spine & Spine1 & Spine2: Distributed anatomical curvature
+  // Spine & Spine1 & Spine2: Distributed anatomical curvature for deep hinges (deadlifts, good mornings, crunches)
   Spine: {
-    minPitch: THREE.MathUtils.degToRad(-30),
-    maxPitch: THREE.MathUtils.degToRad(45),
-    minYaw: THREE.MathUtils.degToRad(-25),
-    maxYaw: THREE.MathUtils.degToRad(25),
-    minRoll: THREE.MathUtils.degToRad(-20),
-    maxRoll: THREE.MathUtils.degToRad(20),
+    minPitch: THREE.MathUtils.degToRad(-45),
+    maxPitch: THREE.MathUtils.degToRad(75),
+    minYaw: THREE.MathUtils.degToRad(-35),
+    maxYaw: THREE.MathUtils.degToRad(35),
+    minRoll: THREE.MathUtils.degToRad(-30),
+    maxRoll: THREE.MathUtils.degToRad(30),
   },
   Spine1: {
     minPitch: THREE.MathUtils.degToRad(-20),

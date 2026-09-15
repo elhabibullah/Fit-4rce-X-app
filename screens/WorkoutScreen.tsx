@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-    Pause, Play, X, ChevronLeft, ChevronRight, Activity, Timer as TimerIcon, Video, Box, Sun, Moon, 
+    Pause, Play, X, ChevronLeft, ChevronRight, Activity, Timer as TimerIcon, Box, Sun, Moon, 
     CheckCircle2, Flame, Dumbbell, Zap, RotateCcw, FastForward, Award, Clock 
 } from 'lucide-react';
 import { generateWorkoutWithGemini, getWorkoutSeriesAndRest } from '../services/aiService.ts';
@@ -334,7 +334,7 @@ const WorkoutScreen: React.FC = () => {
             >
                 <div className={`relative flex-1 min-h-[52vh] sm:min-h-0 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'} overflow-hidden shrink-0`}>
                     
-                    {/* 3D HOLOGRAPHIC HUMANOID COACH IN STUDIO */}
+                    {/* MAIN MEDIA STAGE: 3D ANDROID COACH */}
                     <div className={`absolute inset-0 z-10 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'}`}>
                         <HolographicCoach 
                             key="workout-holographic-coach"

@@ -62,17 +62,17 @@ function solveAimWorldToPitchYawRoll(
   const az = aim[2] || 0;
 
   // Pitch: angle in sagittal plane relative to straight down (-Z)
-  // When arm extends forward (ay < 0, az ~ 0), forward pitch ~ 90 deg (PI/2)
+  // When arm extends forward (ay < 0, az ~ 0), forward pitch tilts arm up/forward
   const forwardFlex = -ay;
   const downward = -az;
-  const pitch = Math.atan2(forwardFlex, Math.max(-0.99, downward));
+  const pitch = -Math.atan2(forwardFlex, Math.max(-0.99, downward));
 
   // Roll: lateral abduction away from body
   const lateral = isRightSide ? ax : -ax;
   const roll = Math.atan2(lateral, Math.max(0.01, Math.sqrt(forwardFlex * forwardFlex + downward * downward)));
 
   return {
-    pitch: THREE.MathUtils.clamp(pitch, -degToRad(30), degToRad(170)),
+    pitch: THREE.MathUtils.clamp(pitch, -degToRad(170), degToRad(30)),
     yaw: 0,
     roll: THREE.MathUtils.clamp(roll, -degToRad(20), degToRad(90)),
   };
@@ -181,7 +181,7 @@ function convertBlenderKeyframesToMotion(raw: RawJsonExercise): HumanoidMotionCl
       bonesRot.RightUpLeg = {
         pitch: degToRad(thighR[0] || 0),
         yaw: degToRad(thighR[1] || 0),
-        roll: -degToRad(thighR[2] || 0),
+        roll: degToRad(thighR[2] || 0),
       };
     }
 
@@ -201,7 +201,7 @@ function convertBlenderKeyframesToMotion(raw: RawJsonExercise): HumanoidMotionCl
       bonesRot.RightLeg = {
         pitch: degToRad(shinR[0] || 0),
         yaw: degToRad(shinR[1] || 0),
-        roll: -degToRad(shinR[2] || 0),
+        roll: degToRad(shinR[2] || 0),
       };
     }
 
@@ -221,7 +221,7 @@ function convertBlenderKeyframesToMotion(raw: RawJsonExercise): HumanoidMotionCl
       bonesRot.RightFoot = {
         pitch: degToRad(footR[0] || 0),
         yaw: degToRad(footR[1] || 0),
-        roll: -degToRad(footR[2] || 0),
+        roll: degToRad(footR[2] || 0),
       };
     }
 
@@ -246,7 +246,7 @@ function convertBlenderKeyframesToMotion(raw: RawJsonExercise): HumanoidMotionCl
         bonesRot.RightArm = {
           pitch: degToRad(uarmData.rot[0] || 0),
           yaw: degToRad(uarmData.rot[1] || 0),
-          roll: -degToRad(uarmData.rot[2] || 0),
+          roll: degToRad(uarmData.rot[2] || 0),
         };
       }
     }
@@ -260,22 +260,26 @@ function convertBlenderKeyframesToMotion(raw: RawJsonExercise): HumanoidMotionCl
         bonesRot.RightForeArm = { pitch: degToRad(15), yaw: 0, roll: 0 };
       } else if (farmData.rot) {
         // In the JSON exports (e.g. bicep_curl, overhead_press, push_up),
-        // elbow flexion angle is stored as negative roll: rot[2] = -125 deg.
+        // elbow flexion angle is stored as negative roll (rot[2] = -125 deg) or pitch (rot[0] = -60 deg).
         // In the humanoid anatomical retargeter, elbow flexion is positive pitch (0 to 140 deg).
-        let elbowPitch = degToRad(farmData.rot[0] || 0);
-        if (Math.abs(farmData.rot[2] || 0) > 10 && Math.abs(farmData.rot[0] || 0) < 5) {
-          elbowPitch = degToRad(Math.abs(farmData.rot[2] || 0));
+        const rawPitch = farmData.rot[0] || 0;
+        const rawRoll = farmData.rot[2] || 0;
+        let elbowPitch = 0;
+        if (Math.abs(rawPitch) > 5) {
+          elbowPitch = degToRad(Math.abs(rawPitch));
+        } else if (Math.abs(rawRoll) > 5) {
+          elbowPitch = degToRad(Math.abs(rawRoll));
         }
 
         bonesRot.LeftForeArm = {
           pitch: elbowPitch,
           yaw: degToRad(farmData.rot[1] || 0),
-          roll: degToRad(farmData.rot[2] || 0),
+          roll: 0,
         };
         bonesRot.RightForeArm = {
           pitch: elbowPitch,
           yaw: degToRad(farmData.rot[1] || 0),
-          roll: -degToRad(farmData.rot[2] || 0),
+          roll: 0,
         };
       }
     }
@@ -291,14 +295,14 @@ function convertBlenderKeyframesToMotion(raw: RawJsonExercise): HumanoidMotionCl
       bonesRot.RightHand = {
         pitch: degToRad(handWildcard[0] || 0),
         yaw: degToRad(handWildcard[1] || 0),
-        roll: -degToRad(handWildcard[2] || 0),
+        roll: degToRad(handWildcard[2] || 0),
       };
     }
 
     return {
       time: Math.max(0, Math.min(1, kf.t)),
       hipsOffset: [hipsOffsetX, hipsOffsetY, hipsOffsetZ],
-      proneAngle: proneAngle > 0 ? proneAngle : undefined,
+      proneAngle: Math.abs(proneAngle) > 0.05 ? proneAngle : undefined,
       bones: bonesRot,
     };
   });

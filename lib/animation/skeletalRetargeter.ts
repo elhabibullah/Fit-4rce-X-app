@@ -158,9 +158,8 @@ export class HunyuanSkeletalRetargeter {
 
   /**
    * Apply anatomical rotation to a bone with physiological constraints.
-   * Uses Parent-Inverse Forward Kinematics (FK) to guarantee that each joint
-   * rotates precisely in its anatomical reference frame without being skewed
-   * or distorted by parent transformations.
+   * Calculates local anatomical rotation axes directly from the bone's rest world orientation,
+   * preserving natural human joint biomechanics and hierarchical parent-child transforms.
    */
   public setAnatomicalRotation(
     boneName: HumanoidBoneName,
@@ -183,41 +182,39 @@ export class HunyuanSkeletalRetargeter {
       clampedRoll = THREE.MathUtils.clamp(roll, limits.minRoll, limits.maxRoll);
     }
 
-    // Joint rotation axes in character anatomical space:
-    // 1. Sagittal (Pitch)
-    // LeftUpLeg, RightUpLeg, LeftArm, RightArm, LeftForeArm, RightForeArm flex forward around (-1, 0, 0)
-    // LeftLeg, RightLeg (knees) flex backward around (1, 0, 0)
-    // Spine, Spine1, Spine2, Neck, Head, Hips flex forward around (1, 0, 0)
-    let axisPitch = new THREE.Vector3(1, 0, 0);
-    if (['LeftUpLeg', 'RightUpLeg', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm'].includes(boneName)) {
-      axisPitch = new THREE.Vector3(-1, 0, 0);
-    }
+    // Determine the anatomical flexion/extension, abduction/adduction, and twist axes in the bone's local rest frame.
+    // In standard character world space:
+    // +X is Character Left (Pitch/Sagittal flexion axis)
+    // +Y is Character Up (Yaw/Transverse axis)
+    // +Z is Character Forward (Roll/Coronal axis)
+    const invRestWorldQ = calibrated.restWorldQ.clone().invert();
 
-    // 2. Transverse (Yaw) - rotation around character vertical axis
-    const axisYaw = new THREE.Vector3(0, 1, 0);
+    // Transform anatomical cardinal axes into this bone's rest local coordinate system:
+    const localPitchAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(invRestWorldQ).normalize();
+    const localYawAxis   = new THREE.Vector3(0, 1, 0).applyQuaternion(invRestWorldQ).normalize();
+    const localRollAxis  = new THREE.Vector3(0, 0, 1).applyQuaternion(invRestWorldQ).normalize();
 
-    // 3. Coronal (Roll) - lateral abduction away from body midline
-    let axisRoll = new THREE.Vector3(0, 0, 1);
-    if (boneName.startsWith('Right')) {
-      axisRoll = new THREE.Vector3(0, 0, -1);
-    }
+    // Anatomical direction adjustments:
+    // Left & Right limbs mirror laterally:
+    const isRightLimb = boneName.startsWith('Right');
+    const rollSign = isRightLimb ? -1 : 1;
 
-    const qPitch = new THREE.Quaternion().setFromAxisAngle(axisPitch, clampedPitch);
-    const qYaw = new THREE.Quaternion().setFromAxisAngle(axisYaw, clampedYaw);
-    const qRoll = new THREE.Quaternion().setFromAxisAngle(axisRoll, clampedRoll);
+    // For thighs (UpLeg) and upper arms (Arm):
+    // Positive pitch = forward flexion; knees (Leg) flex backward:
+    const pitchSign = (boneName === 'LeftLeg' || boneName === 'RightLeg') ? 1 : 1;
 
-    // Delta rotation in character anatomical space
-    const deltaWorldQ = qYaw.multiply(qRoll).multiply(qPitch);
-    const wantedWorldQ = deltaWorldQ.multiply(calibrated.restWorldQ.clone());
+    const qPitch = new THREE.Quaternion().setFromAxisAngle(localPitchAxis, clampedPitch * pitchSign);
+    const qYaw   = new THREE.Quaternion().setFromAxisAngle(localYawAxis, clampedYaw);
+    const qRoll  = new THREE.Quaternion().setFromAxisAngle(localRollAxis, clampedRoll * rollSign);
 
-    // Parent-inverse forward kinematics: eliminates parent world rotation so the
-    // bone exactly assumes wantedWorldQ in world space
-    if (calibrated.parentBone) {
-      const parentWorldQ = calibrated.parentBone.getWorldQuaternion(new THREE.Quaternion());
-      calibrated.bone.quaternion.copy(parentWorldQ.invert().multiply(wantedWorldQ));
-    } else {
-      calibrated.bone.quaternion.copy(wantedWorldQ);
-    }
+    // Combine into local delta rotation (intrinsic Yaw -> Roll -> Pitch)
+    const deltaLocalQ = new THREE.Quaternion()
+      .multiply(qYaw)
+      .multiply(qRoll)
+      .multiply(qPitch);
+
+    // Apply delta rotation directly relative to rest local orientation
+    calibrated.bone.quaternion.copy(calibrated.restLocalQ.clone().multiply(deltaLocalQ));
   }
 
   /**
