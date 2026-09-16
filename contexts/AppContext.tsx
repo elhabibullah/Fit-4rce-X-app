@@ -265,7 +265,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
         let plan: WorkoutPlan | null = null;
         try {
-            plan = await generateWorkoutWithGemini(intent, language);
+            plan = await generateWorkoutWithGemini(intent, language, {
+                workoutType: params.workoutType,
+                goal: params.workoutType,
+                level: params.intensity
+            });
         } catch (genErr) {
             console.warn("AI generation error, using guaranteed biomechanical plan:", genErr);
         }
@@ -273,7 +277,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (!plan || !plan.exercises || plan.exercises.length === 0) {
             plan = buildFallbackWorkoutPlan(language, { 
                 level: params.intensity || 'medium', 
-                goal: params.workoutType || 'fitness' 
+                goal: params.workoutType || 'fitness',
+                workoutType: params.workoutType || 'fitness'
             });
         }
 
@@ -283,7 +288,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error("Voice workout startup fallback:", e);
         const fallbackPlan = buildFallbackWorkoutPlan(language, { 
             level: params.intensity || 'medium', 
-            goal: params.workoutType || 'fitness' 
+            goal: params.workoutType || 'fitness',
+            workoutType: params.workoutType || 'fitness'
         });
         setSelectedPlan(fallbackPlan);
         setScreen(Screen.Workout);

@@ -64,6 +64,7 @@ const FALLBACK_ACK_MESSAGES: Record<string, string> = {
 export interface WorkoutConfigOptions {
     level?: 'beginner' | 'medium' | 'advanced' | string;
     goal?: 'fitness' | 'mass_gaining' | 'power_training' | string;
+    workoutType?: string;
     targetSets?: number;
     targetReps?: number;
     restBetweenSets?: number;
@@ -121,7 +122,18 @@ export const generateWorkout = async (
         const response = await fetch('/api/generate-workout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, language, options: { targetSets, targetReps, restBetweenSets } })
+            body: JSON.stringify({ 
+                prompt, 
+                language, 
+                options: { 
+                    targetSets, 
+                    targetReps, 
+                    restBetweenSets,
+                    level: options?.level,
+                    goal: options?.goal,
+                    workoutType: options?.workoutType
+                } 
+            })
         });
         
         let data;
@@ -168,6 +180,294 @@ export const buildFallbackWorkoutPlan = (language: Language = Language.EN, optio
     const targetReps = options?.targetReps || (normLevel === 'medium' ? 14 : 15);
     const restBetweenSets = options?.restBetweenSets || (options?.goal === 'power_training' || options?.goal === 'powerlifting' ? 60 : options?.goal === 'mass_gaining' ? 45 : 30);
 
+    const discipline = (options?.workoutType || options?.goal || '').toLowerCase();
+    const isPilates = discipline.includes('pilate') || discipline.includes('بيلاتس') || discipline.includes('ピラティス') || discipline.includes('普拉提');
+    const isYoga = discipline.includes('yoga') || discipline.includes('يوغا') || discipline.includes('يوجا') || discipline.includes('ヨガ') || discipline.includes('瑜伽');
+    const isCalisthenics = discipline.includes('calisthenic') || discipline.includes('calisthénie') || discipline.includes('كاليست') || discipline.includes('自重');
+    const isPower = discipline.includes('power') || discipline.includes('force') || discipline.includes('fuerza') || discipline.includes('قوة');
+
+    if (isPilates) {
+        const pilatesDict: Record<Language, { title: string; desc: string; e1: string; d1: string; e2: string; d2: string; e3: string; d3: string; e4: string; d4: string; e5: string; d5: string }> = {
+            [Language.FR]: {
+                title: "Sculpture & Posture Pilates",
+                desc: "Renforcement profond du transverse, alignement vertébral et contrôle postural.",
+                e1: "Le Cent (The Hundred)", d1: "Battements toniques des bras avec engagement abdominal profond.",
+                e2: "Pont Fessier Isométrique", d2: "Élévation du bassin maintenant une tension continue des fessiers.",
+                e3: "Gainage Latéral Pilates", d3: "Alignement tête-bassin ciblant les obliques et la stabilité.",
+                e4: "Cercles de Jambes", d4: "Stabilité du bassin et mobilité fémorale contrôlée.",
+                e5: "Extension Dorsale Swimming", d5: "Activation symétrique de la chaîne postérieure sans cambrer."
+            },
+            [Language.EN]: {
+                title: "Pilates Core & Posture Sculpture",
+                desc: "Deep core toning, spinal alignment, and full kinetic control.",
+                e1: "The Hundred", d1: "Dynamic arm pumps with deep transverse abdominal activation.",
+                e2: "Isometric Glute Bridge", d2: "Pelvic lift maintaining continuous glute tension.",
+                e3: "Pilates Side Plank", d3: "Head-to-heel linear alignment targeting the obliques.",
+                e4: "Single Leg Circles", d4: "Pelvic stabilization and femoral mobility.",
+                e5: "Spine Swimming Extension", d5: "Symmetrical posterior chain activation."
+            },
+            [Language.AR]: {
+                title: "بيلاتس لنحت القوام وتقوية الجذع",
+                desc: "تقوية عضلات البطن العميقة واستقامة العمود الفقري والتوازن الحركي.",
+                e1: "تمرين المئة (The Hundred)", d1: "حركات ضخ ذراعين مع شد عضلات البطن العميقة.",
+                e2: "جسر الألوية الثابت", d2: "رفع الحوض مع ثبات كامل لعضلات المؤخرة وأسفل الظهر.",
+                e3: "بلانك جانبي بيلاتس", d3: "استقامة كاملة للجسم لاستهداف الخواصر وعضلات التوازن.",
+                e4: "دوائر الساق الفردية", d4: "تثبيت الحوض وتوسيع مرونة مفصل الورك.",
+                e5: "السباحة الظهرية (Swimming)", d5: "تمديد الظهر وتفعيل السلسلة الخلفية بحركات متناسقة."
+            },
+            [Language.ES]: {
+                title: "Escultura y Postura Pilates",
+                desc: "Activación del abdomen profundo, alineación espinal y control postural.",
+                e1: "El Cien (The Hundred)", d1: "Bateo dinámico de brazos con contracción abdominal profunda.",
+                e2: "Puente de Glúteos Isométrico", d2: "Elevación de pelvis manteniendo tensión constante.",
+                e3: "Plancha Lateral Pilates", d3: "Alineación cabeza-tobillos enfocada en los oblicuos.",
+                e4: "Círculos de Pierna", d4: "Estabilización pélvica y movilidad de cadera.",
+                e5: "Natación Dorsal (Swimming)", d5: "Fortalecimiento de toda la cadena posterior."
+            },
+            [Language.PT]: {
+                title: "Escultura e Postura Pilates",
+                desc: "Ativação profunda do core, alinhamento da coluna e controle cinético.",
+                e1: "The Hundred", d1: "Movimentos rítmicos dos braços com abdômen travado.",
+                e2: "Ponte de Glúteos Isométrica", d2: "Elevação pélvica com foco nos glúteos e estabilização lombar.",
+                e3: "Prancha Lateral Pilates", d3: "Alinhamento axial com foco nos oblíquos.",
+                e4: "Círculos de Perna Unilaterais", d4: "Controle pélvico e mobilidade coxofemoral.",
+                e5: "Extensão Swimming", d5: "Trabalho postural simétrico da cadeia posterior."
+            },
+            [Language.JA]: {
+                title: "ピラティス・体幹＆姿勢スカルプト",
+                desc: "深層コア筋の強化、背骨のアライメント、全身のコントロール。",
+                e1: "ハンドレッド (The Hundred)", d1: "腹筋深層を活性化しながらリズミカルに腕を振ります。",
+                e2: "アイソメトリック・ヒップリフト", d2: "骨盤を引き上げ臀筋の緊張をキープします。",
+                e3: "ピラティス・サイドプランク", d3: "体側ラインを一直線に保ち腹斜筋を鍛えます。",
+                e4: "シングルレッグサークル", d4: "骨盤を安定させたまま股関節を柔軟に回します。",
+                e5: "スパイナル・スイミング", d5: "背筋全体を左右対称に引き締めます。"
+            },
+            [Language.ZH]: {
+                title: "普拉提核心雕刻与体态重塑",
+                desc: "深层腹横肌激活，脊柱延展与精准动作控制。",
+                e1: "百次拍打 (The Hundred)", d1: "核心深层收紧，双臂规律拍打呼吸配合。",
+                e2: "静态臀桥骨盆悬停", d2: "骨盆上顶，保持臀肌与核心稳定收缩。",
+                e3: "普拉提侧支撑", d3: "头顶至脚跟呈直线，强化腹斜肌与肩胛稳定。",
+                e4: "单腿划圈控制", d4: "骨盆完全中立稳定，髋关节灵活画圈。",
+                e5: "背腹对抗游泳式", d5: "对侧手脚交替向上微抬，强化背部后链。"
+            },
+            [Language.RU]: {
+                title: "Пилатес: Кор и королевская осанка",
+                desc: "Глубокая активация кора, вытяжение позвоночника и баланс.",
+                e1: "Сотня (The Hundred)", d1: "Динамичные махи руками с фиксацией глубокого пресса.",
+                e2: "Изометрический ягодичный мостик", d2: "Удержание таза на весу с постоянным напряжением ягодиц.",
+                e3: "Боковая планка Пилатес", d3: "Идеальная прямая линия тела для акцента на косые мышцы.",
+                e4: "Круги одной ногой", d4: "Фиксация таза и мягкое вращение в тазобедренном суставе.",
+                e5: "Пловец (Swimming)", d5: "Симметричное укрепление всей задней поверхности тела."
+            }
+        };
+        const pDict = pilatesDict[language] || pilatesDict[Language.EN];
+        return {
+            title: pDict.title,
+            description: pDict.desc,
+            exercises: [
+                { name: pDict.e1, description: pDict.d1, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['plank'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: pDict.e2, description: pDict.d2, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['squat'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: pDict.e3, description: pDict.d3, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['plank'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: pDict.e4, description: pDict.d4, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['lunge'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: pDict.e5, description: pDict.d5, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['deadlift'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets }
+            ],
+            level,
+            goal: 'pilates',
+            targetSets,
+            targetReps,
+            restBetweenSets
+        };
+    }
+
+    if (isYoga) {
+        const yogaDict: Record<Language, { title: string; desc: string; e1: string; d1: string; e2: string; d2: string; e3: string; d3: string; e4: string; d4: string; e5: string; d5: string }> = {
+            [Language.FR]: {
+                title: "Vinyasa Flow & Mobilité Articulaire",
+                desc: "Respiration synchronisée, décompression vertébrale et équilibre.",
+                e1: "Chien Tête en Bas", d1: "Allongement de la colonne et étirement des ischios.",
+                e2: "Guerrier II Virabhadrasana", d2: "Ancrage puissant des appuis et ouverture des hanches.",
+                e3: "Posture du Cobra Bhujangasana", d3: "Ouverture de la cage thoracique et renforcement lombaire.",
+                e4: "Fente Basse Anjaneyasana", d4: "Étirement profond du psoas et stabilité du bassin.",
+                e5: "Posture de l'Enfant Balasana", d5: "Décompression vertébrale et retour au calme respiratoire."
+            },
+            [Language.EN]: {
+                title: "Vinyasa Flow & Dynamic Mobility",
+                desc: "Breath-synchronized movement opening joints and building grounded focus.",
+                e1: "Downward Facing Dog", d1: "Spinal elongation and posterior hamstring stretch.",
+                e2: "Warrior II", d2: "Solid grounding, hip opening, and unwavering focus.",
+                e3: "Cobra Pose", d3: "Chest opening and lumbar spine strengthening.",
+                e4: "Low Lunge Anjaneyasana", d4: "Deep psoas and hip flexor lengthening.",
+                e5: "Child's Rest Pose", d5: "Deep breath restoration and spinal decompression."
+            },
+            [Language.AR]: {
+                title: "يوغا التدفق والمرونة الديناميكية",
+                desc: "تناغم التنفس مع الحركة، وإطالة العمود الفقري وفتح المفاصل.",
+                e1: "وضعية الكلب المنحني لأسفل", d1: "إطالة العمود الفقري وأوتار الركبة الخلفية.",
+                e2: "وضعية المحارب الثاني", d2: "ثبات قوي للأقدام وفتح الوركين وتركيز كامل.",
+                e3: "وضعية الكوبرا", d3: "فتح الصدر وتقوية أسفل الظهر بمرونة.",
+                e4: "الطعنة المنخفضة (أنجانياسانا)", d4: "إطالة عضلات الحوض والورك الأمامية.",
+                e5: "وضعية الطفل للاسترخاء", d5: "تهدئة التنفس وإراحة الظهر بالكامل."
+            },
+            [Language.ES]: {
+                title: "Vinyasa Flow y Movilidad Dinámica",
+                desc: "Movimiento sincronizado con la respiración, apertura articular y equilibrio.",
+                e1: "Perro Boca Abajo", d1: "Elongación espinal y estiramiento de isquiotibiales.",
+                e2: "Guerrero II", d2: "Enraizamiento firme, apertura de cadera y enfoque.",
+                e3: "Postura de la Cobra", d3: "Apertura de pecho y fortalecimiento lumbar suave.",
+                e4: "Zancada Baja Anjaneyasana", d4: "Estiramiento profundo del psoas.",
+                e5: "Postura del Niño Balasana", d5: "Descompresión vertebral y relajación respiratoria."
+            },
+            [Language.PT]: {
+                title: "Vinyasa Flow e Mobilidade Dinâmica",
+                desc: "Movimento sincronizado com a respiração para flexibilidade e equilíbrio.",
+                e1: "Cachorro Olhando para Baixo", d1: "Alongamento da coluna e posteriores de coxa.",
+                e2: "Guerreiro II", d2: "Base sólida, abertura de quadril e concentração.",
+                e3: "Postura da Cobra", d3: "Abertura torácica e fortalecimento lombar.",
+                e4: "Avanço Baixo Anjaneyasana", d4: "Alongamento do psoas e flexores do quadril.",
+                e5: "Postura da Criança Balasana", d5: "Recuperação respiratória e relaxamento da coluna."
+            },
+            [Language.JA]: {
+                title: "ヴィンヤサ・フロー＆ダイナミック・モビリティ",
+                desc: "呼吸と連動した流れるような動きで関節を開き、体軸を整えます。",
+                e1: "ダウンドッグ (下を向いた犬のポーズ)", d1: "背骨を伸ばしハムストリングスを心地よくストレッチ。",
+                e2: "ウォーリアII (戦士のポーズ2)", d2: "下半身の安定と股関節の開き、集中力を高めます。",
+                e3: "コブラのポーズ", d3: "胸を開き、腰背部を穏やかに強化します。",
+                e4: "ローランジ (アンジャネーヤーサナ)", d4: "腸腰筋と股関節前側を深く伸ばします。",
+                e5: "チャイルドポーズ", d5: "呼吸を整え、背骨を緩めてリフレッシュします。"
+            },
+            [Language.ZH]: {
+                title: "流瑜伽与动态关节灵活性",
+                desc: "呼吸与体式同步流动，打开胸腔髋部，舒展脊柱。",
+                e1: "下犬式 (Adho Mukha)", d1: "延展脊柱后背，拉伸大腿后侧肌群。",
+                e2: "战士二式 (Virabhadrasana II)", d2: "扎实双腿根基，开展髋部，凝神聚力。",
+                e3: "眼镜蛇式 (Bhujangasana)", d3: "打开前胸，强化后腰背肌群。",
+                e4: "低位箭步式 (Anjaneyasana)", d4: "深度拉伸髂腰肌与髋屈肌群。",
+                e5: "大休息婴儿式 (Balasana)", d5: "放松脊柱与神经系统，平稳呼吸。"
+            },
+            [Language.RU]: {
+                title: "Виньяса Флоу и Раскрытие Суставов",
+                desc: "Дыхание в движении, мягкая растяжка и центрирование ума.",
+                e1: "Собака мордой вниз", d1: "Вытяжение позвоночника и растяжка подколенных сухожилий.",
+                e2: "Воин II", d2: "Мощная опора стоп, раскрытие таза и концентрация.",
+                e3: "Поза Кобры", d3: "Раскрытие грудной клетки и укрепление поясницы.",
+                e4: "Низкий выпад Анжанеясана", d4: "Глубокое вытяжение подвздошно-поясничной мышцы.",
+                e5: "Поза ребенка Баласана", d5: "Полная разгрузка позвоночника и ровное дыхание."
+            }
+        };
+        const yDict = yogaDict[language] || yogaDict[Language.EN];
+        return {
+            title: yDict.title,
+            description: yDict.desc,
+            exercises: [
+                { name: yDict.e1, description: yDict.d1, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['deadlift'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: yDict.e2, description: yDict.d2, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['lunge'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: yDict.e3, description: yDict.d3, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['push up'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: yDict.e4, description: yDict.d4, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['lunge'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: yDict.e5, description: yDict.d5, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['plank'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets }
+            ],
+            level,
+            goal: 'yoga',
+            targetSets,
+            targetReps,
+            restBetweenSets
+        };
+    }
+
+    if (isCalisthenics) {
+        const calisthenicsDict: Record<Language, { title: string; desc: string; e1: string; d1: string; e2: string; d2: string; e3: string; d3: string; e4: string; d4: string; e5: string; d5: string }> = {
+            [Language.FR]: {
+                title: "Calisthénie & Maîtrise Poids du Corps",
+                desc: "Poussée explosive, verrouillage scapulaire et contrôle statique athlétique.",
+                e1: "Pompes Strictes Explosives", d1: "Descente contrôlée et poussée explosive avec protraction scapulaire.",
+                e2: "Dips au Sol Triceps", d2: "Extension complète des coudes et isolation des triceps.",
+                e3: "Fentes Sautées Plyométriques", d3: "Explosion verticale et réception amortie sur la jambe avant.",
+                e4: "Gainage Hollow Body", d4: "Rétroversion du bassin et verrouillage complet de la sangle abdominale.",
+                e5: "Squats Poids de Corps Tempo", d5: "Contrôle excentrique 3 secondes et verrouillage des fessiers."
+            },
+            [Language.EN]: {
+                title: "Calisthenics Bodyweight Dominance",
+                desc: "Upper-body pressing power, scapular control, and core rigidity.",
+                e1: "Explosive Push-Ups", d1: "Chest to floor, explosive pressing power with scapular protraction.",
+                e2: "Floor Tricep Dips", d2: "Full elbow extension isolating the triceps and anterior deltoids.",
+                e3: "Plyometric Jump Lunges", d3: "Vertical explosion and soft controlled landing on lead foot.",
+                e4: "Hollow Body Core Hold", d4: "Pelvic posterior tilt with maximal abdominal compression.",
+                e5: "Tempo Bodyweight Squats", d5: "Strict 3-second descent with deep hip crease flexion."
+            },
+            [Language.AR]: {
+                title: "كاليستثنكس وقوة وزن الجسم",
+                desc: "قوة دفع متفجرة، ثبات الكتفين واللوحين، وصلابة كاملة للجذع.",
+                e1: "ضغط متفجر دقيق", d1: "نزول للصدر ودفع قوي مع استقامة كاملة للظهر.",
+                e2: "دبس أرضي للترايسبس", d2: "تمديد كامل للكوعين لعزل الترايسبس والأكتاف.",
+                e3: "طعنات قفز بلايوميترية", d3: "قفز انفجاري مع هبوط ممتص على الساق الأمامية.",
+                e4: "تثبيت هولو بودي (Hollow Body)", d4: "شد عميق لعضلات البطن مع التصاق أسفل الظهر.",
+                e5: "سكوات بوزن الجسم مع تحكم", d5: "نزول بطيء وصعود قوي لتقوية الساقين."
+            },
+            [Language.ES]: {
+                title: "Calistenia y Dominio Corporal",
+                desc: "Empuje explosivo, estabilidad escapular y control abdominal estricto.",
+                e1: "Flexiones Explosivas", d1: "Pecho al suelo y empuje potente con protracción escapular.",
+                e2: "Fondos de Tríceps en Suelo", d2: "Extensión total de codos aislando tríceps.",
+                e3: "Zancadas con Salto Pliométricas", d3: "Potencia vertical con aterrizaje suave y controlado.",
+                e4: "Bloqueo Hollow Body", d4: "Retroversión pélvica y compresión abdominal total.",
+                e5: "Sentadillas con Tempo Controlado", d5: "Descenso de 3 segundos y subida explosiva."
+            },
+            [Language.PT]: {
+                title: "Calistenia e Força Corporal",
+                desc: "Empurre explosivo, controle escapular e rigidez muscular completa.",
+                e1: "Flexões Explosivas", d1: "Descida controlada e empurrão potente.",
+                e2: "Mergulho de Tríceps no Chão", d2: "Extensão completa dos cotovelos isolando tríceps.",
+                e3: "Avanço com Salto Pliométrico", d3: "Explosão vertical e aterrissagem suave.",
+                e4: "Hollow Body Isométrico", d4: "Tração pélvica e compressão profunda do abdômen.",
+                e5: "Agachamento com Tempo", d5: "Descida controlada e extensão potente de quadril."
+            },
+            [Language.JA]: {
+                title: "自重キャリステニクス・パワー",
+                desc: "爆発的なプッシュ力、肩甲骨の安定性、強靭な体幹コントロール。",
+                e1: "エクスプロシブ・プッシュアップ", d1: "胸をしっかり下ろし爆発的な推進力で押し上げます。",
+                e2: "フロア・トライセップディップス", d2: "肘をしっかり伸ばし上腕三頭筋を集中強化します。",
+                e3: "プライオメトリック・ジャンプランジ", d3: "跳躍力を高め、前足で衝撃を吸収しながら着地します。",
+                e4: "ホロウボディ・ホールド", d4: "骨盤を後傾させ、腹筋を最大限に引き締めて静止します。",
+                e5: "テンポ・スクワット", d5: "3秒かけて下ろし、力強く立ち上がります。"
+            },
+            [Language.ZH]: {
+                title: "街头自重体能与身体掌控",
+                desc: "爆发力推力、肩胛控制与强悍的核心抗屈能力。",
+                e1: "爆发力标准俯卧撑", d1: "胸部触地，爆发推起，肩胛充分前引。",
+                e2: "地面窄距三头支撑臂屈伸", d2: "肘关节完全伸展，孤立刺激肱三头肌。",
+                e3: "跳跃箭步蹲换腿", d3: "纵向爆发跳跃，前腿轻盈缓冲着地。",
+                e4: "香蕉船空心支撑 (Hollow Body)", d4: "骨盆后倾贴地，腹直肌最大张力紧绷。",
+                e5: "节奏自重深蹲", d5: "三秒下蹲控制节奏，臀部爆发站起。"
+            },
+            [Language.RU]: {
+                title: "Калистеника и Владение Телом",
+                desc: "Взрывной жим, контроль лопаток и жесткая фиксация кора.",
+                e1: "Взрывные отжимания", d1: "Касание грудью пола и мощный толчок с протолканием лопаток.",
+                e2: "Отжимания на трицепс от пола", d2: "Четкое разгибание в локтях для проработки трицепсов.",
+                e3: "Плиометрические выпады с прыжком", d3: "Вертикальный взрыв и мягкое контролируемое приземление.",
+                e4: "Лодочка Холлоу Боди", d4: "Прижатая к полу поясница и железобетонный пресс.",
+                e5: "Приседания с темпом", d5: "Медленный сед за 3 секунды и мощное разгибание."
+            }
+        };
+        const cDict = calisthenicsDict[language] || calisthenicsDict[Language.EN];
+        return {
+            title: cDict.title,
+            description: cDict.desc,
+            exercises: [
+                { name: cDict.e1, description: cDict.d1, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['push up'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: cDict.e2, description: cDict.d2, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['push up'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: cDict.e3, description: cDict.d3, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['lunge'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: cDict.e4, description: cDict.d4, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['plank'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets },
+                { name: cDict.e5, description: cDict.d5, modelUrl: MODEL_LIBRARY.bodyweight, videoUrl: VIDEO_LIBRARY['squat'], difficulty: 'intermediate' as any, muscleGroups: [], sets: targetSets, reps: targetReps, restSeconds: restBetweenSets }
+            ],
+            level,
+            goal: 'calisthenics',
+            targetSets,
+            targetReps,
+            restBetweenSets
+        };
+    }
+
     const fallbackTitles: Record<Language, { title: string; desc: string; sName: string; sDesc: string; pName: string; pDesc: string; lName: string; lDesc: string; plName: string; plDesc: string; dName: string; dDesc: string }> = {
         [Language.FR]: {
             title: "Conditionnement Fitness Haute Intensité",
@@ -190,7 +490,7 @@ export const buildFallbackWorkoutPlan = (language: Language = Language.EN, optio
         [Language.ES]: {
             title: "Acondicionamiento Fitness de Alta Intensidad",
             desc: "Sesión metabólica y funcional para quema calórica y tono muscular integral.",
-            sName: "Sentadillas Dinámicas", sDesc: "Flexión profunda de piernas y extensión potente de cadera.",
+            sName: "Sentadillas Dinámicas", sDesc: "Flexion profunda de piernas y extensión potente de cadera.",
             pName: "Flexiones de Brazos", pDesc: "Empuje de pecho y alineación recta de tronco.",
             lName: "Zancadas Alternas", lDesc: "Pasos amplios manteniendo el torso erguido.",
             plName: "Plancha Abdominal Activa", plDesc: "Contracción máxima de abdomen y glúteos.",

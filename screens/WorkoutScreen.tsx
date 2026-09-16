@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
     Pause, Play, X, ChevronLeft, ChevronRight, Activity, Timer as TimerIcon, Box, Sun, Moon, 
-    CheckCircle2, Flame, Dumbbell, Zap, RotateCcw, FastForward, Award, Clock 
+    CheckCircle2, Flame, Dumbbell, Zap, RotateCcw, FastForward, Award, Clock, Bot
 } from 'lucide-react';
 import { generateWorkoutWithGemini, getWorkoutSeriesAndRest } from '../services/aiService.ts';
 import { WorkoutPlan, Screen, AIProvider } from '../types.ts';
@@ -64,7 +64,7 @@ const playSoundEffect = (type: 'beep' | 'done' | 'start') => {
 };
 
 const WorkoutScreen: React.FC = () => {
-    const { setScreen, language, showStatus, logWorkout, selectedPlan, setSelectedPlan, selectedCoachPersona, setSelectedCoachPersona, setIsGeneratingWorkout, translate } = useApp();
+    const { setScreen, language, showStatus, logWorkout, selectedPlan, setSelectedPlan, selectedCoachPersona, setSelectedCoachPersona, setIsGeneratingWorkout, setIsCoachOpen, translate } = useApp();
     
     const [view, setView] = useState<WorkoutView>(selectedPlan ? 'active' : 'setup');
     const [plan, setPlan] = useState<WorkoutPlan | null>(selectedPlan);
@@ -103,15 +103,18 @@ const WorkoutScreen: React.FC = () => {
     const [trainingGoal, setTrainingGoal] = useState<'fitness' | 'mass_gaining' | 'power_training'>('fitness');
     const [customRestSeconds, setCustomRestSeconds] = useState<number | null>(null);
 
-    // Synchronize training goal with workout type if relevant
+    // Synchronize training goal with workout type and reset previous custom plans
     const handleSelectWorkoutType = (type: string) => {
         setWorkoutType(type);
+        // Clear any previous workout plan so selecting a new discipline always generates fresh exercises
+        setSelectedPlan(null);
+        setPlan(null);
         if (type === 'powerlifting' || type === 'power_training') {
             setTrainingGoal('power_training');
         } else if (type === 'mass_gaining') {
             setTrainingGoal('mass_gaining');
-        } else if (trainingGoal === 'power_training' || trainingGoal === 'mass_gaining') {
-            // Keep current goal unless user wants to change
+        } else {
+            setTrainingGoal('fitness');
         }
     };
 
@@ -220,7 +223,14 @@ const WorkoutScreen: React.FC = () => {
 
     const handleClose = () => {
         setSelectedPlan(null);
-        setScreen(Screen.Home);
+        setPlan(null);
+        setView('setup');
+    };
+
+    const handleStartNewWorkout = () => {
+        setSelectedPlan(null);
+        setPlan(null);
+        setView('setup');
     };
 
     // Main Timer Engine
@@ -271,15 +281,18 @@ const WorkoutScreen: React.FC = () => {
 
     // Generate workout with Gemini or high-performance fallback
     const handleGenerate = async () => {
+        setPlan(null);
+        setSelectedPlan(null);
         setView('loading');
         setIsGeneratingWorkout(true);
         try {
             const { sets, reps, restSeconds } = getWorkoutSeriesAndRest(intensity, trainingGoal);
-            const prompt = `Generate a ${intensity} intensity ${workoutType} workout. Protocol: ${sets} sets of ${reps} reps with ${restSeconds}s rest pause between sets. Requirements: ${customRequirements}. Be concise.`;
+            const prompt = `Generate a ${intensity} intensity ${workoutType} workout. Protocol: ${sets} sets of ${reps} reps with ${restSeconds}s rest pause between sets. Discipline: ${workoutType}. Requirements: ${customRequirements}. Ensure all exercises strictly belong to ${workoutType}. Be concise.`;
             
             const generated = await generateWorkoutWithGemini(prompt, language, {
                 level: intensity,
                 goal: trainingGoal,
+                workoutType: workoutType,
                 targetSets: sets,
                 targetReps: reps,
                 restBetweenSets: restSeconds
@@ -353,7 +366,7 @@ const WorkoutScreen: React.FC = () => {
 
                     {/* TOP CONTROLS & HUD */}
                     <div className="absolute top-0 left-0 right-0 z-[500] p-3 sm:p-5 flex justify-between items-start pointer-events-none">
-                        <div className="flex items-center gap-2 pointer-events-auto flex-wrap max-w-[75%]">
+                        <div className="flex items-center gap-2 pointer-events-auto">
                             <button 
                                 onClick={handleClose} 
                                 className={`p-2.5 rounded-full shadow-2xl active:scale-90 transition-transform border ${
@@ -367,32 +380,7 @@ const WorkoutScreen: React.FC = () => {
                             </button>
 
                             {/* EMS BAND TRIGGER */}
-                            <DeviceStatusTrigger showLabel />
-
-                            {/* STUDIO NIGHT / DAY MODE TOGGLE FOR 3D COACH */}
-                            <button
-                                onClick={() => {
-                                    const next = studioTheme === 'dark' ? 'white' : 'dark';
-                                    setStudioTheme(next);
-                                    localStorage.setItem('f4x_studio_theme', next);
-                                }}
-                                className={`px-3 py-1.5 backdrop-blur-md rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg active:scale-95 transition-all border ${
-                                    studioTheme === 'dark'
-                                        ? 'bg-neutral-900/90 border-neutral-700 text-white hover:bg-neutral-800'
-                                        : 'bg-white/90 border-zinc-200 text-neutral-800 hover:bg-neutral-100'
-                                }`}
-                                title={studioTheme === 'dark' ? "Passer au Studio Blanc" : "Passer en Mode Nuit (Studio Noir)"}
-                            >
-                                {studioTheme === 'dark' ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-purple-600" />}
-                                <span className="hidden sm:inline">{studioTheme === 'dark' ? 'Studio Blanc' : 'Mode Nuit'}</span>
-                            </button>
-
-                            {/* CURRENT PROTOCOL BADGE */}
-                            <div className="px-2.5 py-1 bg-black/80 backdrop-blur-md border border-zinc-800 rounded-full text-white text-[10px] font-mono tracking-wider flex items-center gap-1.5 shadow-lg">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                <span className="font-bold text-[#8A2BE2]">{targetSets}×{targetReps}</span>
-                                <span className="text-zinc-400">• {translate('workout.rest.pause')} {restBetweenSets}s</span>
-                            </div>
+                            <DeviceStatusTrigger showLabel={false} />
                         </div>
 
                         {/* RIGHT HUD: TIMER & PLAY/PAUSE */}
@@ -411,13 +399,13 @@ const WorkoutScreen: React.FC = () => {
                             <button 
                                 onClick={() => setIsPaused(!isPaused)} 
                                 className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all border ${
-                                    studioTheme === 'dark'
-                                        ? 'bg-neutral-900 text-white border-neutral-700'
-                                        : 'bg-white/95 text-black border-zinc-200'
+                                    isPaused 
+                                        ? 'bg-emerald-500 border-emerald-400 text-black shadow-[0_0_25px_rgba(16,185,129,0.5)] animate-pulse' 
+                                        : 'bg-neutral-900/90 border-neutral-700 text-white hover:bg-neutral-800'
                                 }`}
                                 title={isPaused ? translate('workout.action.resume') : translate('workout.action.pause')}
                             >
-                                {isPaused ? <Play size={18} fill={studioTheme === 'dark' ? "white" : "black"} className="ml-0.5"/> : <Pause size={18} fill={studioTheme === 'dark' ? "white" : "black"}/>}
+                                {isPaused ? <Play size={20} fill="currentColor" className="ml-0.5" /> : <Pause size={20} fill="currentColor" />}
                             </button>
                         </div>
                     </div>
@@ -559,9 +547,16 @@ const WorkoutScreen: React.FC = () => {
                         
                         {/* LEFT: EXERCISE INFO & SET BADGES */}
                         <div className="flex-1 min-w-0 pr-2">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <div className="flex items-center gap-2 flex-wrap mb-1.5">
                                 <span className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-[0.25em]">
                                     {translate('workout.active.exercise')} {idx + 1} / {plan.exercises.length}
+                                </span>
+
+                                {/* SESSION PROTOCOL BADGE: 4×14 • Pause 30s PLACED DIRECTLY WITH EXERCISE & SESSIONS */}
+                                <span className="px-2.5 py-0.5 rounded-full bg-black/80 border border-zinc-800 text-white text-[10px] font-mono tracking-wider flex items-center gap-1.5 shadow-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    <span className="font-bold text-[#8A2BE2]">{targetSets}×{targetReps}</span>
+                                    <span className="text-zinc-400">• {translate('workout.rest.pause')} {restBetweenSets}s</span>
                                 </span>
                                 
                                 {/* SERIES BADGE (e.g. SÉRIE 2 / 4) */}
@@ -604,7 +599,7 @@ const WorkoutScreen: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* RIGHT: COMPLETE SET BUTTON & SKIP EXERCISE */}
+                        {/* RIGHT: COMPLETE SET BUTTON & SKIP EXERCISE & STUDIO THEME TOGGLE */}
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             {phase === 'work' && (
                                 <button
@@ -626,10 +621,24 @@ const WorkoutScreen: React.FC = () => {
                                 </button>
                             )}
 
+                            {/* STUDIO NIGHT / DAY MODE TOGGLE (SAFELY IN LOWER BAR - NEVER HIDING COACH HEAD) */}
+                            <button
+                                onClick={() => {
+                                    const next = studioTheme === 'dark' ? 'white' : 'dark';
+                                    setStudioTheme(next);
+                                    localStorage.setItem('f4x_studio_theme', next);
+                                }}
+                                className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl shrink-0"
+                                title={studioTheme === 'dark' ? "Passer au Studio Blanc" : "Passer en Mode Nuit (Studio Noir)"}
+                                aria-label="Basculer Mode Studio Nuit/Jour"
+                            >
+                                {studioTheme === 'dark' ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-purple-400" />}
+                            </button>
+
                             <button 
                                 onClick={skipExercise} 
                                 title={translate('workout.active.next_exercise')}
-                                className="bg-neutral-800 hover:bg-neutral-700 text-white w-11 h-11 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl shrink-0"
+                                className="bg-neutral-800 hover:bg-neutral-700 text-white w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl shrink-0"
                             >
                                 <ChevronRight size={22} />
                             </button>
@@ -696,9 +705,30 @@ const WorkoutScreen: React.FC = () => {
                     )}
                 </div>
 
-                <Button onClick={() => setScreen(Screen.Home)} className="w-full max-w-md py-6 font-bold text-xs tracking-widest uppercase shadow-[0_0_40px_rgba(138,43,226,0.3)]">
-                    {translate('workout.btn.home')}
-                </Button>
+                <div className="flex gap-3 w-full max-w-md">
+                    <Button 
+                        onClick={() => {
+                            setSelectedPlan(null);
+                            setPlan(null);
+                            setView('setup');
+                        }} 
+                        className="flex-1 py-5 font-bold text-xs tracking-widest uppercase bg-purple-600 hover:bg-purple-500 shadow-[0_0_30px_rgba(138,43,226,0.4)]"
+                    >
+                        <RotateCcw size={15} className="mr-2 inline" />
+                        Nouvelle séance
+                    </Button>
+                    <Button 
+                        onClick={() => {
+                            setSelectedPlan(null);
+                            setPlan(null);
+                            setScreen(Screen.Home);
+                        }} 
+                        variant="secondary" 
+                        className="flex-1 py-5 font-bold text-xs tracking-widest uppercase border-zinc-800 text-zinc-300 hover:text-white"
+                    >
+                        {translate('workout.btn.home')}
+                    </Button>
+                </div>
             </div>
         );
     }
@@ -710,7 +740,17 @@ const WorkoutScreen: React.FC = () => {
                     <button onClick={() => setScreen(Screen.Home)} className="p-2 text-gray-500 hover:text-white -ml-2 transition-colors">
                         <ChevronLeft size={26} />
                     </button>
-                    <DeviceStatusTrigger showLabel />
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsCoachOpen(true)}
+                            className="px-3 py-1.5 bg-purple-950/70 border border-purple-500/60 rounded-full text-xs font-semibold text-purple-200 flex items-center gap-1.5 hover:bg-purple-900 shadow-md active:scale-95 transition-all"
+                            title="Chatbot / Coach IA F4X"
+                        >
+                            <Bot size={14} className="text-purple-300" />
+                            <span>Coach IA</span>
+                        </button>
+                        <DeviceStatusTrigger showLabel />
+                    </div>
                 </div>
                 <h1 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight sm:tracking-widest px-2 leading-none text-center">
                     {translate('workout.setup.title')}

@@ -200,8 +200,8 @@ export class HunyuanSkeletalRetargeter {
     const rollSign = isRightLimb ? -1 : 1;
 
     // For thighs (UpLeg) and upper arms (Arm):
-    // Positive pitch = forward flexion; knees (Leg) flex backward:
-    const pitchSign = (boneName === 'LeftLeg' || boneName === 'RightLeg') ? 1 : 1;
+    // Positive pitch = forward flexion; knees (Leg) flex backward (anatomical posterior flexion):
+    const pitchSign = (boneName === 'LeftLeg' || boneName === 'RightLeg') ? -1 : 1;
 
     const qPitch = new THREE.Quaternion().setFromAxisAngle(localPitchAxis, clampedPitch * pitchSign);
     const qYaw   = new THREE.Quaternion().setFromAxisAngle(localYawAxis, clampedYaw);

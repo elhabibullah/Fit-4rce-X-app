@@ -451,12 +451,12 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
   return (
     <div 
-      className="fixed inset-0 bg-black/95 backdrop-blur-2xl z-[9999] flex flex-col items-center justify-between p-4 sm:p-6 font-['Poppins']"
+      className="fixed inset-0 h-[100dvh] max-h-[100dvh] w-full bg-black/95 backdrop-blur-2xl z-[9999] flex flex-col items-center justify-between font-['Poppins'] overflow-hidden"
       role="dialog"
       aria-modal="true"
     >
       {/* TOP BAR */}
-      <div className="w-full max-w-md flex items-center justify-between pt-2 pb-4 border-b border-white/10">
+      <div className="w-full max-w-md flex items-center justify-between px-4 pt-3 pb-3 border-b border-white/10 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-purple-900/60 border border-purple-500/40 flex items-center justify-center shadow-[0_0_15px_rgba(138,43,226,0.4)]">
             <Bot className="w-5 h-5 text-purple-300" />
@@ -496,15 +496,18 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       </div>
 
       {/* CONVERSATION HISTORY SCROLL */}
-      <div className="w-full max-w-md flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-3 flex flex-col justify-end custom-scrollbar">
+      <div className="w-full max-w-md flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3 flex flex-col justify-end custom-scrollbar">
         {messages.length === 0 && !currentTranscript && (
-          <div className="text-center py-6">
+          <div className="text-center py-4 my-auto">
             <p className="text-sm font-bold text-purple-300 tracking-wide">
               {COACH_TITLE_PROMPTS[language] || COACH_TITLE_PROMPTS[Language.EN]}
             </p>
-            <p className="text-[11px] text-zinc-400 mt-2">
+            <p className="text-[11px] text-zinc-400 mt-2 max-w-xs mx-auto">
               {COACH_EXAMPLE_PROMPTS[language] || COACH_EXAMPLE_PROMPTS[Language.EN]}
             </p>
+            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 bg-purple-900/30 border border-purple-500/30 rounded-full text-[10px] text-purple-300">
+              <span>✍️ Tapez votre message au clavier en bas ou parlez</span>
+            </div>
           </div>
         )}
 
@@ -545,69 +548,74 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       </div>
 
       {/* COMPACT VOICE STATUS INDICATOR */}
-      <div className="w-full max-w-md flex flex-col items-center justify-center py-2 flex-shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="w-full max-w-md flex items-center justify-between px-4 py-1.5 flex-shrink-0 border-t border-white/5 bg-zinc-950/70">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={toggleListening}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl active:scale-95 ${
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-md active:scale-95 flex-shrink-0 ${
               isAiSpeaking
-                ? 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 shadow-[0_0_25px_rgba(138,43,226,0.8)] scale-105 animate-pulse'
+                ? 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 shadow-[0_0_20px_rgba(138,43,226,0.8)] animate-pulse'
                 : isListening
-                ? 'bg-gradient-to-tr from-purple-700 to-indigo-600 border-2 border-purple-300 shadow-[0_0_20px_rgba(138,43,226,0.6)] scale-105'
-                : 'bg-zinc-900 border-2 border-purple-500/40 hover:border-purple-400 shadow-[0_0_15px_rgba(138,43,226,0.2)]'
+                ? 'bg-gradient-to-tr from-purple-700 to-indigo-600 border-2 border-purple-300 shadow-[0_0_15px_rgba(138,43,226,0.6)]'
+                : 'bg-zinc-900 border border-purple-500/40 hover:border-purple-400'
             }`}
             aria-label={isListening ? "Stop listening" : "Start speaking"}
           >
             {isAiSpeaking ? (
-              <div className="flex items-end gap-1 h-5">
-                <div className="w-1 h-2.5 bg-white rounded-full animate-bounce"></div>
-                <div className="w-1 h-5 bg-white rounded-full animate-bounce [animation-delay:0.15s]"></div>
-                <div className="w-1 h-3.5 bg-white rounded-full animate-bounce [animation-delay:0.3s]"></div>
+              <div className="flex items-end gap-0.5 h-3.5">
+                <div className="w-1 h-2 bg-white rounded-full animate-bounce"></div>
+                <div className="w-1 h-3.5 bg-white rounded-full animate-bounce [animation-delay:0.15s]"></div>
+                <div className="w-1 h-2.5 bg-white rounded-full animate-bounce [animation-delay:0.3s]"></div>
               </div>
             ) : (
               <Mic 
-                size={22} 
+                size={16} 
                 className={`${isListening ? 'text-white scale-110' : 'text-purple-400'} transition-transform`} 
               />
             )}
           </button>
           
           <div className="text-left">
-            <p className="text-[11px] font-bold text-gray-200 uppercase tracking-wider">
+            <p className="text-[10px] font-bold text-gray-200 uppercase tracking-wider">
               {isAiSpeaking 
                 ? translate('coach.status.speaking') 
                 : isListening 
                 ? translate('coach.status.im_listening') 
                 : translate('coach.status.ready_voice')}
             </p>
-            <p className="text-[10px] text-zinc-400">
-              {isListening ? "Parlez ou écrivez au clavier ci-dessous" : "Cliquez sur le micro pour parler ou écrivez"}
+            <p className="text-[9px] text-zinc-400">
+              {isListening ? "Parlez ou écrivez au clavier ci-dessous" : "Cliquez sur le micro ou écrivez au clavier"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* FULL TEXT INPUT BAR WITH SEND & MIC */}
-      <form onSubmit={handleManualSubmit} className="w-full max-w-md flex items-center gap-2 pt-2 pb-1 flex-shrink-0">
-        <div className="flex-1 relative flex items-center">
-          <input 
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder={COACH_INPUT_PLACEHOLDERS[language] || COACH_INPUT_PLACEHOLDERS[Language.EN]}
-            className="w-full bg-zinc-900/95 border-2 border-purple-500/40 focus:border-purple-400 rounded-full px-4 py-3 text-xs text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all cursor-text select-text"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={!inputText.trim()}
-          className="w-11 h-11 rounded-full bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center shadow-lg active:scale-95 transition-all flex-shrink-0"
-          aria-label="Send"
-        >
-          <Send size={16} />
-        </button>
-      </form>
+      {/* FULL TEXT INPUT BAR - PERMANENTLY DOCKED AT THE BOTTOM */}
+      <div 
+        className="w-full max-w-md p-3 bg-zinc-950 border-t-2 border-purple-500/50 flex-shrink-0 z-50 shadow-[0_-8px_30px_rgba(0,0,0,0.95)]"
+        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}
+      >
+        <form onSubmit={handleManualSubmit} className="flex items-center gap-2">
+          <div className="flex-1 relative flex items-center">
+            <input 
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder={COACH_INPUT_PLACEHOLDERS[language] || COACH_INPUT_PLACEHOLDERS[Language.EN]}
+              className="w-full bg-zinc-900 border-2 border-purple-500/60 focus:border-purple-400 rounded-full px-4 py-3 text-xs sm:text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40 transition-all cursor-text select-text"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={!inputText.trim()}
+            className="w-11 h-11 rounded-full bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center shadow-lg active:scale-95 transition-all flex-shrink-0"
+            aria-label="Send"
+          >
+            <Send size={16} />
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

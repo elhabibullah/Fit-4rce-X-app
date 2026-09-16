@@ -49,7 +49,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick,
 
 
 const BottomNav: React.FC = () => {
-  const { screen, setScreen, translate, planId, showStatus } = useApp();
+  const { screen, setScreen, translate, planId, showStatus, setSelectedPlan } = useApp();
 
   const navItems = useMemo(() => [
     { icon: Home, label: translate('nav.home'), screen: Screen.Home, premium: false },
@@ -76,6 +76,9 @@ const BottomNav: React.FC = () => {
                 if (isLocked) {
                   showStatus(translate('premiumFeature.locked'));
                 } else {
+                  if (item.screen === Screen.Workout && screen === Screen.Workout) {
+                    setSelectedPlan(null);
+                  }
                   setScreen(item.screen);
                 }
               }}

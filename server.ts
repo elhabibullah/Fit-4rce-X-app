@@ -572,6 +572,8 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
   const targetSets = options?.targetSets || 4;
   const targetReps = options?.targetReps || 14;
   const restBetweenSets = options?.restBetweenSets || 30;
+  const workoutType = (options?.workoutType || '').toLowerCase();
+  const combinedPrompt = `${workoutType} ${prompt || ''}`.trim();
 
   try {
     let generatedData = null;
@@ -579,7 +581,8 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
       try {
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: `As a world-class certified fitness coach, generate a high quality structured workout plan in ${language || 'fr'} for this request: "${prompt || 'full body fitness'}".
+          contents: `As a world-class certified coach, generate an authentic, structured workout plan in ${language || 'fr'} specifically for the discipline "${workoutType || 'fitness'}" with requirements: "${prompt || combinedPrompt}".
+          Strict discipline requirement: The exercises must strictly belong to "${workoutType || 'fitness'}". For example, if Pilates is selected, generate authentic Pilates movements (e.g. Le Cent, Pont Fessier, Gainage Latéral, Cercles de Jambes, Extension Dorsale Swimming), NEVER generic bodybuilding squats.
           The session protocol requires exactly ${targetSets} sets of ${targetReps} reps per exercise with ${restBetweenSets}s rest pause between sets.
           Return a JSON object with:
           - "title": string
@@ -616,7 +619,7 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
       return;
     }
 
-    const fallback = getDynamicWorkoutFallback(prompt, language);
+    const fallback = getDynamicWorkoutFallback(combinedPrompt, language);
     res.json({
       ...fallback,
       targetSets,
@@ -631,7 +634,7 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
     });
   } catch (error: any) {
     console.error("API error generate-workout:", error);
-    const fallback = getDynamicWorkoutFallback(prompt, language);
+    const fallback = getDynamicWorkoutFallback(combinedPrompt, language);
     res.json(fallback);
   }
 });
