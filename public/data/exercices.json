@@ -1,0 +1,7201 @@
+[
+  {
+    "id": "glute_bridge",
+    "name": "Glute Bridge",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Glutes"
+    ],
+    "secondary": [
+      "Hamstrings",
+      "Core"
+    ],
+    "steps": [
+      "Lie on your back, knees bent, feet flat near the hips.",
+      "Drive through the heels to lift the hips.",
+      "Squeeze the glutes at the top; body straight from knees to shoulders.",
+      "Lower with control."
+    ],
+    "fps": 30,
+    "duration": 2.6,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              -90,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.808
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -46,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              100,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              21,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              55
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              -115,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.608
+            ]
+          },
+          "spine": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              -6,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              12,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              3,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              92,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              6,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              55
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              -115,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.608
+            ]
+          },
+          "spine": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              -6,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              12,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              3,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              92,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              6,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              55
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              5
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              -90,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.808
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -46,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              100,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              21,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              55
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              5
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "good_morning",
+    "name": "Good Morning",
+    "equipment": "Barbell",
+    "difficulty": "Intermediate",
+    "prop": {
+      "type": "barbell"
+    },
+    "primary": [
+      "Hamstrings"
+    ],
+    "secondary": [
+      "Lower Back",
+      "Glutes"
+    ],
+    "steps": [
+      "Rest the bar across the upper traps, hands securing it.",
+      "Brace the core and hinge at the hips, chest lowering toward the floor.",
+      "Keep knees soft and back flat throughout.",
+      "Extend the hips to return upright."
+    ],
+    "fps": 30,
+    "duration": 3,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -5,
+              0,
+              -115
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -135
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.52,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.14,
+              -0.08
+            ]
+          },
+          "spine": {
+            "rot": [
+              42,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              20,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -35,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              12,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -2,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -5,
+              0,
+              -115
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -135
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.62,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.14,
+              -0.08
+            ]
+          },
+          "spine": {
+            "rot": [
+              42,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              20,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -35,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              12,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -2,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -5,
+              0,
+              -115
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -135
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -5,
+              0,
+              -115
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -135
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "hammer_curl",
+    "name": "Hammer Curl",
+    "equipment": "Dumbbell",
+    "difficulty": "Beginner",
+    "prop": {
+      "type": "dumbbell",
+      "axis": [
+        0,
+        1,
+        0
+      ]
+    },
+    "primary": [
+      "Biceps"
+    ],
+    "secondary": [
+      "Forearms"
+    ],
+    "steps": [
+      "Stand holding dumbbells at the sides, palms facing each other.",
+      "Curl the weights up without rotating the wrists.",
+      "Keep elbows pinned to the ribs.",
+      "Lower under control."
+    ],
+    "fps": 30,
+    "duration": 2.6,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -80,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -80,
+              0,
+              -12
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -125
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              -10
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -80,
+              0,
+              -12
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -125
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              -10
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -80,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "high_knees",
+    "name": "High Knees",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Quads"
+    ],
+    "secondary": [
+      "Calves",
+      "Core"
+    ],
+    "steps": [
+      "Stand tall, core braced.",
+      "Drive one knee to hip height, then the other, in a running rhythm.",
+      "Stay on the balls of the feet; pump the arms.",
+      "Keep the torso upright throughout."
+    ],
+    "fps": 30,
+    "duration": 0.9,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.03
+            ]
+          },
+          "spine": {
+            "rot": [
+              6,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              -85,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              8,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              80,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              15,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              -20,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              -20,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -70,
+              0,
+              -20
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -90
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.5,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.03
+            ]
+          },
+          "spine": {
+            "rot": [
+              6,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              8,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              -85,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              15,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              80,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              -20,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              -20,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -70,
+              0,
+              -20
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -90
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.03
+            ]
+          },
+          "spine": {
+            "rot": [
+              6,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              -85,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              8,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              80,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              15,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              -20,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              -20,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -70,
+              0,
+              -20
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -90
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "jump_push_up",
+    "name": "Plyometric Push-Up",
+    "equipment": "None",
+    "difficulty": "Advanced",
+    "primary": [
+      "Chest",
+      "Triceps"
+    ],
+    "secondary": [
+      "Shoulders",
+      "Core"
+    ],
+    "steps": [
+      "Start in a tight plank, hands under the shoulders.",
+      "Lower the chest to the floor with the elbows at about 45 degrees.",
+      "Drive explosively so the hands leave the floor.",
+      "Land with soft elbows and go straight into the next rep."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/jump_push_up.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "jumping_jack",
+    "name": "Jumping Jack",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Shoulders"
+    ],
+    "secondary": [
+      "Calves",
+      "Core"
+    ],
+    "steps": [
+      "Stand tall, arms at the sides.",
+      "Jump the feet wide while sweeping the arms overhead.",
+      "Land softly on the balls of the feet.",
+      "Jump back to the start and repeat rhythmically."
+    ],
+    "fps": 30,
+    "duration": 1.6,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.5,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0.06
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              -22
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              4,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              85,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      }
+    ],
+    "mocap": "mixamo/jumping_jacks.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "kettlebell_swing",
+    "name": "Kettlebell Swing",
+    "equipment": "Kettlebell",
+    "difficulty": "Intermediate",
+    "primary": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "secondary": [
+      "Lower Back",
+      "Core",
+      "Forearms"
+    ],
+    "steps": [
+      "Hinge at the hips and hike the bell back between the legs.",
+      "Snap the hips forward to float the bell to chest height.",
+      "Keep the arms relaxed; the hips do the work, not the shoulders.",
+      "Let the bell fall and hinge again as it passes the knees."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/kettlebell_swing.fbx",
+    "camera": "side",
+    "prop": {
+      "type": "kettlebell"
+    }
+  },
+  {
+    "id": "lateral_raise",
+    "name": "Lateral Raise",
+    "equipment": "Dumbbell",
+    "difficulty": "Beginner",
+    "prop": {
+      "type": "dumbbell",
+      "axis": [
+        0,
+        1,
+        0
+      ]
+    },
+    "primary": [
+      "Shoulders"
+    ],
+    "secondary": [
+      "Traps"
+    ],
+    "steps": [
+      "Stand with dumbbells at the sides, slight elbow bend.",
+      "Raise the arms out to shoulder height, leading with the elbows.",
+      "Pause briefly at the top.",
+      "Lower slowly — no swinging."
+    ],
+    "fps": 30,
+    "duration": 2.4,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -2,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -2,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "lunge",
+    "name": "Forward Lunge",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Quads",
+      "Glutes"
+    ],
+    "secondary": [
+      "Hamstrings",
+      "Calves",
+      "Core"
+    ],
+    "steps": [
+      "Step one leg forward into a split stance.",
+      "Lower straight down until both knees are near 90°.",
+      "Keep the front knee over the ankle and torso upright.",
+      "Push off the front heel to return."
+    ],
+    "fps": 30,
+    "duration": 3,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.52,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              -0.1,
+              -0.32
+            ]
+          },
+          "spine": {
+            "rot": [
+              8,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -8,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              -70,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              75,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              -8,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              30,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              95,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              -60,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.62,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              -0.1,
+              -0.32
+            ]
+          },
+          "spine": {
+            "rot": [
+              8,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -8,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              -70,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              75,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              -8,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              30,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              95,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              -60,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "overhead_press",
+    "name": "Overhead Press",
+    "equipment": "Barbell",
+    "difficulty": "Intermediate",
+    "prop": {
+      "type": "barbell"
+    },
+    "primary": [
+      "Shoulders"
+    ],
+    "secondary": [
+      "Triceps",
+      "Core"
+    ],
+    "steps": [
+      "Hold the bar at the front of the shoulders, grip just outside shoulder width.",
+      "Brace and press the bar straight overhead.",
+      "Lock out with the bar over the mid-foot, head through.",
+      "Lower with control back to the shoulders."
+    ],
+    "fps": 30,
+    "duration": 2.8,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -55,
+              0,
+              -35
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -125
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              -5,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              80,
+              0,
+              -8
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -8
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              -5,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              80,
+              0,
+              -8
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -8
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -55,
+              0,
+              -35
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -125
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "overhead_squat",
+    "name": "Overhead Squat",
+    "equipment": "Barbell",
+    "difficulty": "Advanced",
+    "primary": [
+      "Quads",
+      "Shoulders"
+    ],
+    "secondary": [
+      "Glutes",
+      "Core",
+      "Traps"
+    ],
+    "steps": [
+      "Press the bar overhead with a wide grip, arms locked.",
+      "Squat down while keeping the bar stacked over the mid-foot.",
+      "Keep the chest up and push the bar toward the ceiling throughout.",
+      "Stand up without letting the bar drift forward."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/overhead_squat.fbx",
+    "prop": {
+      "type": "barbell",
+      "axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "camera": "front"
+  },
+  {
+    "id": "overhead_tricep_extension",
+    "name": "Overhead Tricep Extension",
+    "equipment": "Dumbbell",
+    "difficulty": "Intermediate",
+    "prop": {
+      "type": "dumbbell",
+      "hold": "both",
+      "axis": [
+        0,
+        0,
+        1
+      ]
+    },
+    "primary": [
+      "Triceps"
+    ],
+    "secondary": [
+      "Shoulders"
+    ],
+    "steps": [
+      "Hold one dumbbell overhead with both hands.",
+      "Lower it behind the head by bending the elbows.",
+      "Keep the elbows tight and pointing forward.",
+      "Extend the arms back to lockout."
+    ],
+    "fps": 30,
+    "duration": 2.6,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.1,
+              0.06,
+              0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.06,
+              0.8,
+              -0.6
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.1,
+              0.02,
+              0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.08,
+              0.05,
+              1
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.1,
+              0.02,
+              0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.08,
+              0.05,
+              1
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.1,
+              0.06,
+              0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.06,
+              0.8,
+              -0.6
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "pistol_squat",
+    "name": "Pistol Squat",
+    "equipment": "None",
+    "difficulty": "Advanced",
+    "primary": [
+      "Quads",
+      "Glutes"
+    ],
+    "secondary": [
+      "Hamstrings",
+      "Core",
+      "Calves"
+    ],
+    "steps": [
+      "Stand on one leg, the other leg extended in front, arms forward.",
+      "Sit down slowly on the standing leg, keeping the heel planted.",
+      "Go as deep as balance allows without the knee caving in.",
+      "Drive back up through the whole foot."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/pistol_squat.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "plank",
+    "name": "Plank",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Core"
+    ],
+    "secondary": [
+      "Shoulders"
+    ],
+    "steps": [
+      "Set forearms under the shoulders, legs extended.",
+      "Form a straight line from head to heels.",
+      "Brace the abs and glutes; don't let the hips sag.",
+      "Breathe and hold."
+    ],
+    "fps": 30,
+    "duration": 2,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              68,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.554
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -15,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -85
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -3
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.5,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              68,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.554
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -15,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -85
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -3
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              68,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.554
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -15,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -85
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -3
+            ]
+          }
+        }
+      }
+    ],
+    "mocap": "mixamo/plank.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "push_up",
+    "name": "Push-Up",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Chest"
+    ],
+    "secondary": [
+      "Triceps",
+      "Core"
+    ],
+    "steps": [
+      "Start in a high plank, hands under shoulders.",
+      "Lower the chest to just above the floor, elbows ~45° from the body.",
+      "Keep the body rigid from head to heels.",
+      "Press back up to full lockout."
+    ],
+    "fps": 30,
+    "duration": 2.8,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              68,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.554
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -15,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -85
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -3
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.52,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              79,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.707
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -45
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -60
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.62,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              79,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.707
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -45
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -60
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              68,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.554
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -15,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -85
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -3
+            ]
+          }
+        }
+      }
+    ],
+    "mocap": "mixamo/push_up.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "reverse_lunge",
+    "name": "Reverse Lunge",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Quads",
+      "Glutes"
+    ],
+    "secondary": [
+      "Hamstrings",
+      "Calves",
+      "Core"
+    ],
+    "steps": [
+      "Stand tall, then step one leg straight back.",
+      "Lower until both knees reach ~90°, torso upright.",
+      "Keep the front knee over the ankle.",
+      "Push through the front heel to return to standing."
+    ],
+    "fps": 30,
+    "duration": 3,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.52,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              -0.1,
+              -0.32
+            ]
+          },
+          "spine": {
+            "rot": [
+              8,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -8,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              30,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              95,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              -60,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              -70,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              75,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              -8,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.62,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              -0.1,
+              -0.32
+            ]
+          },
+          "spine": {
+            "rot": [
+              8,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -8,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              30,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              95,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              -60,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              -70,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              75,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              -8,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.L": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.R": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "romanian_deadlift",
+    "name": "Romanian Deadlift",
+    "equipment": "Barbell",
+    "difficulty": "Intermediate",
+    "prop": {
+      "type": "barbell"
+    },
+    "primary": [
+      "Hamstrings",
+      "Glutes"
+    ],
+    "secondary": [
+      "Lower Back",
+      "Forearms"
+    ],
+    "steps": [
+      "Hold the bar at the hips, feet hip-width, soft knees.",
+      "Hinge at the hips, pushing them back as the bar slides down the thighs.",
+      "Keep a flat back; feel the stretch in the hamstrings.",
+      "Drive the hips forward to stand, squeezing the glutes."
+    ],
+    "fps": 30,
+    "duration": 3.2,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.52,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.16,
+              -0.1
+            ]
+          },
+          "spine": {
+            "rot": [
+              42,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              22,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -38,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -12,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              15,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -3,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.62,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.16,
+              -0.1
+            ]
+          },
+          "spine": {
+            "rot": [
+              42,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              22,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -38,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -12,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              15,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -3,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "situp",
+    "name": "Sit-Up",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Abs"
+    ],
+    "secondary": [
+      "Core"
+    ],
+    "steps": [
+      "Lie on your back, knees bent, feet flat, hands by your temples.",
+      "Brace and curl the torso all the way up to the knees.",
+      "Keep the chin off the chest and avoid pulling on the neck.",
+      "Lower with control, one vertebra at a time."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/situps.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "snatch",
+    "name": "Barbell Snatch",
+    "equipment": "Barbell",
+    "difficulty": "Advanced",
+    "primary": [
+      "Glutes",
+      "Quads",
+      "Traps"
+    ],
+    "secondary": [
+      "Hamstrings",
+      "Shoulders",
+      "Core"
+    ],
+    "steps": [
+      "Wide grip, hips low, chest over the bar.",
+      "Drive with the legs, then extend the hips violently.",
+      "Pull yourself under the bar and receive it overhead in a squat.",
+      "Stand up with the bar locked out overhead."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/snatch.fbx",
+    "prop": {
+      "type": "barbell",
+      "axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "camera": "side"
+  },
+  {
+    "id": "squat",
+    "name": "Bodyweight Squat",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Quads",
+      "Glutes"
+    ],
+    "secondary": [
+      "Hamstrings",
+      "Core"
+    ],
+    "steps": [
+      "Stand with feet shoulder-width apart, toes slightly out, arms forward for balance.",
+      "Sit the hips back and down, chest up, until thighs reach parallel.",
+      "Keep knees tracking over the toes and heels planted.",
+      "Drive through the heels to stand tall."
+    ],
+    "fps": 30,
+    "duration": 3,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.1,
+              -0.18,
+              -0.98
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.1,
+              -0.18,
+              -0.98
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.52,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.06,
+              -0.44
+            ]
+          },
+          "spine": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              10,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -72,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              118,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -35,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.12,
+              -0.97,
+              -0.15
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.12,
+              -0.98,
+              0.05
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.62,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.06,
+              -0.44
+            ]
+          },
+          "spine": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              10,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -72,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              118,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -35,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.12,
+              -0.97,
+              -0.15
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.12,
+              -0.98,
+              0.05
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.1,
+              -0.18,
+              -0.98
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.1,
+              -0.18,
+              -0.98
+            ]
+          }
+        }
+      }
+    ],
+    "mocap": "mixamo/air_squat.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "sumo_high_pull",
+    "name": "Sumo High Pull",
+    "equipment": "Barbell",
+    "difficulty": "Intermediate",
+    "primary": [
+      "Traps",
+      "Shoulders"
+    ],
+    "secondary": [
+      "Glutes",
+      "Hamstrings",
+      "Quads"
+    ],
+    "steps": [
+      "Wide stance, toes out, narrow grip on the bar.",
+      "Drive the hips forward and pull the elbows high and wide.",
+      "The bar travels close to the body up to chin height.",
+      "Lower under control back to the start."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/sumo_high_pull.fbx",
+    "prop": {
+      "type": "barbell",
+      "axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "camera": "front"
+  },
+  {
+    "id": "sumo_squat",
+    "name": "Sumo Squat",
+    "equipment": "Dumbbell",
+    "difficulty": "Beginner",
+    "prop": {
+      "type": "dumbbell",
+      "hold": "both",
+      "axis": [
+        0,
+        0,
+        1
+      ]
+    },
+    "primary": [
+      "Quads",
+      "Glutes"
+    ],
+    "secondary": [
+      "Hamstrings",
+      "Core"
+    ],
+    "steps": [
+      "Take a wide stance, toes out 30-45°, dumbbell hanging between the legs.",
+      "Squat down keeping the torso upright and knees pushed out.",
+      "Descend until thighs are parallel.",
+      "Squeeze the glutes and inner thighs to stand."
+    ],
+    "fps": 30,
+    "duration": 3,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              -14
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.08,
+              -0.3,
+              -0.95
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.08,
+              -0.55,
+              0.83
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.52,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.04,
+              -0.38
+            ]
+          },
+          "spine": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              10,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -62,
+              0,
+              -28
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              105,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -30,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.08,
+              -0.45,
+              -0.89
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.08,
+              -0.5,
+              0.87
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.62,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.04,
+              -0.38
+            ]
+          },
+          "spine": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              10,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -62,
+              0,
+              -28
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              105,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -30,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.08,
+              -0.45,
+              -0.89
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.08,
+              -0.5,
+              0.87
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              -14
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.08,
+              -0.3,
+              -0.95
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.08,
+              -0.55,
+              0.83
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "superman",
+    "name": "Superman",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Lower Back"
+    ],
+    "secondary": [
+      "Glutes"
+    ],
+    "fps": 30,
+    "duration": 2.8,
+    "steps": [
+      "Lie face down, arms extended overhead.",
+      "Lift arms, chest, and legs off the floor together.",
+      "Squeeze the lower back and glutes at the top.",
+      "Lower slowly without dropping."
+    ],
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              88,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.85
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -6,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              2,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              2,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.12,
+              -0.98,
+              -0.05
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.12,
+              -0.98,
+              -0.05
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.4,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              88,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.85
+            ]
+          },
+          "spine": {
+            "rot": [
+              -16,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              6,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              14,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              4,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.12,
+              -0.95,
+              0.28
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.12,
+              -0.95,
+              0.28
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.55,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              88,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.85
+            ]
+          },
+          "spine": {
+            "rot": [
+              -16,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              -10,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              6,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              14,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              4,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.12,
+              -0.95,
+              0.28
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.12,
+              -0.95,
+              0.28
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              88,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.85
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -6,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              2,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              2,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.12,
+              -0.98,
+              -0.05
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.12,
+              -0.98,
+              -0.05
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "wall_sit",
+    "name": "Wall Sit",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Quads"
+    ],
+    "secondary": [
+      "Glutes",
+      "Core"
+    ],
+    "fps": 30,
+    "duration": 3,
+    "steps": [
+      "Slide down a wall until thighs are parallel to the floor.",
+      "Knees at 90°, directly over the ankles.",
+      "Press the whole back flat against the wall.",
+      "Breathe and hold."
+    ],
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.06,
+              -0.44
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -72,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              118,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -35,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.1,
+              -0.06,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.1,
+              -0.06,
+              -0.99
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.06,
+              -0.44
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -72,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              118,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -35,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.1,
+              -0.06,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.1,
+              -0.06,
+              -0.99
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "back_squat",
+    "name": "Barbell Back Squat",
+    "equipment": "Barbell",
+    "difficulty": "Intermediate",
+    "primary": [
+      "Quads",
+      "Glutes"
+    ],
+    "secondary": [
+      "Hamstrings",
+      "Core",
+      "Lower Back"
+    ],
+    "steps": [
+      "Bar across the upper back, feet shoulder-width, toes slightly out.",
+      "Brace, then sit the hips back and down, chest tall.",
+      "Descend until the thighs are at least parallel, knees over toes.",
+      "Drive the floor away and stand tall without leaning forward."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/back_squat.fbx",
+    "prop": {
+      "type": "barbell",
+      "axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "camera": "front"
+  },
+  {
+    "id": "bent_over_row",
+    "name": "Bent-Over Row",
+    "equipment": "Barbell",
+    "difficulty": "Intermediate",
+    "prop": {
+      "type": "barbell"
+    },
+    "primary": [
+      "Back"
+    ],
+    "secondary": [
+      "Biceps",
+      "Forearms"
+    ],
+    "steps": [
+      "Hinge to ~45° with a flat back, bar hanging at arm's length.",
+      "Pull the bar to the lower ribs, elbows driving back.",
+      "Squeeze the shoulder blades together at the top.",
+      "Lower with control without losing the hinge."
+    ],
+    "fps": 30,
+    "duration": 2.6,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.12,
+              -0.06
+            ]
+          },
+          "spine": {
+            "rot": [
+              38,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -30,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -14,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              16,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -3,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.15,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.15,
+              -0.99
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.12,
+              -0.06
+            ]
+          },
+          "spine": {
+            "rot": [
+              38,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -30,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -14,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              16,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -3,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.05,
+              0.45,
+              -0.89
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.05,
+              -0.55,
+              0.83
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.12,
+              -0.06
+            ]
+          },
+          "spine": {
+            "rot": [
+              38,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -30,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -14,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              16,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -3,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.05,
+              0.45,
+              -0.89
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.05,
+              -0.55,
+              0.83
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.12,
+              -0.06
+            ]
+          },
+          "spine": {
+            "rot": [
+              38,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -30,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -14,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              16,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -3,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.15,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.15,
+              -0.99
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "bicep_curl",
+    "name": "Bicep Curl",
+    "equipment": "Dumbbell",
+    "difficulty": "Beginner",
+    "prop": {
+      "type": "dumbbell",
+      "axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "primary": [
+      "Biceps"
+    ],
+    "secondary": [
+      "Forearms"
+    ],
+    "steps": [
+      "Stand holding dumbbells at the sides, palms forward.",
+      "Curl the weights up, keeping elbows pinned to the ribs.",
+      "Squeeze the biceps at the top.",
+      "Lower under control to full extension."
+    ],
+    "fps": 30,
+    "duration": 2.6,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -80,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -80,
+              0,
+              -12
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -125
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              -10
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -80,
+              0,
+              -12
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -125
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              -10
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -80,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    ],
+    "mocap": "mixamo/bicep_curl.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "bicycle_crunch",
+    "name": "Bicycle Crunch",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Abs"
+    ],
+    "secondary": [
+      "Core"
+    ],
+    "steps": [
+      "Lie on your back, hands by your temples, legs lifted.",
+      "Drive one knee in while rotating the opposite elbow toward it.",
+      "Extend the other leg straight, hovering above the floor.",
+      "Alternate sides in a smooth pedalling rhythm."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/bicycle_crunch.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "burpee",
+    "name": "Burpee",
+    "equipment": "None",
+    "difficulty": "Intermediate",
+    "primary": [
+      "Quads",
+      "Chest"
+    ],
+    "secondary": [
+      "Core",
+      "Shoulders",
+      "Glutes"
+    ],
+    "steps": [
+      "From standing, squat down and plant both hands on the floor.",
+      "Jump the feet back into a plank and lower the chest to the floor.",
+      "Push up, jump the feet back under the hips.",
+      "Explode up into a jump, arms overhead, and land softly."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/burpee.fbx",
+    "camera": "front"
+  },
+  {
+    "id": "calf_raise",
+    "name": "Calf Raise",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Calves"
+    ],
+    "secondary": [
+      "Core"
+    ],
+    "steps": [
+      "Stand tall, feet hip-width apart.",
+      "Rise onto the balls of the feet as high as possible.",
+      "Pause at the top, squeezing the calves.",
+      "Lower slowly under control."
+    ],
+    "fps": 30,
+    "duration": 2,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0.07
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              30,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0.07
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              30,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "clean_and_jerk",
+    "name": "Clean and Jerk",
+    "equipment": "Barbell",
+    "difficulty": "Advanced",
+    "primary": [
+      "Quads",
+      "Glutes",
+      "Shoulders"
+    ],
+    "secondary": [
+      "Traps",
+      "Triceps",
+      "Core"
+    ],
+    "steps": [
+      "Pull the bar from the floor and extend the hips.",
+      "Drop under and rack the bar on the front of the shoulders.",
+      "Dip a few inches and drive the bar overhead.",
+      "Split or squat under, lock out, and recover to standing."
+    ],
+    "fps": 30,
+    "mocap": "mixamo/clean_and_jerk.fbx",
+    "prop": {
+      "type": "barbell",
+      "axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "camera": "side"
+  },
+  {
+    "id": "crunch",
+    "name": "Crunch",
+    "equipment": "None",
+    "difficulty": "Beginner",
+    "primary": [
+      "Abs"
+    ],
+    "secondary": [
+      "Core"
+    ],
+    "steps": [
+      "Lie on your back, knees bent, hands by the head.",
+      "Curl the ribcage toward the pelvis, shoulder blades off the floor.",
+      "Exhale at the top; don't pull on the neck.",
+      "Lower slowly."
+    ],
+    "fps": 30,
+    "duration": 2.2,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              -90,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.808
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -46,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              100,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              21,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -50
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -120
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              -90,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.808
+            ]
+          },
+          "spine": {
+            "rot": [
+              38,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              15,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -46,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              100,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              21,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -50
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -120
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              -90,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.808
+            ]
+          },
+          "spine": {
+            "rot": [
+              38,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              15,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              18,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -46,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              100,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              21,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -50
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -120
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              -90,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              -0.808
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -46,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              100,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              21,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -50
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -120
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "deadlift",
+    "name": "Deadlift",
+    "equipment": "Barbell",
+    "difficulty": "Intermediate",
+    "prop": {
+      "type": "barbell"
+    },
+    "primary": [
+      "Glutes",
+      "Hamstrings",
+      "Lower Back"
+    ],
+    "secondary": [
+      "Quads",
+      "Traps",
+      "Forearms"
+    ],
+    "fps": 30,
+    "duration": 3.2,
+    "steps": [
+      "Stand with the bar over the mid-foot, hands just outside the legs.",
+      "Hinge and bend the knees to grip the bar with a flat back.",
+      "Drive through the floor; bar stays against the legs.",
+      "Lock out tall, then lower along the same path."
+    ],
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.18,
+              -0.18
+            ]
+          },
+          "spine": {
+            "rot": [
+              38,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              20,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -22,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -50,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              70,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -20,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.45,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.55,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0.18,
+              -0.18
+            ]
+          },
+          "spine": {
+            "rot": [
+              38,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              20,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              -22,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              -50,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              70,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              -20,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          },
+          "forearm.*": {
+            "aim_world": [
+              0.04,
+              -0.12,
+              -0.99
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "dumbbell_shoulder_press",
+    "name": "Dumbbell Shoulder Press",
+    "equipment": "Dumbbell",
+    "difficulty": "Intermediate",
+    "prop": {
+      "type": "dumbbell",
+      "axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "primary": [
+      "Shoulders"
+    ],
+    "secondary": [
+      "Triceps",
+      "Core"
+    ],
+    "steps": [
+      "Hold dumbbells at shoulder height, palms forward.",
+      "Press both weights straight overhead.",
+      "Lock out without shrugging; keep the core braced.",
+      "Lower with control back to the shoulders."
+    ],
+    "fps": 30,
+    "duration": 2.8,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -55,
+              0,
+              -35
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -125
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              -5,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              80,
+              0,
+              -8
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -8
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              -5,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              -4,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              80,
+              0,
+              -8
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -8
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -55,
+              0,
+              -35
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -125
+            ]
+          },
+          "hand.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    ],
+    "status": "draft"
+  },
+  {
+    "id": "front_raise",
+    "name": "Front Raise",
+    "equipment": "Dumbbell",
+    "difficulty": "Beginner",
+    "prop": {
+      "type": "dumbbell",
+      "axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "primary": [
+      "Shoulders"
+    ],
+    "secondary": [
+      "Core"
+    ],
+    "steps": [
+      "Hold dumbbells in front of the thighs, palms down.",
+      "Raise straight arms to shoulder height.",
+      "Keep the torso still; no leaning back.",
+      "Lower under control."
+    ],
+    "fps": 30,
+    "duration": 2.4,
+    "keyframes": [
+      {
+        "t": 0,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.36,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -78
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 0.46,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              0,
+              0,
+              -78
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      },
+      {
+        "t": 1,
+        "bones": {
+          "pelvis": {
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "loc": [
+              0,
+              0,
+              0
+            ]
+          },
+          "spine": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "chest": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "head": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "thigh.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "shin.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "foot.*": {
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          "upper_arm.*": {
+            "rot": [
+              -75,
+              0,
+              0
+            ]
+          },
+          "forearm.*": {
+            "rot": [
+              0,
+              0,
+              -5
+            ]
+          }
+        }
+      }
+    ],
+    "mocap": "mixamo/front_raises.fbx",
+    "camera": "front"
+  }
+]

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { HunyuanSkeletalRetargeter, HumanoidFramePose } from './skeletalRetargeter.ts';
+import { HumanoidMotionClip } from './humanoidMotionClip.ts';
 import {
-  HumanoidMotionClip,
   resolveHumanoidClip,
   CLIPS_REGISTRY,
 } from './animationClips.ts';
@@ -68,12 +68,12 @@ export class HumanoidMotionEngine {
     const nextDef = resolveExerciseDefinition(exerciseNameOrQuery);
     const nextClip = resolveHumanoidClip(exerciseNameOrQuery);
 
-    if (this.currentExerciseDef.id === nextDef.id && !this.targetClip) {
+    if (this.currentClip.id === nextClip.id && this.currentExerciseDef.id === nextDef.id && !this.targetClip) {
       if (resetTime) this.time = 0;
       return;
     }
 
-    if (this.targetExerciseDef?.id === nextDef.id) {
+    if (this.targetClip?.id === nextClip.id && this.targetExerciseDef?.id === nextDef.id) {
       if (resetTime) this.time = 0;
       return;
     }
