@@ -197,9 +197,8 @@ export class HumanoidMotionEngine {
     // Avoid accumulating arbitrary offsets that cause character to float into air
     if (solveResult.hipsElevationAdjust !== 0) {
       const currentHips = this.retargeter.hipsBone;
-      const calibratedHips = this.retargeter.bones.get('Hips');
-      if (currentHips && calibratedHips) {
-        currentHips.position.y = calibratedHips.restLocalPos.y + (finalPose.hipsOffset[1] + solveResult.hipsElevationAdjust) * this.retargeter.unitScale;
+      if (currentHips) {
+        currentHips.position.y += solveResult.hipsElevationAdjust * this.retargeter.unitScale;
         currentHips.updateMatrixWorld(true);
       }
     }

@@ -425,8 +425,9 @@ const CameraHipsTracker: React.FC<{
       hipsBoneRef.current.getWorldPosition(tempPos.current);
       if (controlsRef.current) {
         const target = controlsRef.current.target;
-        // Smoothly adapt target to follow hips center of gravity (standing, squatting, or floor)
-        target.y = THREE.MathUtils.lerp(target.y, tempPos.current.y, 0.08);
+        // Smoothly adapt target to follow hips center of gravity while keeping the podium solidly in frame
+        const safeTargetY = Math.max(-0.32, tempPos.current.y);
+        target.y = THREE.MathUtils.lerp(target.y, safeTargetY, 0.08);
         target.x = THREE.MathUtils.lerp(target.x, tempPos.current.x, 0.08);
         target.z = THREE.MathUtils.lerp(target.z, tempPos.current.z, 0.08);
         controlsRef.current.update();

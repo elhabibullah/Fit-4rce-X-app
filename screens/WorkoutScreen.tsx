@@ -381,6 +381,24 @@ const WorkoutScreen: React.FC = () => {
 
                             {/* EMS BAND TRIGGER */}
                             <DeviceStatusTrigger showLabel={false} />
+
+                            {/* STUDIO NIGHT / DAY MODE TOGGLE - PLACED AT THE TOP NEXT TO EMS */}
+                            <button
+                                onClick={() => {
+                                    const next = studioTheme === 'dark' ? 'white' : 'dark';
+                                    setStudioTheme(next);
+                                    localStorage.setItem('f4x_studio_theme', next);
+                                }}
+                                className={`p-2.5 rounded-full shadow-2xl active:scale-90 transition-transform border ${
+                                    studioTheme === 'dark'
+                                        ? 'bg-neutral-900/90 text-amber-400 border-neutral-700 hover:bg-neutral-800'
+                                        : 'bg-white/90 text-purple-600 border-zinc-200 hover:bg-zinc-100'
+                                    }`}
+                                title={studioTheme === 'dark' ? "Passer au Studio Blanc" : "Passer en Mode Nuit (Studio Noir)"}
+                                aria-label="Basculer Mode Studio Nuit/Jour"
+                            >
+                                {studioTheme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-purple-600" />}
+                            </button>
                         </div>
 
                         {/* RIGHT HUD: TIMER & PLAY/PAUSE */}
@@ -525,11 +543,8 @@ const WorkoutScreen: React.FC = () => {
                     )}
                 </div>
 
-                {/* BOTTOM EXERCISE & SETS HUD BAR */}
-                <div 
-                    className="bg-zinc-950 px-4 sm:px-8 pt-4 sm:pt-6 pb-28 sm:pb-8 z-[300] relative flex flex-col justify-center border-t border-zinc-900 shadow-[0_-10px_30px_rgba(0,0,0,0.6)] shrink-0"
-                    style={{ paddingBottom: '100px' }}
-                >
+                {/* BOTTOM EXERCISE & SETS HUD BAR - SLEEK & COMPACT TO MAXIMIZE 3D STUDIO STAGE */}
+                <div className="bg-zinc-950 px-4 sm:px-6 py-2.5 sm:py-3.5 z-[300] relative flex flex-col justify-center border-t border-zinc-900 shadow-[0_-10px_30px_rgba(0,0,0,0.6)] shrink-0">
                     
                     {/* PROGRESS BAR */}
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-zinc-900 overflow-hidden">
@@ -543,11 +558,11 @@ const WorkoutScreen: React.FC = () => {
                         />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         
                         {/* LEFT: EXERCISE INFO & SET BADGES */}
                         <div className="flex-1 min-w-0 pr-2">
-                            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
                                 <span className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-[0.25em]">
                                     {translate('workout.active.exercise')} {idx + 1} / {plan.exercises.length}
                                 </span>
@@ -574,8 +589,8 @@ const WorkoutScreen: React.FC = () => {
                                 {ex.name}
                             </h2>
 
-                            {/* SETS PROGRESS CHIPS (e.g. 3, 4, or 5 sets indicator) */}
-                            <div className="flex items-center gap-1.5 mt-2">
+                            {/* SETS PROGRESS CHIPS */}
+                            <div className="flex items-center gap-1.5 mt-1.5">
                                 {Array.from({ length: targetSets }).map((_, sIdx) => {
                                     const setNumber = sIdx + 1;
                                     const isDone = setNumber < currentSet;
@@ -599,12 +614,12 @@ const WorkoutScreen: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* RIGHT: COMPLETE SET BUTTON & SKIP EXERCISE & STUDIO THEME TOGGLE */}
+                        {/* RIGHT: COMPLETE SET BUTTON & SKIP EXERCISE */}
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             {phase === 'work' && (
                                 <button
                                     onClick={handleCompleteSet}
-                                    className="flex-1 sm:flex-initial px-5 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-all shrink-0"
+                                    className="flex-1 sm:flex-initial px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-all shrink-0"
                                 >
                                     <CheckCircle2 size={18} />
                                     <span>{translate('workout.active.validate_set')} ({targetReps} reps)</span>
@@ -614,33 +629,19 @@ const WorkoutScreen: React.FC = () => {
                             {phase === 'rest' && (
                                 <button
                                     onClick={handleSkipRest}
-                                    className="flex-1 sm:flex-initial px-5 py-3.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.4)] active:scale-95 transition-all shrink-0"
+                                    className="flex-1 sm:flex-initial px-5 py-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.4)] active:scale-95 transition-all shrink-0"
                                 >
                                     <FastForward size={18} />
                                     <span>{translate('workout.active.skip_rest')}</span>
                                 </button>
                             )}
 
-                            {/* STUDIO NIGHT / DAY MODE TOGGLE (SAFELY IN LOWER BAR - NEVER HIDING COACH HEAD) */}
-                            <button
-                                onClick={() => {
-                                    const next = studioTheme === 'dark' ? 'white' : 'dark';
-                                    setStudioTheme(next);
-                                    localStorage.setItem('f4x_studio_theme', next);
-                                }}
-                                className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl shrink-0"
-                                title={studioTheme === 'dark' ? "Passer au Studio Blanc" : "Passer en Mode Nuit (Studio Noir)"}
-                                aria-label="Basculer Mode Studio Nuit/Jour"
-                            >
-                                {studioTheme === 'dark' ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-purple-400" />}
-                            </button>
-
                             <button 
                                 onClick={skipExercise} 
                                 title={translate('workout.active.next_exercise')}
-                                className="bg-neutral-800 hover:bg-neutral-700 text-white w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl shrink-0"
+                                className="bg-neutral-800 hover:bg-neutral-700 text-white w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center active:scale-90 transition-transform shadow-xl shrink-0"
                             >
-                                <ChevronRight size={22} />
+                                <ChevronRight size={20} />
                             </button>
                         </div>
                     </div>

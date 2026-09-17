@@ -4,7 +4,7 @@ import { CalibratedBone, HunyuanSkeletalRetargeter } from './skeletalRetargeter.
 import { ContactConstraints, StartingPosture } from './exerciseDefinitions.ts';
 
 export interface SolvedGroundContact {
-  hipsElevationAdjust: number; // upward translation needed to keep lowest contact flush at y = 0
+  hipsElevationAdjust: number; // upward/downward translation needed to keep feet/hands grounded on podium
   leftFootGrounded: boolean;
   rightFootGrounded: boolean;
   leftHandFlat: boolean;
@@ -12,17 +12,20 @@ export interface SolvedGroundContact {
 }
 
 /**
- * GroundContactSolver: Enforces physical ground constraints and prevents
- * floor penetration across all exercises (Squats, Lunges, Pushups, Planks, Martial Arts).
+ * GroundContactSolver: Enforces physical ground constraints and ensures
+ * the character stays firmly anchored to the floor podium across all exercises
+ * (Squats, Lunges, Pushups, Planks, Martial Arts).
  */
 export class GroundContactSolver {
-  private tempVecA = new THREE.Vector3();
-  private tempVecB = new THREE.Vector3();
-  private tempVecC = new THREE.Vector3();
+  private tmpVec = new THREE.Vector3();
+  private tmpPalmDown = new THREE.Vector3(0, -1, 0);
+  private tmpInvParentWQ = new THREE.Quaternion();
+  private tmpParentWQ = new THREE.Quaternion();
 
   /**
    * Evaluates the skeleton in character space and computes the elevation
-   * compensation so no contact point penetrates below the floor (y = 0).
+   * compensation so the character is firmly anchored to the floor/podium
+   * and palms are completely flat on the floor for floor exercises.
    */
   public solveContacts(
     retargeter: HunyuanSkeletalRetargeter,
@@ -46,48 +49,113 @@ export class GroundContactSolver {
     const rightToe = retargeter.bones.get('RightToeBase');
     const leftHand = retargeter.bones.get('LeftHand');
     const rightHand = retargeter.bones.get('RightHand');
-    const leftLeg = retargeter.bones.get('LeftLeg');
-    const rightLeg = retargeter.bones.get('RightLeg');
 
-    // 1. In prone positions (Pushups, Planks):
-    // Align hands flat on the floor and orient toes naturally
-    if (posture === 'prone') {
-      // Ensure hands are oriented flat to the ground (palms facing down) using calibrated anatomical rotation
-      if (constraints.handOrientation === 'flat_floor') {
+    // 1. IN PRONE / FLOOR EXERCISES (Pushups, Planks, Floor Core):
+    // Align hands completely FLAT on the floor (palms facing down)
+    if (posture === 'prone' || Math.abs(bodyProneAngle) > 0.3) {
+      if (constraints.handOrientation === 'flat_floor' || true) {
         this.orientHandFlatToFloor(retargeter, true);
         this.orientHandFlatToFloor(retargeter, false);
         result.leftHandFlat = true;
         result.rightHandFlat = true;
       }
 
-      // In prone position, feet are extended with toes contacting the floor
-      this.orientFootForFloorContact(retargeter, leftToe);
-      this.orientFootForFloorContact(retargeter, rightToe);
+      // Orient toes to contact floor naturally
+      if (leftToe) this.orientFootForFloorContact(retargeter, leftToe);
+      if (rightToe) this.orientFootForFloorContact(retargeter, rightToe);
 
-      result.hipsElevationAdjust = 0;
+      // Measure lowest point among hands and feet to anchor on the podium
+      let lowestY = Infinity;
+      const contactBones = [leftHand, rightHand, leftToe || leftFoot, rightToe || rightFoot];
+      contactBones.forEach((cb) => {
+        if (cb) {
+          cb.bone.getWorldPosition(this.tmpVec);
+          if (this.tmpVec.y < lowestY) lowestY = this.tmpVec.y;
+        }
+      });
+
+      // Target podium surface in studio space is Y = -0.889
+      const podiumSurfaceY = -0.889;
+      if (lowestY !== Infinity) {
+        // Delta needed in world space to keep lowest contact flush on podium
+        const deltaWorldY = podiumSurfaceY - lowestY;
+        // Convert to character hips elevation offset
+        result.hipsElevationAdjust = deltaWorldY / Math.max(0.1, retargeter.unitScale * 0.254);
+      }
+
       return result;
     }
 
-    // 2. In standing / squatting / lunging / martial stances:
-    // Poses in animationClips.ts are already calibrated with realistic clearances.
-    // Zero out any elevation adjustments to keep hips solidly anchored to the floor podium.
-    result.hipsElevationAdjust = 0;
+    // 2. IN STANDING / SQUATTING / LUNGING EXERCISES:
+    // Ensure feet do NOT float in the air during knee flexions (Squats, Lunges, Horse stance)
+    let lowestFootY = Infinity;
+    const feetBones = [leftFoot, rightFoot, leftToe, rightToe];
+    feetBones.forEach((fb) => {
+      if (fb) {
+        fb.bone.getWorldPosition(this.tmpVec);
+        if (this.tmpVec.y < lowestFootY) lowestFootY = this.tmpVec.y;
+      }
+    });
+
+    const podiumSurfaceY = -0.889;
+    if (lowestFootY !== Infinity) {
+      // Calculate deviation from podium level
+      const deltaWorldY = podiumSurfaceY - lowestFootY;
+      // If feet are floating in the air or penetrating floor by more than 2mm, adjust hips
+      if (Math.abs(deltaWorldY) > 0.002) {
+        result.hipsElevationAdjust = deltaWorldY / Math.max(0.1, retargeter.unitScale * 0.254);
+      }
+    }
+
     return result;
   }
 
   /**
-   * Sets the wrist bone so the hand palm is completely flat on the floor (palms facing down)
-   * Uses retargeter's anatomical coordinate space for true physiological accuracy.
+   * Sets the hand bone so the PALM is 100% FLAT on the floor (palms facing down).
+   *
+   * Kinematic derivation for android_rigged.glb:
+   * - Local +Z is palm normal -> points down (0, -1, 0)
+   * - Local +Y is fingers -> points forward (inwardX, 0, forwardZ)
+   * - Local +X is orthogonal side -> (fingers x palm)
    */
-  private orientHandFlatToFloor(retargeter: HunyuanSkeletalRetargeter, isLeft: boolean): void {
+  public orientHandFlatToFloor(retargeter: HunyuanSkeletalRetargeter, isLeft: boolean): void {
     const boneName: HumanoidBoneName = isLeft ? 'LeftHand' : 'RightHand';
-    // Anatomical dorsiflexion (extension) of the wrist (1.35 rad ~ 77 degrees)
-    // with slight lateral spread (-0.15 rad / +0.15 rad) places the palm flat against the floor
-    retargeter.setAnatomicalRotation(boneName, 1.35, 0, isLeft ? -0.15 : 0.15);
+    const calibrated = retargeter.bones.get(boneName);
+    if (!calibrated) return;
+
+    // Palm normal points straight down to floor
+    const palmDown = this.tmpPalmDown.set(0, -1, 0);
+    // Fingers point forward with natural anatomical slight inward rotation (~8.5 degrees)
+    const inward = isLeft ? 0.15 : -0.15;
+    const fingersForward = new THREE.Vector3(inward, 0, 1).normalize();
+
+    // Build orthonormal basis:
+    // local Y -> fingersForward
+    // local Z -> palmDown
+    // local X -> cross(Y, Z)
+    const handY = fingersForward.clone();
+    const handZ = palmDown.clone();
+    const handX = new THREE.Vector3().crossVectors(handY, handZ).normalize();
+    handY.crossVectors(handZ, handX).normalize();
+
+    const rotMatrix = new THREE.Matrix4().makeBasis(handX, handY, handZ);
+    const targetWorldQ = new THREE.Quaternion().setFromRotationMatrix(rotMatrix);
+
+    // Convert target world orientation to local quaternion relative to parent forearm
+    const parentObj = calibrated.bone.parent;
+    if (parentObj) {
+      parentObj.getWorldQuaternion(this.tmpParentWQ);
+      this.tmpInvParentWQ.copy(this.tmpParentWQ).invert();
+      calibrated.bone.quaternion.copy(this.tmpInvParentWQ.multiply(targetWorldQ));
+    } else {
+      calibrated.bone.quaternion.copy(targetWorldQ);
+    }
+
+    calibrated.bone.updateMatrixWorld(true);
   }
 
   /**
-   * Sets the toe bone so the foot contacts the floor naturally
+   * Sets the toe bone so the foot contacts the floor naturally in prone positions
    */
   private orientFootForFloorContact(retargeter: HunyuanSkeletalRetargeter, toe: CalibratedBone | undefined): void {
     if (!toe) return;

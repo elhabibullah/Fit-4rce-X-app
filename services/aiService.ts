@@ -574,13 +574,112 @@ export const getChatbotResponse = async (msg: string, language: string = 'en', h
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ msg, language, history })
         });
-        if (!response.ok) throw new Error('Chatbot response failed');
-        const data = await response.json();
-        const fallbackMsg = FALLBACK_ACK_MESSAGES[language] || FALLBACK_ACK_MESSAGES['en'];
-        return data.text || fallbackMsg;
+        const contentType = response.headers.get('content-type') || '';
+        if (response.ok && contentType.includes('application/json')) {
+            const data = await response.json();
+            if (data && typeof data.text === 'string' && data.text.trim()) {
+                return data.text.trim();
+            }
+        }
     } catch (e) {
-        return FALLBACK_ACK_MESSAGES[language] || FALLBACK_ACK_MESSAGES['en'];
+        console.warn("API chatbot-response offline or unreachable, switching to local coach engine:", e);
     }
+
+    // High-level client-side conversational AI intelligence:
+    const l = (language || 'en').toLowerCase().slice(0, 2);
+    const lower = (msg || '').toLowerCase();
+
+    const isReady = (
+        lower.includes('prêt') || lower.includes('pret') || lower.includes('lance') ||
+        lower.includes('start') || lower.includes('ready') || lower.includes('commencer') ||
+        lower.includes('go') || lower.includes('parti') || lower.includes('vamos') ||
+        lower.includes('listo') || lower.includes('جاهز') || lower.includes('يلا') ||
+        lower.includes('開始') || lower.includes('准备') || lower.includes('готов') || lower.includes('поехали')
+    );
+
+    const isGreeting = (
+        lower.includes('bonjour') || lower.includes('salut') || lower.includes('hello') ||
+        lower.includes('hi') || lower.includes('hola') || lower.includes('مرحبا') ||
+        lower.includes('olá') || lower.includes('ola') || lower.includes('こんにちは') || lower.includes('你好')
+    );
+
+    const isEquipment = (
+        lower.includes('haltere') || lower.includes('haltère') || lower.includes('dumbbell') ||
+        lower.includes('poids') || lower.includes('machine') || lower.includes('corps') ||
+        lower.includes('mancuerna') || lower.includes('وزن') || lower.includes('自重') || lower.includes('哑铃')
+    );
+
+    const isFocus = (
+        lower.includes('bras') || lower.includes('jambe') || lower.includes('dos') ||
+        lower.includes('pectoraux') || lower.includes('abdos') || lower.includes('core') ||
+        lower.includes('upper') || lower.includes('lower') || lower.includes('leg') || lower.includes('chest')
+    );
+
+    const DIALOGUES: Record<string, { ready: string; greet: string; equip: string; focus: string; generic: string }> = {
+        fr: {
+            ready: "C'est parti ! Je génère ta séance 3D sur mesure. Donne le meilleur de toi-même ! [GENERATE_WORKOUT]",
+            greet: "Bonjour ! Je suis ton coach Fit-4rce X. Quel est ton objectif aujourd'hui : full body, haut du corps ou bas du corps ?",
+            equip: "Parfait pour l'équipement ! Dis-moi quand tu es prêt et je lance ton entraînement 3D.",
+            focus: "Zone bien ciblée ! Dis-moi 'lance la séance' ou 'je suis prêt' pour démarrer !",
+            generic: "Bien reçu ! Dis-moi 'je suis prêt' dès que tu souhaites commencer ton entraînement. [GENERATE_WORKOUT]"
+        },
+        en: {
+            ready: "Awesome! Generating your custom 3D workout now. Let's crush this! [GENERATE_WORKOUT]",
+            greet: "Hello! I'm your Fit-4rce X coach. What's our focus today: full body, upper body, or lower body?",
+            equip: "Great choice! Tell me whenever you're ready and I'll generate your 3D session.",
+            focus: "Target locked! Say 'start' or 'I am ready' whenever you want to begin!",
+            generic: "Understood! Whenever you're ready to start, let me know! [GENERATE_WORKOUT]"
+        },
+        es: {
+            ready: "¡Vamos con todo! Preparando tu entrenamiento 3D ahora mismo. [GENERATE_WORKOUT]",
+            greet: "¡Hola! Soy tu entrenador Fit-4rce X. ¿Cuál es tu objetivo hoy: cuerpo completo, tren superior o piernas?",
+            equip: "¡Excelente! Dime cuando estés listo para generar tu entrenamiento 3D.",
+            focus: "¡Objetivo fijado! Di 'estoy listo' o 'vamos' para comenzar.",
+            generic: "¡Perfecto! Cuando estés listo para comenzar, ¡avísame! [GENERATE_WORKOUT]"
+        },
+        ar: {
+            ready: "هيا بنا! أقوم بتجهيز تمارينك ثلاثية الأبعاد الآن. بالتوفيق! [GENERATE_WORKOUT]",
+            greet: "أهلاً بك! أنا مدربك الشخصي Fit-4rce X. ما هو هدفك اليوم: تدريب كامل، الجزء العلوي أم السفلي؟",
+            equip: "ممتاز! أخبرني عندما تكون جاهزاً وسأقوم بتوليد تدريبك ثلاثي الأبعاد.",
+            focus: "تم تحديد الهدف! قل 'أنا جاهز' أو 'ابدأ' للبدء فوراً.",
+            generic: "رائع! أخبرني عندما تكون مستعداً للبدء! [GENERATE_WORKOUT]"
+        },
+        pt: {
+            ready: "Vamos com tudo! Preparando seu treino 3D personalizado agora. [GENERATE_WORKOUT]",
+            greet: "Olá! Sou seu treinador Fit-4rce X. Qual é o foco de hoje: corpo inteiro, superior ou pernas?",
+            equip: "Perfeito! Diga quando estiver pronto para gerar seu treino 3D.",
+            focus: "Foco definido! Diga 'estou pronto' ou 'vamos' para começar.",
+            generic: "Perfeito! Quando estiver pronto para começar, me avise! [GENERATE_WORKOUT]"
+        },
+        ja: {
+            ready: "さあ始めましょう！あなた専用の3Dワークアウトを準備しています。[GENERATE_WORKOUT]",
+            greet: "こんにちは！Fit-4rce Xコーチです。本日のターゲットは全身、上半身、それとも下半身ですか？",
+            equip: "素晴らしい！準備ができたら「スタート」と声をかけてください。",
+            focus: "ターゲット設定完了！準備ができたら教えてください。",
+            generic: "了解しました！準備ができたら声をかけてください！[GENERATE_WORKOUT]"
+        },
+        zh: {
+            ready: "全力以赴！正在为你准备定制的3D训练动作。[GENERATE_WORKOUT]",
+            greet: "你好！我是你的 Fit-4rce X 专属教练。今天想练全身、上半身还是下肢？",
+            equip: "太好了！准备好时告诉我，我将为你生成3D动作序列。",
+            focus: "目标已锁定！准备好了就说‘开始’吧。",
+            generic: "收到！准备好时随时告诉我！[GENERATE_WORKOUT]"
+        },
+        ru: {
+            ready: "Поехали! Создаю твою персональную 3D тренировку прямо сейчас. [GENERATE_WORKOUT]",
+            greet: "Привет! Я твой тренер Fit-4rce X. Какова цель сегодня: все тело, верхняя часть или ноги?",
+            equip: "Отлично! Скажи, когда будешь готов, и я создам твою 3D тренировку.",
+            focus: "Цель определена! Скажи 'готов' или 'старт', чтобы начать.",
+            generic: "Отлично! Как только будешь готов начать, дай знать! [GENERATE_WORKOUT]"
+        }
+    };
+
+    const d = DIALOGUES[l] || DIALOGUES.en;
+    if (isReady) return d.ready;
+    if (isGreeting) return d.greet;
+    if (isEquipment) return d.equip;
+    if (isFocus) return d.focus;
+    return d.generic;
 };
 
 export const generateDietPlan = async (profile: UserProfile, language: Language) => {
