@@ -194,11 +194,11 @@ export class HumanoidMotionEngine {
     this.lastSolveResult = solveResult;
 
     // 3. Keep hips solidly anchored to calibrated pose height
-    // Avoid accumulating arbitrary offsets that cause character to float into air
+    // Apply exact world elevation compensation so feet/hands stay planted on the podium
     if (solveResult.hipsElevationAdjust !== 0) {
       const currentHips = this.retargeter.hipsBone;
       if (currentHips) {
-        currentHips.position.y += solveResult.hipsElevationAdjust * this.retargeter.unitScale;
+        currentHips.position.y += solveResult.hipsElevationAdjust;
         currentHips.updateMatrixWorld(true);
       }
     }

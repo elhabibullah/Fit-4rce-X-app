@@ -95,6 +95,7 @@ const WorkoutScreen: React.FC = () => {
     // Advanced ('high'): 5 sets x 15 reps (5x15)
     const [workoutType, setWorkoutType] = useState('fitness');
     const [intensity, setIntensity] = useState<'low' | 'medium' | 'high'>('medium');
+    const [equipmentMode, setEquipmentMode] = useState<'bodyweight' | 'home' | 'gym'>('bodyweight');
     
     // Rest rule:
     // Standard Fitness: 30s pause max (default 30s)
@@ -287,12 +288,14 @@ const WorkoutScreen: React.FC = () => {
         setIsGeneratingWorkout(true);
         try {
             const { sets, reps, restSeconds } = getWorkoutSeriesAndRest(intensity, trainingGoal);
-            const prompt = `Generate a ${intensity} intensity ${workoutType} workout. Protocol: ${sets} sets of ${reps} reps with ${restSeconds}s rest pause between sets. Discipline: ${workoutType}. Requirements: ${customRequirements}. Ensure all exercises strictly belong to ${workoutType}. Be concise.`;
+            const eqDesc = equipmentMode === 'bodyweight' ? 'bodyweight only (no equipment)' : equipmentMode === 'home' ? 'home gym (dumbbells, resistance bands, mat)' : 'full commercial gym (barbells, dumbbells, cables, machines)';
+            const prompt = `Generate a ${intensity} intensity ${workoutType} workout. Equipment: ${eqDesc}. Protocol: ${sets} sets of ${reps} reps with ${restSeconds}s rest pause between sets. Discipline: ${workoutType}. Requirements: ${customRequirements}. Ensure all exercises strictly belong to ${workoutType} and match ${eqDesc}. Be concise.`;
             
             const generated = await generateWorkoutWithGemini(prompt, language, {
                 level: intensity,
                 goal: trainingGoal,
                 workoutType: workoutType,
+                equipment: equipmentMode,
                 targetSets: sets,
                 targetReps: reps,
                 restBetweenSets: restSeconds
@@ -801,6 +804,65 @@ const WorkoutScreen: React.FC = () => {
                                     {translate(labelKey)}
                                 </button>
                             </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* 2.5 EQUIPMENT / LOCATION SELECTION */}
+                <section className="bg-neutral-950/70 border border-zinc-800/80 rounded-2xl p-4">
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-[10px] font-light text-zinc-400 uppercase tracking-[0.4em]">
+                            {language === 'fr' ? 'Lieu & Équipement' : 'Location & Equipment'}
+                        </h3>
+                        <span className="text-[10px] font-medium text-purple-400 font-mono">
+                            {equipmentMode === 'bodyweight' 
+                                ? (language === 'fr' ? 'Sans matériel' : 'Bodyweight') 
+                                : equipmentMode === 'home' 
+                                ? (language === 'fr' ? 'Maison' : 'Home') 
+                                : (language === 'fr' ? 'Salle de sport' : 'Gym')}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                        {[
+                            { 
+                                id: 'bodyweight' as const, 
+                                titleFr: 'Poids du corps', 
+                                titleEn: 'Bodyweight', 
+                                descFr: 'Sans matériel', 
+                                descEn: 'No equipment' 
+                            },
+                            { 
+                                id: 'home' as const, 
+                                titleFr: 'Maison', 
+                                titleEn: 'Home Gym', 
+                                descFr: 'Haltères & Bandes', 
+                                descEn: 'Dumbbells / Bands' 
+                            },
+                            { 
+                                id: 'gym' as const, 
+                                titleFr: 'Salle de sport', 
+                                titleEn: 'Full Gym', 
+                                descFr: 'Barres & Machines', 
+                                descEn: 'Barbells / Cables' 
+                            }
+                        ].map(({ id, titleFr, titleEn, descFr, descEn }) => (
+                            <button
+                                key={id}
+                                onClick={() => setEquipmentMode(id)}
+                                className={`px-2 py-2.5 rounded-xl border text-center transition-all active:scale-95 flex flex-col items-center justify-center min-h-[58px] ${
+                                    equipmentMode === id
+                                        ? 'bg-[#8A2BE2] text-white border-purple-400 shadow-[0_0_20px_rgba(138,43,226,0.4)]'
+                                        : 'bg-zinc-900/80 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                                }`}
+                            >
+                                <span className={`block text-xs font-medium leading-snug truncate w-full ${equipmentMode === id ? 'text-white' : 'text-zinc-200'}`}>
+                                    {language === 'fr' ? titleFr : titleEn}
+                                </span>
+                                <span className={`block text-[11px] font-normal leading-snug truncate w-full ${equipmentMode === id ? 'text-purple-100' : 'text-zinc-400'}`}>
+                                    {language === 'fr' ? descFr : descEn}
+                                </span>
+                            </button>
                         ))}
                     </div>
                 </section>

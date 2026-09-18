@@ -64,23 +64,32 @@ export class GroundContactSolver {
       if (leftToe) this.orientFootForFloorContact(retargeter, leftToe);
       if (rightToe) this.orientFootForFloorContact(retargeter, rightToe);
 
-      // Measure lowest point among hands and feet to anchor on the podium
+      // Target podium surface in studio space is Y = -0.889
+      const podiumSurfaceY = -0.889;
       let lowestY = Infinity;
-      const contactBones = [leftHand, rightHand, leftToe || leftFoot, rightToe || rightFoot];
-      contactBones.forEach((cb) => {
-        if (cb) {
-          cb.bone.getWorldPosition(this.tmpVec);
-          if (this.tmpVec.y < lowestY) lowestY = this.tmpVec.y;
+      const handThickness = 0.035;
+      const toeThickness = 0.040;
+      if (leftHand) {
+        leftHand.bone.getWorldPosition(this.tmpVec);
+        lowestY = Math.min(lowestY, this.tmpVec.y - handThickness);
+      }
+      if (rightHand) {
+        rightHand.bone.getWorldPosition(this.tmpVec);
+        lowestY = Math.min(lowestY, this.tmpVec.y - handThickness);
+      }
+      const contactToes = [leftToe || leftFoot, rightToe || rightFoot];
+      contactToes.forEach((t) => {
+        if (t) {
+          t.bone.getWorldPosition(this.tmpVec);
+          lowestY = Math.min(lowestY, this.tmpVec.y - toeThickness);
         }
       });
 
-      // Target podium surface in studio space is Y = -0.889
-      const podiumSurfaceY = -0.889;
       if (lowestY !== Infinity) {
-        // Delta needed in world space to keep lowest contact flush on podium
         const deltaWorldY = podiumSurfaceY - lowestY;
-        // Convert to character hips elevation offset
-        result.hipsElevationAdjust = deltaWorldY / Math.max(0.1, retargeter.unitScale * 0.254);
+        if (Math.abs(deltaWorldY) > 0.001) {
+          result.hipsElevationAdjust = deltaWorldY;
+        }
       }
 
       return result;
@@ -99,11 +108,11 @@ export class GroundContactSolver {
 
     const podiumSurfaceY = -0.889;
     if (lowestFootY !== Infinity) {
-      // Calculate deviation from podium level
-      const deltaWorldY = podiumSurfaceY - lowestFootY;
-      // If feet are floating in the air or penetrating floor by more than 2mm, adjust hips
-      if (Math.abs(deltaWorldY) > 0.002) {
-        result.hipsElevationAdjust = deltaWorldY / Math.max(0.1, retargeter.unitScale * 0.254);
+      // Offset from ankle/toe to bottom of sole
+      const footSoleY = lowestFootY - retargeter.anklePodiumClearance;
+      const deltaWorldY = podiumSurfaceY - footSoleY;
+      if (Math.abs(deltaWorldY) > 0.001) {
+        result.hipsElevationAdjust = deltaWorldY;
       }
     }
 
@@ -114,27 +123,28 @@ export class GroundContactSolver {
    * Sets the hand bone so the PALM is 100% FLAT on the floor (palms facing down).
    *
    * Kinematic derivation for android_rigged.glb:
-   * - Local +Z is palm normal -> points down (0, -1, 0)
+   * - Local +Z is dorsal normal -> points UP (0, 1, 0)
+   * - Local -Z is palmar surface -> points DOWN (0, -1, 0) into floor
    * - Local +Y is fingers -> points forward (inwardX, 0, forwardZ)
-   * - Local +X is orthogonal side -> (fingers x palm)
+   * - Local +X is orthogonal side -> (fingers x normal)
    */
   public orientHandFlatToFloor(retargeter: HunyuanSkeletalRetargeter, isLeft: boolean): void {
     const boneName: HumanoidBoneName = isLeft ? 'LeftHand' : 'RightHand';
     const calibrated = retargeter.bones.get(boneName);
     if (!calibrated) return;
 
-    // Palm normal points straight down to floor
-    const palmDown = this.tmpPalmDown.set(0, -1, 0);
+    // Dorsal normal points UP to ceiling (0, 1, 0) so PALMAR surface points DOWN into floor
+    const dorsalUp = this.tmpPalmDown.set(0, 1, 0);
     // Fingers point forward with natural anatomical slight inward rotation (~8.5 degrees)
     const inward = isLeft ? 0.15 : -0.15;
     const fingersForward = new THREE.Vector3(inward, 0, 1).normalize();
 
     // Build orthonormal basis:
     // local Y -> fingersForward
-    // local Z -> palmDown
+    // local Z -> dorsalUp (so palm faces down!)
     // local X -> cross(Y, Z)
     const handY = fingersForward.clone();
-    const handZ = palmDown.clone();
+    const handZ = dorsalUp.clone();
     const handX = new THREE.Vector3().crossVectors(handY, handZ).normalize();
     handY.crossVectors(handZ, handX).normalize();
 

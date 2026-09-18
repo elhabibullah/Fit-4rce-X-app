@@ -65,6 +65,7 @@ export interface WorkoutConfigOptions {
     level?: 'beginner' | 'medium' | 'advanced' | string;
     goal?: 'fitness' | 'mass_gaining' | 'power_training' | string;
     workoutType?: string;
+    equipment?: 'bodyweight' | 'home' | 'gym' | string;
     targetSets?: number;
     targetReps?: number;
     restBetweenSets?: number;
@@ -131,7 +132,8 @@ export const generateWorkout = async (
                     restBetweenSets,
                     level: options?.level,
                     goal: options?.goal,
-                    workoutType: options?.workoutType
+                    workoutType: options?.workoutType,
+                    equipment: options?.equipment
                 } 
             })
         });

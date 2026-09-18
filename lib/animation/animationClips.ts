@@ -94,126 +94,118 @@ const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 2.8, [
   },
 ]);
 
-// 2. LUNGE: Authentic forward stepping alternating lunges
+// 2. LUNGE: Authentic grounded split lunges (fentes sur place) - both feet anchored, pure vertical motion
 const LUNGE_CLIP = new HumanoidMotionClip('lunge', 'Lunge', 3.6, [
-  // 0.00: Standing neutral
+  // 0.00: Split stance ready (Right foot forward, Left foot back on ball of foot)
   {
     time: 0.0,
     hipsOffset: [0, 0, 0],
     bones: {
       Spine: { pitch: 0.02, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.10, yaw: 0, roll: -0.08 },
-      RightArm: { pitch: 0.10, yaw: 0, roll: 0.08 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftArm: { pitch: 0.20, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: -0.20, yaw: 0, roll: 0.10 },
+      RightUpLeg: { pitch: 0.35, yaw: 0, roll: -0.02 }, // Front leg slightly forward
+      RightLeg: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.05, yaw: 0, roll: 0 }, // Planted flat
+      LeftUpLeg: { pitch: -0.25, yaw: 0, roll: 0.04 }, // Rear leg back
+      LeftLeg: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.25, yaw: 0, roll: 0 }, // Ball of foot anchored on floor
     },
   },
-  // 0.12: Right leg initiates forward step
-  {
-    time: 0.12,
-    hipsOffset: [0, -0.08, 0.15],
-    bones: {
-      Spine: { pitch: 0.05, yaw: -0.04, roll: 0 },
-      RightUpLeg: { pitch: 0.45, yaw: 0, roll: -0.02 },
-      RightLeg: { pitch: 0.35, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: -0.10, yaw: 0, roll: 0.04 },
-      LeftFoot: { pitch: 0.15, yaw: 0, roll: 0 }, // Ball of rear foot
-      LeftArm: { pitch: 0.45, yaw: 0, roll: -0.05 },
-      RightArm: { pitch: -0.20, yaw: 0, roll: 0.05 },
-    },
-  },
-  // 0.25: Deep right forward lunge (90 deg front knee, rear knee hovering 8cm above floor)
+  // 0.25: Deep vertical descent (both knees bend to ~90 deg, rear knee hovers above floor)
   {
     time: 0.25,
-    hipsOffset: [0, -0.32, 0.18],
+    hipsOffset: [0, -0.28, 0], // Pure vertical descent, zero horizontal skating
     bones: {
-      Spine: { pitch: 0.04, yaw: -0.02, roll: 0 },
-      RightUpLeg: { pitch: 0.85, yaw: 0, roll: -0.02 },
-      RightLeg: { pitch: 1.15, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0.20, yaw: 0, roll: 0 }, // Front foot flat
-      LeftUpLeg: { pitch: -0.22, yaw: 0, roll: 0.04 },
-      LeftLeg: { pitch: 1.05, yaw: 0, roll: 0 }, // Rear knee bent down hovering
-      LeftFoot: { pitch: -0.35, yaw: 0, roll: 0 }, // Rear foot on toes
-      LeftArm: { pitch: 0.65, yaw: 0, roll: -0.08 },
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 }, // Upright torso
+      RightUpLeg: { pitch: 0.85, yaw: 0, roll: -0.02 }, // 90 deg front hip
+      RightLeg: { pitch: 1.15, yaw: 0, roll: 0 }, // 90 deg front knee
+      RightFoot: { pitch: 0.15, yaw: 0, roll: 0 }, // Front foot flat on floor
+      LeftUpLeg: { pitch: -0.20, yaw: 0, roll: 0.04 }, // Rear hip extension
+      LeftLeg: { pitch: 1.15, yaw: 0, roll: 0 }, // Rear knee bent down hovering above floor
+      LeftFoot: { pitch: -0.40, yaw: 0, roll: 0 }, // Ball of rear foot firmly on floor
+      LeftArm: { pitch: 0.45, yaw: 0, roll: -0.08 },
       RightArm: { pitch: -0.25, yaw: 0, roll: 0.08 },
     },
   },
-  // 0.38: Push back through front heel
+  // 0.45: Drive back up vertically to split stance
   {
-    time: 0.38,
-    hipsOffset: [0, -0.10, 0.08],
+    time: 0.45,
+    hipsOffset: [0, 0, 0],
     bones: {
-      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
-      RightUpLeg: { pitch: 0.25, yaw: 0, roll: -0.02 },
-      RightLeg: { pitch: 0.30, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
-      LeftLeg: { pitch: 0.10, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: 0.35, yaw: 0, roll: -0.02 },
+      RightLeg: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: -0.25, yaw: 0, roll: 0.04 },
+      LeftLeg: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.25, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.20, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: -0.20, yaw: 0, roll: 0.10 },
     },
   },
-  // 0.50: Center standing transition
+  // 0.50: Switch leg transition (Left foot forward, Right foot back)
   {
     time: 0.50,
     hipsOffset: [0, 0, 0],
     bones: {
       Spine: { pitch: 0.02, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.10, yaw: 0, roll: -0.08 },
-      RightArm: { pitch: 0.10, yaw: 0, roll: 0.08 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftUpLeg: { pitch: 0.35, yaw: 0, roll: 0.02 }, // Left leg forward
+      LeftLeg: { pitch: 0.15, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.05, yaw: 0, roll: 0 }, // Planted flat
+      RightUpLeg: { pitch: -0.25, yaw: 0, roll: -0.04 }, // Right leg back
+      RightLeg: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.25, yaw: 0, roll: 0 }, // Ball of foot anchored
+      RightArm: { pitch: 0.20, yaw: 0, roll: 0.10 },
+      LeftArm: { pitch: -0.20, yaw: 0, roll: -0.10 },
     },
   },
-  // 0.62: Left leg initiates forward step
-  {
-    time: 0.62,
-    hipsOffset: [0, -0.08, 0.15],
-    bones: {
-      Spine: { pitch: 0.05, yaw: 0.04, roll: 0 },
-      LeftUpLeg: { pitch: 0.45, yaw: 0, roll: 0.02 },
-      LeftLeg: { pitch: 0.35, yaw: 0, roll: 0 },
-      RightUpLeg: { pitch: -0.10, yaw: 0, roll: -0.04 },
-      RightFoot: { pitch: 0.15, yaw: 0, roll: 0 },
-      RightArm: { pitch: 0.45, yaw: 0, roll: 0.05 },
-      LeftArm: { pitch: -0.20, yaw: 0, roll: -0.05 },
-    },
-  },
-  // 0.75: Deep left forward lunge
+  // 0.75: Deep vertical descent on opposite side
   {
     time: 0.75,
-    hipsOffset: [0, -0.32, 0.18],
+    hipsOffset: [0, -0.28, 0], // Pure vertical descent
     bones: {
-      Spine: { pitch: 0.04, yaw: 0.02, roll: 0 },
-      LeftUpLeg: { pitch: 0.85, yaw: 0, roll: 0.02 },
-      LeftLeg: { pitch: 1.15, yaw: 0, roll: 0 },
-      LeftFoot: { pitch: 0.20, yaw: 0, roll: 0 }, // Front foot flat
-      RightUpLeg: { pitch: -0.22, yaw: 0, roll: -0.04 },
-      RightLeg: { pitch: 1.05, yaw: 0, roll: 0 }, // Rear knee hovering
-      RightFoot: { pitch: -0.35, yaw: 0, roll: 0 },
-      RightArm: { pitch: 0.65, yaw: 0, roll: 0.08 },
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.85, yaw: 0, roll: 0.02 }, // 90 deg left hip
+      LeftLeg: { pitch: 1.15, yaw: 0, roll: 0 }, // 90 deg left knee
+      LeftFoot: { pitch: 0.15, yaw: 0, roll: 0 }, // Left foot flat
+      RightUpLeg: { pitch: -0.20, yaw: 0, roll: -0.04 },
+      RightLeg: { pitch: 1.15, yaw: 0, roll: 0 }, // Right knee hovering above floor
+      RightFoot: { pitch: -0.40, yaw: 0, roll: 0 }, // Ball of right foot on floor
+      RightArm: { pitch: 0.45, yaw: 0, roll: 0.08 },
       LeftArm: { pitch: -0.25, yaw: 0, roll: -0.08 },
     },
   },
-  // 0.88: Push back through left front heel
+  // 0.95: Drive back up vertically to left split stance
   {
-    time: 0.88,
-    hipsOffset: [0, -0.10, 0.08],
+    time: 0.95,
+    hipsOffset: [0, 0, 0],
     bones: {
-      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.25, yaw: 0, roll: 0.02 },
-      LeftLeg: { pitch: 0.30, yaw: 0, roll: 0 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
-      RightLeg: { pitch: 0.10, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.35, yaw: 0, roll: 0.02 },
+      LeftLeg: { pitch: 0.15, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.05, yaw: 0, roll: 0 },
+      RightUpLeg: { pitch: -0.25, yaw: 0, roll: -0.04 },
+      RightLeg: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.25, yaw: 0, roll: 0 },
+      RightArm: { pitch: 0.20, yaw: 0, roll: 0.10 },
+      LeftArm: { pitch: -0.20, yaw: 0, roll: -0.10 },
     },
   },
-  // 1.00: Return to neutral standing
+  // 1.00: Return to start
   {
     time: 1.0,
     hipsOffset: [0, 0, 0],
     bones: {
       Spine: { pitch: 0.02, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.10, yaw: 0, roll: -0.08 },
-      RightArm: { pitch: 0.10, yaw: 0, roll: 0.08 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      RightUpLeg: { pitch: 0.35, yaw: 0, roll: -0.02 },
+      RightLeg: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: -0.25, yaw: 0, roll: 0.04 },
+      LeftLeg: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.25, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.20, yaw: 0, roll: -0.10 },
+      RightArm: { pitch: -0.20, yaw: 0, roll: 0.10 },
     },
   },
 ]);

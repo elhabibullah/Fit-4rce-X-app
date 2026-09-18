@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Mic, MicOff, X, Volume2, Bot, Loader2, Send, Play } from 'lucide-react';
+import { Mic, MicOff, X, Volume2, Bot, Loader2, Play } from 'lucide-react';
 import { useApp } from '../../hooks/useApp.ts';
 import { Language, WorkoutGenerationParams } from '../../types.ts';
 import { getChatbotResponse } from '../../services/aiService.ts';
@@ -67,24 +67,12 @@ const COACH_EXAMPLE_PROMPTS: Record<Language, string> = {
   [Language.EN]: 'Ex: "I want a calisthenics workout", "High intensity", "I\'m ready"'
 };
 
-const COACH_INPUT_PLACEHOLDERS: Record<Language, string> = {
-  [Language.FR]: "Écrivez au coach ici (ou parlez au micro)...",
-  [Language.ES]: "Escribe al coach aquí (o habla por el micro)...",
-  [Language.AR]: "اكتب للمدرب هنا (أو تحدث بالميكروفون)...",
-  [Language.PT]: "Escreva para o treinador aqui (ou fale no microfone)...",
-  [Language.JA]: "ここにメッセージを入力（またはマイクで発话）...",
-  [Language.ZH]: "在此输入信息（或使用麦克风说话）...",
-  [Language.RU]: "Напишите тренеру здесь (или говорите в микрофон)...",
-  [Language.EN]: "Type to the coach here (or speak into the mic)..."
-};
-
 const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const { language, startWorkoutFromVoice, translate } = useApp();
   const [isListening, setIsListening] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState('');
-  const [inputText, setInputText] = useState('');
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
 
@@ -329,7 +317,6 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     if (!userText || !userText.trim()) return;
     const cleanText = userText.trim();
     setCurrentTranscript('');
-    setInputText('');
     accumulatedContextRef.current += ` ${cleanText}`;
 
     // Temporarily pause listening while processing
@@ -429,7 +416,6 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     // Clear conversation on new session
     setMessages([]);
     setCurrentTranscript('');
-    setInputText('');
     accumulatedContextRef.current = '';
 
     // Start microphone listening immediately, waiting for user to speak
@@ -440,14 +426,10 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     };
   }, [isVisible]);
 
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputText.trim()) {
-      handleUserMessage(inputText.trim());
-    }
-  };
-
   if (!isVisible) return null;
+
+  const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
+  const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
 
   return (
     <div 
@@ -456,165 +438,189 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       aria-modal="true"
     >
       {/* TOP BAR */}
-      <div className="w-full max-w-md flex items-center justify-between px-4 pt-3 pb-3 border-b border-white/10 flex-shrink-0">
+      <div className="w-full max-w-lg flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-purple-900/60 border border-purple-500/40 flex items-center justify-center shadow-[0_0_15px_rgba(138,43,226,0.4)]">
+          <div className="w-10 h-10 rounded-full bg-purple-900/60 border border-purple-500/40 flex items-center justify-center shadow-[0_0_20px_rgba(138,43,226,0.5)]">
             <Bot className="w-5 h-5 text-purple-300" />
           </div>
           <div>
             <h2 className="text-xs font-black text-white uppercase tracking-widest leading-none">
-              {translate('chatbot.title')}
+              {translate('chatbot.title')} • VOCAL
             </h2>
-            <span className="text-[9px] text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1">
-              <span className={`w-1.5 h-1.5 rounded-full ${isAiSpeaking ? 'bg-indigo-400 animate-pulse' : isListening ? 'bg-green-400 animate-pulse' : 'bg-zinc-500'}`}></span>
+            <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1.5">
+              <span className={`w-2 h-2 rounded-full ${isAiSpeaking ? 'bg-indigo-400 animate-ping' : isListening ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`}></span>
               {isAiSpeaking ? translate('coach.status.speaking') : isListening ? translate('coach.status.listening') : "EN ATTENTE"}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {/* Mute Audio Voice */}
           <button 
             onClick={() => setIsMuted(prev => !prev)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border ${
-              isMuted ? 'bg-red-950/80 border-red-500/50 text-red-400' : 'bg-white/10 border-white/10 text-gray-300 hover:text-white'
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border ${
+              isMuted ? 'bg-red-950/80 border-red-500/50 text-red-400' : 'bg-white/10 border-white/15 text-gray-300 hover:text-white'
             }`}
             aria-label="Toggle Mute"
+            title={isMuted ? "Son coupé" : "Son actif"}
           >
-            {isMuted ? <MicOff size={16} /> : <Volume2 size={16} />}
+            {isMuted ? <MicOff size={18} /> : <Volume2 size={18} />}
           </button>
 
           {/* Close Coach */}
           <button 
             onClick={() => { cleanupAudio(); onClose(); }}
-            className="w-9 h-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+            className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
             aria-label="Close"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
       </div>
 
-      {/* CONVERSATION HISTORY SCROLL */}
-      <div className="w-full max-w-md flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3 flex flex-col justify-end custom-scrollbar">
-        {messages.length === 0 && !currentTranscript && (
-          <div className="text-center py-4 my-auto">
-            <p className="text-sm font-bold text-purple-300 tracking-wide">
-              {COACH_TITLE_PROMPTS[language] || COACH_TITLE_PROMPTS[Language.EN]}
-            </p>
-            <p className="text-[11px] text-zinc-400 mt-2 max-w-xs mx-auto">
-              {COACH_EXAMPLE_PROMPTS[language] || COACH_EXAMPLE_PROMPTS[Language.EN]}
-            </p>
-            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 bg-purple-900/30 border border-purple-500/30 rounded-full text-[10px] text-purple-300">
-              <span>✍️ Tapez votre message au clavier en bas ou parlez</span>
-            </div>
-          </div>
-        )}
+      {/* CENTRAL VOICE STAGE */}
+      <div className="w-full max-w-lg flex-1 flex flex-col items-center justify-center px-6 py-4 space-y-6 overflow-y-auto custom-scrollbar">
+        
+        {/* VOICE VISUALIZER ORB */}
+        <div className="relative flex items-center justify-center my-2">
+          {/* Animated concentric pulse rings */}
+          {isListening && (
+            <>
+              <div className="absolute w-48 h-48 rounded-full bg-purple-600/20 animate-ping [animation-duration:2.5s] pointer-events-none"></div>
+              <div className="absolute w-40 h-40 rounded-full bg-indigo-500/25 animate-pulse pointer-events-none"></div>
+            </>
+          )}
+          {isAiSpeaking && (
+            <>
+              <div className="absolute w-52 h-52 rounded-full bg-cyan-500/20 animate-ping [animation-duration:1.8s] pointer-events-none"></div>
+              <div className="absolute w-44 h-44 rounded-full bg-purple-500/30 animate-pulse pointer-events-none"></div>
+            </>
+          )}
 
-        {messages.map((msg, index) => (
-          <div 
-            key={index}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div 
-              className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed shadow-lg ${
-                msg.role === 'user' 
-                  ? 'bg-purple-600 text-white rounded-br-none' 
-                  : 'bg-zinc-900 border border-purple-500/30 text-purple-100 rounded-bl-none'
-              }`}
-            >
-              {msg.text}
-            </div>
-          </div>
-        ))}
-
-        {currentTranscript && (
-          <div className="flex justify-end">
-            <div className="max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm bg-purple-950/80 border border-purple-500/40 text-purple-200 italic rounded-br-none">
-              « {currentTranscript} »
-            </div>
-          </div>
-        )}
-
-        {isThinking && (
-          <div className="flex justify-start">
-            <div className="bg-zinc-900 border border-purple-500/30 rounded-2xl px-4 py-3 flex items-center gap-2 text-xs text-purple-300">
-              <Loader2 size={14} className="animate-spin text-purple-400" />
-              <span className="animate-pulse">En réflexion...</span>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* COMPACT VOICE STATUS INDICATOR */}
-      <div className="w-full max-w-md flex items-center justify-between px-4 py-1.5 flex-shrink-0 border-t border-white/5 bg-zinc-950/70">
-        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={toggleListening}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-md active:scale-95 flex-shrink-0 ${
+            className={`relative z-10 w-32 h-32 rounded-full flex flex-col items-center justify-center transition-all duration-500 shadow-2xl active:scale-95 border-2 ${
               isAiSpeaking
-                ? 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 shadow-[0_0_20px_rgba(138,43,226,0.8)] animate-pulse'
+                ? 'bg-gradient-to-tr from-purple-700 via-indigo-600 to-cyan-400 border-cyan-300 shadow-[0_0_50px_rgba(6,182,212,0.6)]'
                 : isListening
-                ? 'bg-gradient-to-tr from-purple-700 to-indigo-600 border-2 border-purple-300 shadow-[0_0_15px_rgba(138,43,226,0.6)]'
-                : 'bg-zinc-900 border border-purple-500/40 hover:border-purple-400'
+                ? 'bg-gradient-to-tr from-purple-600 to-emerald-600 border-emerald-300 shadow-[0_0_40px_rgba(16,185,129,0.5)]'
+                : 'bg-zinc-900/90 border-purple-500/40 hover:border-purple-400 shadow-[0_0_30px_rgba(138,43,226,0.3)]'
             }`}
-            aria-label={isListening ? "Stop listening" : "Start speaking"}
+            aria-label={isListening ? "Arrêter d'écouter" : "Parler au coach"}
           >
             {isAiSpeaking ? (
-              <div className="flex items-end gap-0.5 h-3.5">
-                <div className="w-1 h-2 bg-white rounded-full animate-bounce"></div>
-                <div className="w-1 h-3.5 bg-white rounded-full animate-bounce [animation-delay:0.15s]"></div>
-                <div className="w-1 h-2.5 bg-white rounded-full animate-bounce [animation-delay:0.3s]"></div>
+              <div className="flex items-end gap-1.5 h-8">
+                <div className="w-1.5 h-4 bg-white rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                <div className="w-1.5 h-8 bg-white rounded-full animate-bounce [animation-delay:0.25s]"></div>
+                <div className="w-1.5 h-6 bg-white rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                <div className="w-1.5 h-7 bg-white rounded-full animate-bounce [animation-delay:0.15s]"></div>
+                <div className="w-1.5 h-3 bg-white rounded-full animate-bounce [animation-delay:0.35s]"></div>
               </div>
+            ) : isListening ? (
+              <>
+                <Mic size={36} className="text-white animate-pulse" />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-200 mt-1">Écoute...</span>
+              </>
             ) : (
-              <Mic 
-                size={16} 
-                className={`${isListening ? 'text-white scale-110' : 'text-purple-400'} transition-transform`} 
-              />
+              <>
+                <Mic size={36} className="text-purple-400 hover:text-white transition-colors" />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 mt-1">Micro</span>
+              </>
             )}
           </button>
-          
-          <div className="text-left">
-            <p className="text-[10px] font-bold text-gray-200 uppercase tracking-wider">
-              {isAiSpeaking 
-                ? translate('coach.status.speaking') 
-                : isListening 
-                ? translate('coach.status.im_listening') 
-                : translate('coach.status.ready_voice')}
-            </p>
-            <p className="text-[9px] text-zinc-400">
-              {isListening ? "Parlez ou écrivez au clavier ci-dessous" : "Cliquez sur le micro ou écrivez au clavier"}
-            </p>
+        </div>
+
+        {/* STATUS TITLE */}
+        <div className="text-center space-y-1">
+          <p className="text-sm font-semibold text-white tracking-wide">
+            {isAiSpeaking 
+              ? translate('coach.status.speaking') 
+              : isListening 
+              ? translate('coach.status.im_listening') 
+              : COACH_TITLE_PROMPTS[language] || COACH_TITLE_PROMPTS[Language.EN]}
+          </p>
+          <p className="text-[11px] text-zinc-400">
+            {isListening ? "Parlez librement, le coach vous répond à voix haute" : "Touchez le cercle ci-dessus pour parler au coach"}
+          </p>
+        </div>
+
+        {/* LIVE TRANSCRIPTS & REPLIES */}
+        <div className="w-full space-y-3">
+          {/* User live spoken phrase */}
+          {(currentTranscript || lastUserMessage) && (
+            <div className="flex justify-end">
+              <div className="max-w-[90%] rounded-2xl rounded-br-none px-4 py-3 bg-purple-900/60 border border-purple-500/40 text-purple-100 text-xs sm:text-sm leading-relaxed shadow-lg">
+                <span className="text-[9px] uppercase font-bold text-purple-300 block mb-1">Vous</span>
+                « {currentTranscript || lastUserMessage?.text} »
+              </div>
+            </div>
+          )}
+
+          {/* Coach thinking loader */}
+          {isThinking && (
+            <div className="flex justify-start">
+              <div className="rounded-2xl rounded-bl-none px-4 py-3 bg-zinc-900 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2">
+                <Loader2 size={14} className="animate-spin text-purple-400" />
+                <span className="animate-pulse">Le coach analyse et répond...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Coach spoken answer */}
+          {lastAssistantMessage && !isThinking && (
+            <div className="flex justify-start">
+              <div className="max-w-[92%] rounded-2xl rounded-bl-none px-4 py-3.5 bg-zinc-900/90 border border-purple-500/40 text-zinc-100 text-xs sm:text-sm leading-relaxed shadow-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <Bot size={14} className="text-purple-400" />
+                  <span className="text-[9px] uppercase font-bold text-purple-400">Coach IA</span>
+                </div>
+                <p>{lastAssistantMessage.text}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* QUICK VOCAL PROMPTS */}
+        <div className="w-full pt-2">
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest text-center mb-2">Suggestions vocales</p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {[
+              "Je suis prêt, lance la séance !",
+              "Séance Calisthénie",
+              "Séance Pilates / Gainage",
+              "Séance Yoga & Mobilité",
+              "Entraînement intense"
+            ].map((promptText, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleUserMessage(promptText)}
+                className="px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 hover:border-purple-500/50 text-[11px] text-zinc-300 hover:text-white transition-all active:scale-95"
+              >
+                {promptText}
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* DIRECT LAUNCH WORKOUT BUTTON */}
+        <div className="w-full pt-2">
+          <button
+            type="button"
+            onClick={() => executeWorkoutLaunch(lastUserMessage?.text || 'fitness')}
+            className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(138,43,226,0.4)] active:scale-[0.98] transition-all"
+          >
+            <Play size={16} className="fill-white" />
+            <span>Lancer l'entraînement 3D</span>
+          </button>
+        </div>
+
       </div>
 
-      {/* FULL TEXT INPUT BAR - PERMANENTLY DOCKED AT THE BOTTOM */}
-      <div 
-        className="w-full max-w-md p-3 bg-zinc-950 border-t-2 border-purple-500/50 flex-shrink-0 z-50 shadow-[0_-8px_30px_rgba(0,0,0,0.95)]"
-        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}
-      >
-        <form onSubmit={handleManualSubmit} className="flex items-center gap-2">
-          <div className="flex-1 relative flex items-center">
-            <input 
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder={COACH_INPUT_PLACEHOLDERS[language] || COACH_INPUT_PLACEHOLDERS[Language.EN]}
-              className="w-full bg-zinc-900 border-2 border-purple-500/60 focus:border-purple-400 rounded-full px-4 py-3 text-xs sm:text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40 transition-all cursor-text select-text"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={!inputText.trim()}
-            className="w-11 h-11 rounded-full bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center shadow-lg active:scale-95 transition-all flex-shrink-0"
-            aria-label="Send"
-          >
-            <Send size={16} />
-          </button>
-        </form>
+      {/* BOTTOM FOOTER */}
+      <div className="w-full max-w-lg py-3 px-6 text-center border-t border-white/10 text-[10px] text-zinc-500 uppercase tracking-widest flex-shrink-0">
+        Fit-4rce X • Reconnaissance vocale temps réel
       </div>
     </div>
   );

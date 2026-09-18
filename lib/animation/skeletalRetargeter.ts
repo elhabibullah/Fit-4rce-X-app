@@ -81,6 +81,8 @@ export class HunyuanSkeletalRetargeter {
   public isCalibrated: boolean = false;
   public characterHeight: number = 1.70;
   public unitScale: number = 1.0;
+  public anklePodiumClearance: number = 0.08;
+  public standingHipsWorldY: number = 0;
 
   // Reusable temporaries for zero-garbage 60fps puppeteering
   private tmpVecX = new THREE.Vector3(1, 0, 0);
@@ -121,6 +123,9 @@ export class HunyuanSkeletalRetargeter {
 
           if (stdName === 'Hips') {
             this.hipsBone = child as THREE.Bone;
+            const pHips = new THREE.Vector3();
+            this.hipsBone.getWorldPosition(pHips);
+            this.standingHipsWorldY = pHips.y;
           }
         }
       }
@@ -141,6 +146,7 @@ export class HunyuanSkeletalRetargeter {
       const measuredHeight = Math.max(1.0, Math.abs(pHead.y - pFoot.y));
       this.characterHeight = measuredHeight;
       this.unitScale = measuredHeight / 1.70;
+      this.anklePodiumClearance = Math.max(0.04, pFoot.y - (-0.889));
     }
 
     this.isCalibrated = this.bones.size > 0;
@@ -183,9 +189,10 @@ export class HunyuanSkeletalRetargeter {
     if (this.hipsBone && calibratedHips) {
       if (isFloor) {
         // Floor exercises (Push-up, Plank, Superman, Glute Bridge, Crunch):
-        // Lower hips to floor level and center horizontally
-        const floorDrop = 2.05 * this.unitScale;
-        const forwardShift = 0.35 * this.unitScale;
+        // Lower hips to horizontal floor level (approx 14cm above podium surface)
+        const hipsElevationAbovePodium = Math.max(0.4, (this.standingHipsWorldY || 0) - (-0.889));
+        const floorDrop = Math.max(0.3, hipsElevationAbovePodium - 0.14);
+        const forwardShift = 0.20 * this.unitScale;
         this.hipsBone.position.x = calibratedHips.restLocalPos.x + (pose.hipsOffset[0] || 0) * this.unitScale;
         this.hipsBone.position.y = calibratedHips.restLocalPos.y - floorDrop + (pose.hipsOffset[1] || 0) * this.unitScale;
         this.hipsBone.position.z = calibratedHips.restLocalPos.z + forwardShift + (pose.hipsOffset[2] || 0) * this.unitScale;
