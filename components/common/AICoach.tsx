@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Mic, MicOff, X, Volume2, Bot, Loader2, Play } from 'lucide-react';
+import { Mic, MicOff, X, Volume2, Bot, Loader2 } from 'lucide-react';
 import { useApp } from '../../hooks/useApp.ts';
 import { Language, WorkoutGenerationParams } from '../../types.ts';
 import { getChatbotResponse } from '../../services/aiService.ts';
@@ -579,41 +579,6 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* QUICK VOCAL PROMPTS */}
-        <div className="w-full pt-2">
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest text-center mb-2">Suggestions vocales</p>
-          <div className="flex flex-wrap gap-2 justify-center">
-            {[
-              "Je suis prêt, lance la séance !",
-              "Séance Calisthénie",
-              "Séance Pilates / Gainage",
-              "Séance Yoga & Mobilité",
-              "Entraînement intense"
-            ].map((promptText, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleUserMessage(promptText)}
-                className="px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 hover:border-purple-500/50 text-[11px] text-zinc-300 hover:text-white transition-all active:scale-95"
-              >
-                {promptText}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* DIRECT LAUNCH WORKOUT BUTTON */}
-        <div className="w-full pt-2">
-          <button
-            type="button"
-            onClick={() => executeWorkoutLaunch(lastUserMessage?.text || 'fitness')}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(138,43,226,0.4)] active:scale-[0.98] transition-all"
-          >
-            <Play size={16} className="fill-white" />
-            <span>Lancer l'entraînement 3D</span>
-          </button>
         </div>
 
       </div>

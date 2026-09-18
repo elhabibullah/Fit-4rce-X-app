@@ -4,6 +4,7 @@ import path from 'path';
 import { WebSocketServer } from 'ws';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
+import { generateSmartWorkout } from './lib/workoutPools.ts';
 
 const app = express();
 const server = http.createServer(app);
@@ -573,6 +574,7 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
   const targetReps = options?.targetReps || 14;
   const restBetweenSets = options?.restBetweenSets || 30;
   const workoutType = (options?.workoutType || '').toLowerCase();
+  const equipment = (options?.equipment || 'bodyweight').toLowerCase();
   const combinedPrompt = `${workoutType} ${prompt || ''}`.trim();
 
   try {
@@ -581,13 +583,29 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
       try {
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: `As a world-class certified coach, generate an authentic, structured workout plan in ${language || 'fr'} specifically for the discipline "${workoutType || 'fitness'}" with requirements: "${prompt || combinedPrompt}".
-          Strict discipline requirement: The exercises must strictly belong to "${workoutType || 'fitness'}". For example, if Pilates is selected, generate authentic Pilates movements (e.g. Le Cent, Pont Fessier, Gainage Latéral, Cercles de Jambes, Extension Dorsale Swimming), NEVER generic bodybuilding squats.
-          The session protocol requires exactly ${targetSets} sets of ${targetReps} reps per exercise with ${restBetweenSets}s rest pause between sets.
-          Return a JSON object with:
-          - "title": string
-          - "description": string
-          - "exercises": array of 5 objects, each having { "name": string, "description": string, "equipment": string, "sets": ${targetSets}, "reps": ${targetReps}, "restSeconds": ${restBetweenSets} }`,
+          contents: `You are Fit-4rce X Master Sports Biomechanist & Olympic Conditioning Coach.
+Generate a high-variety, professionally periodized 5-exercise workout plan in ${language || 'fr'}.
+
+Workout Discipline: ${workoutType || 'fitness'}
+Equipment Mode: ${equipment} (bodyweight = sans matériel, home = haltères/bandes/tapis, gym = salle complète/barres/machines)
+User Specifics & Request: "${prompt || combinedPrompt}"
+
+CRITICAL DIVERSITY & ANATOMICAL MANDATE:
+- DO NOT RESTRICT YOURSELF to a narrow, repetitive set of 2-4 standard exercises!
+- Tap into the vast encyclopedic repertoire of hundreds of authentic movements in this discipline:
+  * For Calisthenics: Variations of pull-ups (pronated, supinated, wide, archer, typewriter, commando, inverted rows), dips (parallel, straight bar, rings), push-ups (diamond, decline, pseudo-planche, pike, handstand, archer, hindu), levers & core holds (L-sit, dragon flag, hollow body), and bodyweight leg mastery (pistol, shrimp, sissy, cossack, Nordic curls).
+  * For Core, Abdominals & Planks: Over 500 movement variations exist! Forearm planks, RKC planks, Copenhagen planks, dynamic side planks with hip drop or leg lift, hollow body holds/rocks, ab wheel rollouts, hanging leg raises, deadbugs, bird dogs, Russian twists, reverse crunches, bear crawl holds, etc.
+  * For Pilates: Full classical & contemporary repertoire (The Hundred, Roll Up, Roll Over, Single/Double Leg Stretch, Criss-cross, Spine Stretch, Saw, Swan Dive, Single/Double Leg Kick, Scissors, Bicycle, Shoulder Bridge, Side Kick series, Teasers, Swimming, Leg Pulls, Boomerang, Seal, etc.).
+  * For Yoga: Vast classical asana repertoire (Surya Namaskar, Virabhadrasana I/II/III, Trikonasana, Bakasana, Sirsasana, Urdhva Dhanurasana, Matsyasana, Bhujangasana, Gomukhasana, Paschimottanasana, Ardha Matsyendrasana, Baddha Konasana, etc.).
+  * For Powerlifting: Squats (low bar, high bar, paused, pin, box, front), Bench Press (competition, close-grip, spoto, floor press), Deadlifts (conventional, sumo, Romanian, deficit, block pull), Military press, Pendlay/Yates rows, good mornings, hip thrusts.
+  * For Hypertrophy / Bodybuilding: Incline/decline presses, dumbbell flyes, Arnold presses, lateral raises, Romanian deadlifts, Bulgarian split squats, hammer curls, skull crushers.
+  * For Conditioning / HIIT: Burpees, mountain climbers, skater jumps, tuck jumps, box jumps, kettlebell swings, bear crawls.
+
+The session protocol requires exactly ${targetSets} sets of ${targetReps} reps per exercise with ${restBetweenSets}s rest pause between sets.
+Return a JSON object with:
+- "title": string (accurate, engaging title)
+- "description": string (clear summary of session benefits)
+- "exercises": array of 5 distinct, well-balanced objects, each having { "name": string, "description": string, "equipment": string, "sets": ${targetSets}, "reps": ${targetReps}, "restSeconds": ${restBetweenSets} }`,
           config: {
             responseMimeType: 'application/json'
           }
@@ -610,7 +628,7 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
           };
         }
       } catch (geminiErr) {
-        console.warn("Gemini direct call error, utilizing dynamic fallback:", geminiErr);
+        console.warn("Gemini direct call error, utilizing smart dynamic fallback pool:", geminiErr);
       }
     }
 
@@ -619,23 +637,12 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
       return;
     }
 
-    const fallback = getDynamicWorkoutFallback(combinedPrompt, language);
-    res.json({
-      ...fallback,
-      targetSets,
-      targetReps,
-      restBetweenSets,
-      exercises: fallback.exercises.map((e: any) => ({
-        ...e,
-        sets: targetSets,
-        reps: targetReps,
-        restSeconds: restBetweenSets
-      }))
-    });
+    const smartFallback = generateSmartWorkout(workoutType || combinedPrompt, targetSets, targetReps, restBetweenSets, language || 'fr', equipment);
+    res.json(smartFallback);
   } catch (error: any) {
     console.error("API error generate-workout:", error);
-    const fallback = getDynamicWorkoutFallback(combinedPrompt, language);
-    res.json(fallback);
+    const smartFallback = generateSmartWorkout(workoutType || combinedPrompt, targetSets, targetReps, restBetweenSets, language || 'fr', equipment);
+    res.json(smartFallback);
   }
 });
 

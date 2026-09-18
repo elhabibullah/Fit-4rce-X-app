@@ -116,6 +116,11 @@
       @keyframes slideInUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
       .animate-slideInUp { animation: slideInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       
+      .chatbot-scrollbar::-webkit-scrollbar { width: 8px; }
+      .chatbot-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.4); border-radius: 4px; }
+      .chatbot-scrollbar::-webkit-scrollbar-thumb { background: #8A2BE2; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); }
+      .chatbot-scrollbar::-webkit-scrollbar-thumb:hover { background: #9d4edd; }
+
       .custom-scrollbar::-webkit-scrollbar { width: 4px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
