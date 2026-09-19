@@ -449,7 +449,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
             </h2>
             <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1.5">
               <span className={`w-2 h-2 rounded-full ${isAiSpeaking ? 'bg-indigo-400 animate-ping' : isListening ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`}></span>
-              {isAiSpeaking ? translate('coach.status.speaking') : isListening ? translate('coach.status.listening') : "EN ATTENTE"}
+              {isAiSpeaking ? translate('coach.status.speaking') : isListening ? translate('coach.status.listening') : translate('coach.status.waiting')}
             </span>
           </div>
         </div>
@@ -462,7 +462,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
               isMuted ? 'bg-red-950/80 border-red-500/50 text-red-400' : 'bg-white/10 border-white/15 text-gray-300 hover:text-white'
             }`}
             aria-label="Toggle Mute"
-            title={isMuted ? "Son coupé" : "Son actif"}
+            title={isMuted ? translate('coach.sound.muted') : translate('coach.sound.active')}
           >
             {isMuted ? <MicOff size={18} /> : <Volume2 size={18} />}
           </button>
@@ -507,7 +507,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
                 ? 'bg-gradient-to-tr from-purple-600 to-emerald-600 border-emerald-300 shadow-[0_0_40px_rgba(16,185,129,0.5)]'
                 : 'bg-zinc-900/90 border-purple-500/40 hover:border-purple-400 shadow-[0_0_30px_rgba(138,43,226,0.3)]'
             }`}
-            aria-label={isListening ? "Arrêter d'écouter" : "Parler au coach"}
+            aria-label={isListening ? translate('coach.btn.stop_listening') : translate('coach.btn.speak_coach')}
           >
             {isAiSpeaking ? (
               <div className="flex items-end gap-1.5 h-8">
@@ -520,12 +520,12 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
             ) : isListening ? (
               <>
                 <Mic size={36} className="text-white animate-pulse" />
-                <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-200 mt-1">Écoute...</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-200 mt-1">{translate('coach.mic.listening')}</span>
               </>
             ) : (
               <>
                 <Mic size={36} className="text-purple-400 hover:text-white transition-colors" />
-                <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 mt-1">Micro</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 mt-1">{translate('coach.mic.label')}</span>
               </>
             )}
           </button>
@@ -541,7 +541,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
               : COACH_TITLE_PROMPTS[language] || COACH_TITLE_PROMPTS[Language.EN]}
           </p>
           <p className="text-[11px] text-zinc-400">
-            {isListening ? "Parlez librement, le coach vous répond à voix haute" : "Touchez le cercle ci-dessus pour parler au coach"}
+            {isListening ? translate('coach.hint.listening') : translate('coach.hint.idle')}
           </p>
         </div>
 
@@ -551,7 +551,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
           {(currentTranscript || lastUserMessage) && (
             <div className="flex justify-end">
               <div className="max-w-[90%] rounded-2xl rounded-br-none px-4 py-3 bg-purple-900/60 border border-purple-500/40 text-purple-100 text-xs sm:text-sm leading-relaxed shadow-lg">
-                <span className="text-[9px] uppercase font-bold text-purple-300 block mb-1">Vous</span>
+                <span className="text-[9px] uppercase font-bold text-purple-300 block mb-1">{translate('coach.user.you')}</span>
                 « {currentTranscript || lastUserMessage?.text} »
               </div>
             </div>
@@ -562,7 +562,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
             <div className="flex justify-start">
               <div className="rounded-2xl rounded-bl-none px-4 py-3 bg-zinc-900 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2">
                 <Loader2 size={14} className="animate-spin text-purple-400" />
-                <span className="animate-pulse">Le coach analyse et répond...</span>
+                <span className="animate-pulse">{translate('coach.status.analyzing')}</span>
               </div>
             </div>
           )}
@@ -573,7 +573,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
               <div className="max-w-[92%] rounded-2xl rounded-bl-none px-4 py-3.5 bg-zinc-900/90 border border-purple-500/40 text-zinc-100 text-xs sm:text-sm leading-relaxed shadow-lg space-y-2">
                 <div className="flex items-center gap-2">
                   <Bot size={14} className="text-purple-400" />
-                  <span className="text-[9px] uppercase font-bold text-purple-400">Coach IA</span>
+                  <span className="text-[9px] uppercase font-bold text-purple-400">{translate('coach.avatar.name')}</span>
                 </div>
                 <p>{lastAssistantMessage.text}</p>
               </div>
@@ -585,7 +585,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
       {/* BOTTOM FOOTER */}
       <div className="w-full max-w-lg py-3 px-6 text-center border-t border-white/10 text-[10px] text-zinc-500 uppercase tracking-widest flex-shrink-0">
-        Fit-4rce X • Reconnaissance vocale temps réel
+        {translate('coach.footer.tagline')}
       </div>
     </div>
   );

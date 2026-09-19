@@ -83,14 +83,10 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
 
   if (!isVisible) return null;
 
-  const quickPrompts = language === 'fr' ? [
-    'Comment bien faire le squat ?',
-    'Exercices abdominaux',
-    'Conseils récupération',
-  ] : [
-    'How to do a proper squat?',
-    'Core exercises',
-    'Recovery tips',
+  const quickPrompts = [
+    translate('chatbot.quick.squat'),
+    translate('chatbot.quick.abs'),
+    translate('chatbot.quick.recovery'),
   ];
 
   return (
@@ -187,7 +183,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={language === 'fr' ? 'Écrivez votre message ici...' : (translate('chatbot.inputPlaceholder') || 'Type your message here...')}
+              placeholder={translate('chatbot.inputPlaceholder')}
               className="flex-1 min-w-0 bg-gray-900 border border-purple-500/50 focus:border-[#8A2BE2] rounded-xl px-3.5 py-2.5 text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-1 focus:ring-[#8A2BE2] transition-all shadow-inner"
               disabled={isLoading}
               autoComplete="off"
@@ -196,7 +192,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
               type="submit"
               disabled={isLoading || input.trim() === ''} 
               className="w-11 h-11 bg-[#8A2BE2] hover:bg-purple-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex-shrink-0 flex items-center justify-center cursor-pointer text-white"
-              aria-label="Envoyer"
+              aria-label={translate('chatbot.send')}
             >
               <Send className="w-5 h-5" />
             </button>

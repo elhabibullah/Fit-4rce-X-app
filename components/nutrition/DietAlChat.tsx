@@ -46,7 +46,7 @@ const DietAlChat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-255px)] animate-fadeIn font-['Poppins']">
+    <div className="flex flex-col h-[calc(100vh-295px)] min-h-[420px] animate-fadeIn font-['Poppins']">
         <DietAlHeader title={translate('nutrition.chat.title')} subtitle={translate('nutrition.chat.subtitle')} />
         <main className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/40 rounded-2xl border border-gray-800 shadow-sm custom-scrollbar">
           {messages.map((msg, index) => (
@@ -72,7 +72,7 @@ const DietAlChat: React.FC = () => {
           <div ref={messagesEndRef} />
         </main>
 
-        <footer className="pt-4">
+        <footer className="pt-3 flex-shrink-0">
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -80,12 +80,17 @@ const DietAlChat: React.FC = () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder={translate('nutrition.chat.inputPlaceholder')}
-              className="flex-grow bg-gray-900 border border-gray-800 rounded-xl p-4 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500 shadow-inner"
+              className="flex-1 min-w-0 bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500 shadow-inner"
               disabled={isLoading}
               autoComplete="off"
             />
-            <button onClick={handleSend} disabled={isLoading || input.trim() === ''} className="p-4 bg-green-600 hover:bg-green-500 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg">
-              <Send className="w-6 h-6 text-white" />
+            <button 
+              onClick={handleSend} 
+              disabled={isLoading || input.trim() === ''} 
+              aria-label={translate('chatbot.send') || 'Send'}
+              className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-green-600 hover:bg-green-500 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg text-white"
+            >
+              <Send className="w-5 h-5" />
             </button>
           </div>
         </footer>
