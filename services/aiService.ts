@@ -148,7 +148,9 @@ export const generateWorkout = async (
             throw new Error('Empty workout data');
         }
 
-        const exercises = data.exercises.map((ex: any) => ({
+        const exercises = data.exercises.map((ex: any, idx: number) => ({
+            id: ex.canonicalId || ex.id || `ex-${idx}`,
+            canonicalId: ex.canonicalId,
             name: ex.name,
             description: ex.description,
             modelUrl: mapToModel(ex.equipment),
@@ -191,7 +193,9 @@ export const buildFallbackWorkoutPlan = (language: Language = Language.EN, optio
     return {
         title: smartWorkout.title,
         description: smartWorkout.description,
-        exercises: smartWorkout.exercises.map((ex: any) => ({
+        exercises: smartWorkout.exercises.map((ex: any, idx: number) => ({
+            id: ex.canonicalId || `ex-${idx}`,
+            canonicalId: ex.canonicalId,
             name: ex.name,
             description: ex.description,
             modelUrl: mapToModel(ex.equipment),

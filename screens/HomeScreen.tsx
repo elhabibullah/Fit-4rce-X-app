@@ -149,7 +149,7 @@ const DashboardScreen: React.FC = () => {
             <div className="flex justify-between items-center relative z-10">
                 <div>
                     <span className="text-[9px] font-bold uppercase text-purple-400 tracking-[0.3em]">{translate('home.aiGenerated')}</span>
-                    <h2 className="text-xl font-black text-white mt-1 uppercase tracking-tight leading-tight">{translate('home.featuredWorkout.title')}</h2>
+                    <h2 className="text-base sm:text-lg font-bold text-zinc-100 mt-1 uppercase tracking-wide leading-snug break-words max-w-full">{translate('home.featuredWorkout.title')}</h2>
                     <p className="text-gray-500 text-[10px] font-light mt-1 uppercase tracking-widest">{translate('home.featuredWorkout.details')}</p>
                 </div>
                 <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center border border-white/10 shadow-inner group-hover:scale-110 transition-transform">

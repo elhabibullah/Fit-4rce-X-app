@@ -9,6 +9,107 @@ export interface ExerciseItem {
   description: string;
   equipment: string;
   category: 'push' | 'pull' | 'core' | 'legs' | 'posture' | 'power' | 'cardio';
+  canonicalId?: string;
+}
+
+/**
+ * Maps any multilingual or descriptive exercise name to its canonical 3D animation ID
+ */
+export function getCanonicalIdForExercise(name: string, category?: string): string {
+  if (!name) return 'squat';
+  const clean = name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  // 1. Martial arts
+  if (clean.includes('cavalier') || clean.includes('mabu') || clean.includes('ma bu') || clean.includes('horse')) return 'martial_mabu';
+  if (clean.includes('poing') || clean.includes('punch') || clean.includes('strike')) return 'martial_punch';
+  if (clean.includes('paume') || clean.includes('palm') || clean.includes('deflect')) return 'martial_palm';
+  if (clean.includes('pied') || clean.includes('kick') || clean.includes('fouette')) return 'martial_kick';
+  if (clean.includes('tai chi') || clean.includes('taichi') || clean.includes('qi gong') || clean.includes('respiration')) return 'martial_taichi';
+
+  // 2. Burpee
+  if (clean.includes('burpee') || clean.includes('burpe') || clean.includes('берпи')) return 'burpee';
+
+  // 3. Push-up & Dip variations (Pompes, Pompages, Pushups, Press-up)
+  if (
+    clean.includes('pompe') || clean.includes('pompage') || clean.includes('push_up') || clean.includes('pushup') ||
+    clean.includes('push-up') || clean.includes('press-up') || clean.includes('dips') || clean.includes('flexion') ||
+    clean.includes('liegestutz') || clean.includes('отжимания') || clean.includes('piegamenti')
+  ) {
+    return 'push_up';
+  }
+
+  // 4. Squat variations
+  if (
+    clean.includes('squat') || clean.includes('cuisse') || clean.includes('chaise') ||
+    clean.includes('sentadilla') || clean.includes('agachamento') || clean.includes('kniebeuge') ||
+    clean.includes('присед')
+  ) {
+    if (clean.includes('pistol')) return 'pistol_squat';
+    if (clean.includes('sumo')) return 'sumo_squat';
+    return 'squat';
+  }
+
+  // 5. Lunges / Fentes
+  if (
+    clean.includes('fente') || clean.includes('lunge') || clean.includes('zancada') ||
+    clean.includes('afundo') || clean.includes('ausfallschritt') || clean.includes('выпад')
+  ) {
+    if (clean.includes('arriere') || clean.includes('reverse')) return 'reverse_lunge';
+    return 'lunge';
+  }
+
+  // 6. Planks / Gainage
+  if (
+    clean.includes('gainage') || clean.includes('planche') || clean.includes('plank') ||
+    clean.includes('plancha') || clean.includes('prancha') || clean.includes('hollow') ||
+    clean.includes('планка')
+  ) {
+    return 'plank';
+  }
+
+  // 7. Core / Crunch / Abdominals / Situp
+  if (
+    clean.includes('crunch') || clean.includes('abdo') || clean.includes('situp') ||
+    clean.includes('releve de jambe') || clean.includes('releves de jambe') || clean.includes('dragon flag') ||
+    clean.includes('скручиван')
+  ) {
+    return 'crunch';
+  }
+
+  // 8. Posterior chain / Glute Bridge / Superman
+  if (clean.includes('pont fessier') || clean.includes('glute bridge') || clean.includes('hip thrust')) return 'glute_bridge';
+  if (clean.includes('superman') || clean.includes('lombaire') || clean.includes('swan dive')) return 'superman';
+
+  // 9. Back / Pull / Rows
+  if (
+    clean.includes('traction') || clean.includes('rowing') || clean.includes('row') ||
+    clean.includes('tirage') || clean.includes('pull-up') || clean.includes('chin-up')
+  ) {
+    return 'bent_over_row';
+  }
+
+  // 10. Cardio / Jacks / High knees
+  if (clean.includes('jack') || clean.includes('saut') || clean.includes('corde') || clean.includes('jump')) return 'jumping_jack';
+  if (clean.includes('genoux') || clean.includes('knee')) return 'high_knees';
+
+  // 11. Biceps / Arms
+  if (clean.includes('curl') || clean.includes('bicep')) return 'bicep_curl';
+
+  // 12. Shoulders / Overhead
+  if (clean.includes('epaule') || clean.includes('shoulder') || clean.includes('overhead') || clean.includes('elevation')) return 'overhead_press';
+
+  // Category fallbacks
+  if (category === 'push') return 'push_up';
+  if (category === 'legs') return 'squat';
+  if (category === 'core') return 'plank';
+  if (category === 'pull') return 'bent_over_row';
+  if (category === 'cardio') return 'jumping_jack';
+
+  return 'squat';
 }
 
 export const CALISTHENICS_POOL: ExerciseItem[] = [
@@ -251,6 +352,7 @@ export function generateSmartWorkout(
       name: ex.name,
       description: ex.description,
       equipment: ex.equipment,
+      canonicalId: ex.canonicalId || getCanonicalIdForExercise(ex.name, ex.category),
       sets: targetSets,
       reps: targetReps,
       restSeconds: restBetweenSets

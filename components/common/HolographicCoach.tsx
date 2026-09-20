@@ -14,6 +14,7 @@ export type ExerciseCategory =
   | 'pushup'
   | 'inverted_row'
   | 'jack'
+  | 'burpee'
   | 'lunge'
   | 'boxing'
   | 'plank'
@@ -26,9 +27,30 @@ export type ExerciseCategory =
   | 'martial_taichi'
   | 'idle';
 
-export const getExerciseType = (name?: string): ExerciseCategory => {
-  if (!name) return 'idle';
-  const ex = name.toLowerCase();
+export const getExerciseType = (name?: string, id?: string): ExerciseCategory => {
+  const raw = id || name;
+  if (!raw) return 'idle';
+  const ex = raw
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  // Direct canonical IDs
+  if (ex === 'push_up' || ex === 'pushup' || ex === 'jump_push_up') return 'pushup';
+  if (ex === 'squat' || ex === 'back_squat' || ex === 'sumo_squat' || ex === 'pistol_squat') return 'squat';
+  if (ex === 'lunge' || ex === 'reverse_lunge') return 'lunge';
+  if (ex === 'burpee') return 'burpee';
+  if (ex === 'plank') return 'plank';
+  if (ex === 'jumping_jack' || ex === 'jack') return 'jack';
+  if (ex === 'bent_over_row' || ex === 'inverted_row') return 'inverted_row';
+  if (ex === 'martial_mabu') return 'martial_mabu';
+  if (ex === 'martial_punch') return 'martial_punch';
+  if (ex === 'martial_palm') return 'martial_palm';
+  if (ex === 'martial_kick') return 'martial_kick';
+  if (ex === 'martial_taichi') return 'martial_taichi';
+  if (ex === 'run' || ex === 'sprint') return 'run';
+  if (ex === 'walk') return 'walk';
 
   // Inverted Row / Tirage horizontal / Suspension row / Australian pull-up
   if (
@@ -46,7 +68,7 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
   if (ex.includes('palm') || ex.includes('paume') || ex.includes('ondulatoire') || ex.includes('deflection')) {
     return 'martial_palm';
   }
-  if (ex.includes('kick') || ex.includes('fouetté') || ex.includes('fouette') || ex.includes('balayage') || ex.includes('pied') || ex.includes('jambe')) {
+  if (ex.includes('kick') || ex.includes('fouette') || ex.includes('balayage') || ex.includes('pied') || ex.includes('jambe')) {
     return 'martial_kick';
   }
   if (ex.includes('tai') || ex.includes('chi') || ex.includes('onde') || ex.includes('flow') || ex.includes('spiral') || ex.includes('nuage') || ex.includes('fluid') || ex.includes('shift')) {
@@ -56,18 +78,23 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
     return 'martial_punch';
   }
 
+  // 0. Burpees: dedicated multi-phase exercise
+  if (ex.includes('burpee') || ex.includes('burpe') || ex.includes('берпи')) {
+    return 'burpee';
+  }
+
   // 1. Jumping Jacks / Cardio / Sauts / Corde
   if (
     ex.includes('jack') || ex.includes('saut') || ex.includes('jump') ||
     ex.includes('skipping') || ex.includes('rope') || ex.includes('corde') ||
-    ex.includes('burpee') || ex.includes('hiit') || ex.includes('hop') ||
+    ex.includes('hiit') || ex.includes('hop') ||
     ex.includes('climb') || ex.includes('mountain')
   ) {
     return 'jack';
   }
 
   // 2. Running / Sprint / Course
-  if (ex.includes('course') || ex.includes('courir') || ex.includes('sprint') || ex.includes('run') || ex.includes('jog') || ex.includes('foulée')) {
+  if (ex.includes('course') || ex.includes('courir') || ex.includes('sprint') || ex.includes('run') || ex.includes('jog') || ex.includes('foulee')) {
     return 'run';
   }
 
@@ -76,11 +103,12 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
     return 'walk';
   }
 
-  // 4. Push-ups / Pompes / Bench Press / Développé
+  // 4. Push-ups / Pompes / Pompages / Bench Press / Développé
   if (
-    ex.includes('push') || ex.includes('pump') || ex.includes('pompe') ||
+    ex.includes('push') || ex.includes('pump') || ex.includes('pompe') || ex.includes('pompage') ||
     ex.includes('press-up') || ex.includes('pressup') || ex.includes('appui') ||
-    ex.includes('bench') || ex.includes('développé') || ex.includes('developpe')
+    ex.includes('bench') || ex.includes('developpe') || ex.includes('flexion') ||
+    ex.includes('liegestutz') || ex.includes('отжимания') || ex.includes('piegamenti')
   ) {
     return 'pushup';
   }
@@ -88,7 +116,8 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
   // 5. Lunges / Fentes
   if (
     ex.includes('lunge') || ex.includes('fente') || ex.includes('split squat') ||
-    ex.includes('zancada') || ex.includes('afundo')
+    ex.includes('zancada') || ex.includes('afundo') || ex.includes('ausfallschritt') ||
+    ex.includes('выпад')
   ) {
     return 'lunge';
   }
@@ -98,7 +127,8 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
     ex.includes('squat') || ex.includes('cuisse') ||
     ex.includes('flexion') || ex.includes('quad') || ex.includes('glute') ||
     ex.includes('fessier') || ex.includes('chaise') || ex.includes('chair') ||
-    ex.includes('sentadilla') || ex.includes('agachamento')
+    ex.includes('sentadilla') || ex.includes('agachamento') || ex.includes('kniebeuge') ||
+    ex.includes('присед')
   ) {
     return 'squat';
   }
@@ -117,7 +147,9 @@ export const getExerciseType = (name?: string): ExerciseCategory => {
   if (
     ex.includes('plank') || ex.includes('gainage') || ex.includes('planche') ||
     ex.includes('abdo') || ex.includes('core') || ex.includes('crunch') ||
-    ex.includes('ventre') || ex.includes('hollow') || ex.includes('sit-up')
+    ex.includes('ventre') || ex.includes('hollow') || ex.includes('sit-up') ||
+    ex.includes('plancha') || ex.includes('prancha') || ex.includes('unterarmstuetz') ||
+    ex.includes('планка')
   ) {
     return 'plank';
   }
@@ -235,12 +267,13 @@ const HunyuanRiggedCoach: React.FC<{
   scene: THREE.Object3D;
   isPaused?: boolean;
   exerciseName?: string;
+  exerciseId?: string;
   isPrep?: boolean;
   speed?: number;
   timelineProgress?: number;
   puppeteerEngine?: HunyuanPuppeteerEngine | null;
   isPuppeteerActive?: boolean;
-}> = ({ scene, isPaused, exerciseName, isPrep, speed = 1.0, timelineProgress, puppeteerEngine, isPuppeteerActive }) => {
+}> = ({ scene, isPaused, exerciseName, exerciseId, isPrep, speed = 1.0, timelineProgress, puppeteerEngine, isPuppeteerActive }) => {
   const groupRef = useRef<THREE.Group>(null);
   const engineRef = useRef<HumanoidMotionEngine | null>(null);
 
@@ -285,13 +318,14 @@ const HunyuanRiggedCoach: React.FC<{
   useEffect(() => {
     if (!scene) return;
     if (isPuppeteerActive) return;
+    const query = exerciseId || exerciseName || 'idle';
     if (!engineRef.current) {
       engineRef.current = new HumanoidMotionEngine(scene);
-      engineRef.current.setExercise(exerciseName || 'idle', 0.0, true);
+      engineRef.current.setExercise(query, 0.0, true);
     } else {
-      engineRef.current.setExercise(exerciseName || 'idle', 0.35, false);
+      engineRef.current.setExercise(query, 0.35, false);
     }
-  }, [scene, exerciseName, isPuppeteerActive]);
+  }, [scene, exerciseId, exerciseName, isPuppeteerActive]);
 
   useFrame((_, delta) => {
     if (!scene) return;
@@ -321,12 +355,13 @@ const UniversalModel: React.FC<{
   url: string;
   isPaused?: boolean;
   exerciseName?: string;
+  exerciseId?: string;
   isPrep?: boolean;
   speed?: number;
   timelineProgress?: number;
   puppeteerEngine?: HunyuanPuppeteerEngine | null;
   isPuppeteerActive?: boolean;
-}> = ({ url, isPaused, exerciseName, isPrep, speed, timelineProgress, puppeteerEngine, isPuppeteerActive }) => {
+}> = ({ url, isPaused, exerciseName, exerciseId, isPrep, speed, timelineProgress, puppeteerEngine, isPuppeteerActive }) => {
   const isFBX = url.toLowerCase().includes('.fbx') || url.includes('format=fbx');
 
   if (isFBX) {
@@ -338,6 +373,7 @@ const UniversalModel: React.FC<{
         scene={cloned}
         isPaused={isPaused}
         exerciseName={exerciseName}
+        exerciseId={exerciseId}
         isPrep={isPrep}
         speed={speed}
         timelineProgress={timelineProgress}
@@ -355,6 +391,7 @@ const UniversalModel: React.FC<{
       scene={cloned}
       isPaused={isPaused}
       exerciseName={exerciseName}
+      exerciseId={exerciseId}
       isPrep={isPrep}
       speed={speed}
       timelineProgress={timelineProgress}
@@ -445,6 +482,7 @@ const CoachCanvas: React.FC<{
   finalUrl: string;
   isPaused?: boolean;
   exerciseName?: string;
+  exerciseId?: string;
   isPrep?: boolean;
   isDark: boolean;
   isTransparent?: boolean;
@@ -453,7 +491,7 @@ const CoachCanvas: React.FC<{
   cameraPreset?: 'face' | 'profile' | 'free';
   puppeteerEngine?: HunyuanPuppeteerEngine | null;
   isPuppeteerActive?: boolean;
-}> = ({ finalUrl, isPaused, exerciseName, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset, puppeteerEngine, isPuppeteerActive }) => {
+}> = ({ finalUrl, isPaused, exerciseName, exerciseId, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset, puppeteerEngine, isPuppeteerActive }) => {
   const controlsRef = useRef<any>(null);
 
   const initialCameraPos = useMemo<[number, number, number]>(() => {
@@ -500,6 +538,7 @@ const CoachCanvas: React.FC<{
           url={finalUrl}
           isPaused={isPaused}
           exerciseName={exerciseName}
+          exerciseId={exerciseId}
           isPrep={isPrep}
           speed={speed}
           timelineProgress={timelineProgress}
@@ -528,6 +567,7 @@ export interface HolographicCoachProps {
   modelUrl?: string;
   isPaused?: boolean;
   exerciseName?: string;
+  exerciseId?: string;
   isPrep?: boolean;
   background?: 'transparent' | 'white' | 'dark';
   studioTheme?: 'white' | 'dark';
@@ -546,6 +586,7 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
   modelUrl,
   isPaused = false,
   exerciseName,
+  exerciseId,
   isPrep = false,
   background,
   studioTheme: propStudioTheme,
@@ -580,12 +621,13 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
     return modelUrl && modelUrl.trim() !== '' ? modelUrl : COACH_MODEL_URL;
   }, [modelUrl]);
 
-  const category = isPrep ? 'idle' : getExerciseType(exerciseName);
+  const category = isPrep ? 'idle' : getExerciseType(exerciseName, exerciseId);
   const categoryLabels: Record<ExerciseCategory, string> = {
     squat: 'Squats',
     pushup: 'Pompes',
     inverted_row: 'Tirage Horizontal (Row)',
     jack: 'Jumping Jacks',
+    burpee: 'Burpees',
     lunge: 'Fentes',
     boxing: 'Shadow Boxing',
     plank: 'Gainage Planche',
@@ -664,6 +706,7 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
               finalUrl={finalUrl}
               isPaused={isPaused}
               exerciseName={exerciseName}
+              exerciseId={exerciseId}
               isPrep={isPrep}
               isDark={isDark}
               isTransparent={isTransparent}

@@ -12,6 +12,7 @@ export type ExerciseCategory =
   | 'inverted_row'
   | 'plank'
   | 'jack'
+  | 'burpee'
   | 'boxing'
   | 'walk'
   | 'run'
@@ -73,7 +74,12 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     keywords: [
       'squat', 'squats', 'air squat', 'goblet squat', 'back squat', 'front squat',
       'flexion', 'cuisse', 'fessier', 'quad', 'glute', 'leg day', 'jump squat',
-      'приседания', 'присед'
+      'sentadilla', 'sentadillas', 'agachamento', 'agachamentos',
+      'kniebeuge', 'kniebeugen', 'squats dynamiques', 'squat dynamique',
+      'приседания', 'присед',
+      'スクワット', 'ダイナミックスクワット',
+      '深蹲', '深蹲起',
+      'القرفصاء', 'سكوات'
     ],
   },
 
@@ -97,7 +103,12 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     },
     keywords: [
       'lunge', 'lunges', 'fente', 'fentes', 'split squat', 'walking lunge',
-      'fente avant', 'fente arriere', 'zancada', 'afundo', 'выпады'
+      'fente avant', 'fente arriere', 'fentes dynamiques', 'fentes alternees',
+      'zancada', 'zancadas', 'afundo', 'afundos', 'ausfallschritt', 'ausfallschritte',
+      'affondi', 'выпады',
+      'ランジ',
+      '箭步蹲', '弓步',
+      'اندفاع', 'طعن'
     ],
   },
 
@@ -120,9 +131,16 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
       minKneeFloorClearance: 0.08,
     },
     keywords: [
-      'pushup', 'pushups', 'push-up', 'push-ups', 'pompe', 'pompes',
+      'pushup', 'pushups', 'push-up', 'push-ups', 'pompe', 'pompes', 'pompage', 'pompages',
       'press-up', 'press up', 'appui tendu', 'développé couché', 'bench press',
-      'chest press', 'pectoral', 'pectoraux', 'dips', 'отжимания'
+      'chest press', 'pectoral', 'pectoraux', 'dips', 'отжимания',
+      'flexion', 'flexiones', 'lagartijas',
+      'liegestütz', 'liegestütze', 'liegestuetz', 'liegestuetze',
+      'piegamenti', 'flessioni',
+      'flexões', 'flexao',
+      '腕立て伏せ', 'ウデタテフセ', 'プッシュアップ',
+      '俯卧撑', '标准俯卧撑',
+      'تمارين الضغط', 'ضغط'
     ],
   },
 
@@ -147,7 +165,9 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     keywords: [
       'inverted row', 'inverted_row', 'australian pull up', 'australian pullup',
       'horizontal pull', 'rowing', 'row', 'tirage horizontal', 'tirage',
-      'traction australienne', 'dos', 'dorsaux', 'traction', 'lat', 'тяга'
+      'traction australienne', 'tractions australiennes', 'dos', 'dorsaux', 'traction', 'tractions', 'lat',
+      'remada', 'remo', 'тяга', 'подтягивания',
+      'インバーテッドロウ', '悬垂划船', 'سحب أفقي'
     ],
   },
 
@@ -171,7 +191,9 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     },
     keywords: [
       'plank', 'gainage', 'planche', 'core', 'abdos', 'abdo', 'isométrie',
-      'gainage ventral', 'planche ventrale', 'hollow body', 'планка'
+      'gainage ventral', 'planche ventrale', 'gainage planche active', 'active plank',
+      'hollow body', 'plancha', 'prancha', 'unterarmstütz', 'planke',
+      'планка', 'プランク', '平板支撑', 'بلانك'
     ],
   },
 
@@ -195,8 +217,34 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     },
     keywords: [
       'jack', 'jacks', 'jumping jack', 'jumping jacks', 'saut', 'jump',
-      'skipping', 'rope', 'corde', 'burpee', 'burpees', 'hiit', 'hop',
-      'прыжки'
+      'skipping', 'rope', 'corde', 'hiit', 'hop',
+      'saltos de tijera', 'hampelmann', 'polichinelo',
+      'прыжки', 'джампинг джек',
+      'ジャンピングジャック', '开合跳', 'قفز الحبل'
+    ],
+  },
+
+  // 7. BURPEES (Dynamic multi-phase full body)
+  burpee: {
+    id: 'burpee',
+    name: 'Burpees',
+    category: 'burpee',
+    clipId: 'burpee',
+    startingPosture: 'standing',
+    cycleDuration: 3.2,
+    contacts: {
+      leftFootGround: true,
+      rightFootGround: true,
+      leftHandGround: false,
+      rightHandGround: false,
+      feetSpacing: 0.30,
+      handOrientation: 'flat_floor',
+      preventFloorPenetration: true,
+      minKneeFloorClearance: 0.10,
+    },
+    keywords: [
+      'burpee', 'burpees', 'burpe', 'burpi', 'berpee', 'берпи',
+      'バーピー', '波比跳', 'بوربي'
     ],
   },
 

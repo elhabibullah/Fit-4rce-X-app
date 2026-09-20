@@ -143,6 +143,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                     <HolographicCoach 
                         modelUrl={effectiveModelUrl} 
                         exerciseName={technique.name} 
+                        exerciseId={technique.id || (technique as any).canonicalId || (technique as any).category}
                         isPaused={isPaused || isScrubbing} 
                         isPrep={isPrep}
                         speed={speed}

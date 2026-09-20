@@ -95,10 +95,9 @@ export class GroundContactSolver {
       return result;
     }
 
-    // 2. IN STANDING / SQUATTING / LUNGING EXERCISES:
-    // Ensure feet do NOT float in the air during knee flexions (Squats, Lunges, Horse stance)
-    let lowestFootY = Infinity;
+    // 2. IN STANDING / SQUATTING / LUNGING / JUMPING EXERCISES:
     const feetBones = [leftFoot, rightFoot, leftToe, rightToe];
+    let lowestFootY = Infinity;
     feetBones.forEach((fb) => {
       if (fb) {
         fb.bone.getWorldPosition(this.tmpVec);
@@ -108,11 +107,21 @@ export class GroundContactSolver {
 
     const podiumSurfaceY = -0.889;
     if (lowestFootY !== Infinity) {
-      // Offset from ankle/toe to bottom of sole
+      // Sole height in world coordinates
       const footSoleY = lowestFootY - retargeter.anklePodiumClearance;
-      const deltaWorldY = podiumSurfaceY - footSoleY;
-      if (Math.abs(deltaWorldY) > 0.001) {
-        result.hipsElevationAdjust = deltaWorldY;
+      const feetGrounded = constraints.leftFootGround || constraints.rightFootGround;
+
+      if (feetGrounded) {
+        // Grounded exercise (Squats, Lunges, Stances, Deadlifts): anchor lowest foot to podium
+        const deltaWorldY = podiumSurfaceY - footSoleY;
+        if (Math.abs(deltaWorldY) > 0.002) {
+          result.hipsElevationAdjust = deltaWorldY;
+        }
+      } else if (constraints.preventFloorPenetration) {
+        // Airborne exercise (Jumps, burpee jump phase): only clamp if foot penetrates below podium
+        if (footSoleY < podiumSurfaceY) {
+          result.hipsElevationAdjust = podiumSurfaceY - footSoleY;
+        }
       }
     }
 
@@ -121,46 +130,28 @@ export class GroundContactSolver {
 
   /**
    * Sets the hand bone so the PALM is 100% FLAT on the floor (palms facing down).
-   *
-   * Kinematic derivation for android_rigged.glb:
-   * - Local +Z is dorsal normal -> points UP (0, 1, 0)
-   * - Local -Z is palmar surface -> points DOWN (0, -1, 0) into floor
-   * - Local +Y is fingers -> points forward (inwardX, 0, forwardZ)
-   * - Local +X is orthogonal side -> (fingers x normal)
+   * Fingers point forward along floor (+Z) with natural slight inward angle.
    */
   public orientHandFlatToFloor(retargeter: HunyuanSkeletalRetargeter, isLeft: boolean): void {
     const boneName: HumanoidBoneName = isLeft ? 'LeftHand' : 'RightHand';
     const calibrated = retargeter.bones.get(boneName);
     if (!calibrated) return;
 
-    // Dorsal normal points UP to ceiling (0, 1, 0) so PALMAR surface points DOWN into floor
-    const dorsalUp = this.tmpPalmDown.set(0, 1, 0);
-    // Fingers point forward with natural anatomical slight inward rotation (~8.5 degrees)
-    const inward = isLeft ? 0.15 : -0.15;
-    const fingersForward = new THREE.Vector3(inward, 0, 1).normalize();
+    // Desired world orientation:
+    // Palm pressed flat against the floor (facing down towards -Y)
+    // Fingers pointing forward along floor (+Z) with slight natural inward angle
+    const qPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), isLeft ? 0.10 : -0.10);
+    const targetWorldQ = new THREE.Quaternion().multiply(qYaw).multiply(qPitch);
 
-    // Build orthonormal basis:
-    // local Y -> fingersForward
-    // local Z -> dorsalUp (so palm faces down!)
-    // local X -> cross(Y, Z)
-    const handY = fingersForward.clone();
-    const handZ = dorsalUp.clone();
-    const handX = new THREE.Vector3().crossVectors(handY, handZ).normalize();
-    handY.crossVectors(handZ, handX).normalize();
-
-    const rotMatrix = new THREE.Matrix4().makeBasis(handX, handY, handZ);
-    const targetWorldQ = new THREE.Quaternion().setFromRotationMatrix(rotMatrix);
-
-    // Convert target world orientation to local quaternion relative to parent forearm
     const parentObj = calibrated.bone.parent;
     if (parentObj) {
-      parentObj.getWorldQuaternion(this.tmpParentWQ);
-      this.tmpInvParentWQ.copy(this.tmpParentWQ).invert();
-      calibrated.bone.quaternion.copy(this.tmpInvParentWQ.multiply(targetWorldQ));
+      const pWQ = new THREE.Quaternion();
+      parentObj.getWorldQuaternion(pWQ);
+      calibrated.bone.quaternion.copy(pWQ.invert().multiply(targetWorldQ));
     } else {
       calibrated.bone.quaternion.copy(targetWorldQ);
     }
-
     calibrated.bone.updateMatrixWorld(true);
   }
 

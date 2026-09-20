@@ -81,8 +81,11 @@ export class HunyuanSkeletalRetargeter {
   public isCalibrated: boolean = false;
   public characterHeight: number = 1.70;
   public unitScale: number = 1.0;
+  public worldToLocalScale: number = 1.0;
+  public localToWorldScale: number = 1.0;
   public anklePodiumClearance: number = 0.08;
   public standingHipsWorldY: number = 0;
+  public standingHipsAboveFloor: number = 0.85;
 
   // Reusable temporaries for zero-garbage 60fps puppeteering
   private tmpVecX = new THREE.Vector3(1, 0, 0);
@@ -126,6 +129,13 @@ export class HunyuanSkeletalRetargeter {
             const pHips = new THREE.Vector3();
             this.hipsBone.getWorldPosition(pHips);
             this.standingHipsWorldY = pHips.y;
+            const ws = new THREE.Vector3();
+            this.hipsBone.getWorldScale(ws);
+            const scaleY = ws.y > 0.0001 ? ws.y : 1.0;
+            this.localToWorldScale = scaleY;
+            this.worldToLocalScale = 1.0 / scaleY;
+            const podiumSurfaceY = -0.889;
+            this.standingHipsAboveFloor = Math.max(0.40, this.standingHipsWorldY - podiumSurfaceY);
           }
         }
       }
@@ -146,7 +156,8 @@ export class HunyuanSkeletalRetargeter {
       const measuredHeight = Math.max(1.0, Math.abs(pHead.y - pFoot.y));
       this.characterHeight = measuredHeight;
       this.unitScale = measuredHeight / 1.70;
-      this.anklePodiumClearance = Math.max(0.04, pFoot.y - (-0.889));
+      // Ankle joint center is anatomically 6cm (0.06m) above the bottom of the foot sole
+      this.anklePodiumClearance = 0.065;
     }
 
     this.isCalibrated = this.bones.size > 0;
@@ -187,20 +198,26 @@ export class HunyuanSkeletalRetargeter {
 
     // 2. Apply root/hips translation
     if (this.hipsBone && calibratedHips) {
+      const offsetX = (pose.hipsOffset[0] || 0) * this.worldToLocalScale;
+      const offsetY = (pose.hipsOffset[1] || 0) * this.worldToLocalScale;
+      const offsetZ = (pose.hipsOffset[2] || 0) * this.worldToLocalScale;
+
       if (isFloor) {
         // Floor exercises (Push-up, Plank, Superman, Glute Bridge, Crunch):
-        // Lower hips to horizontal floor level (approx 14cm above podium surface)
-        const hipsElevationAbovePodium = Math.max(0.4, (this.standingHipsWorldY || 0) - (-0.889));
-        const floorDrop = Math.max(0.3, hipsElevationAbovePodium - 0.14);
-        const forwardShift = 0.20 * this.unitScale;
-        this.hipsBone.position.x = calibratedHips.restLocalPos.x + (pose.hipsOffset[0] || 0) * this.unitScale;
-        this.hipsBone.position.y = calibratedHips.restLocalPos.y - floorDrop + (pose.hipsOffset[1] || 0) * this.unitScale;
-        this.hipsBone.position.z = calibratedHips.restLocalPos.z + forwardShift + (pose.hipsOffset[2] || 0) * this.unitScale;
+        // Lower hips directly to horizontal floor level (approx 16cm above podium surface)
+        const targetFloorHipsAbovePodium = 0.16;
+        const worldFloorDrop = Math.max(0.20, this.standingHipsAboveFloor - targetFloorHipsAbovePodium);
+        const localFloorDrop = worldFloorDrop * this.worldToLocalScale;
+        const localForwardShift = 0.20 * this.worldToLocalScale;
+
+        this.hipsBone.position.x = calibratedHips.restLocalPos.x + offsetX;
+        this.hipsBone.position.y = calibratedHips.restLocalPos.y - localFloorDrop + offsetY;
+        this.hipsBone.position.z = calibratedHips.restLocalPos.z + localForwardShift + offsetZ;
       } else {
         // Standing / squatting / jumping / lunging / walking:
-        this.hipsBone.position.x = calibratedHips.restLocalPos.x + (pose.hipsOffset[0] || 0) * this.unitScale;
-        this.hipsBone.position.y = calibratedHips.restLocalPos.y + (pose.hipsOffset[1] || 0) * this.unitScale;
-        this.hipsBone.position.z = calibratedHips.restLocalPos.z + (pose.hipsOffset[2] || 0) * this.unitScale;
+        this.hipsBone.position.x = calibratedHips.restLocalPos.x + offsetX;
+        this.hipsBone.position.y = calibratedHips.restLocalPos.y + offsetY;
+        this.hipsBone.position.z = calibratedHips.restLocalPos.z + offsetZ;
       }
       this.hipsBone.updateMatrixWorld(true);
     }
@@ -327,9 +344,9 @@ export class HunyuanSkeletalRetargeter {
     const hips = this.bones.get('Hips');
     if (!hips) return;
 
-    hips.bone.position.x = hips.restLocalPos.x + offsetX * this.unitScale;
-    hips.bone.position.y = hips.restLocalPos.y + offsetY * this.unitScale;
-    hips.bone.position.z = hips.restLocalPos.z + offsetZ * this.unitScale;
+    hips.bone.position.x = hips.restLocalPos.x + offsetX * this.worldToLocalScale;
+    hips.bone.position.y = hips.restLocalPos.y + offsetY * this.worldToLocalScale;
+    hips.bone.position.z = hips.restLocalPos.z + offsetZ * this.worldToLocalScale;
     hips.bone.updateMatrixWorld(true);
   }
 }

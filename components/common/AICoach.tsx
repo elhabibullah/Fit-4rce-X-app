@@ -549,17 +549,17 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         <div className="w-full space-y-3">
           {/* User live spoken phrase */}
           {(currentTranscript || lastUserMessage) && (
-            <div className="flex justify-end">
-              <div className="max-w-[90%] rounded-2xl rounded-br-none px-4 py-3 bg-purple-900/60 border border-purple-500/40 text-purple-100 text-xs sm:text-sm leading-relaxed shadow-lg">
+            <div className="flex justify-end w-full">
+              <div className="max-w-[90%] rounded-2xl rounded-br-none px-4 py-3 bg-purple-900/60 border border-purple-500/40 text-purple-100 text-xs sm:text-sm leading-relaxed shadow-lg break-words overflow-hidden">
                 <span className="text-[9px] uppercase font-bold text-purple-300 block mb-1">{translate('coach.user.you')}</span>
-                « {currentTranscript || lastUserMessage?.text} »
+                <p className="break-words">« {currentTranscript || lastUserMessage?.text} »</p>
               </div>
             </div>
           )}
 
           {/* Coach thinking loader */}
           {isThinking && (
-            <div className="flex justify-start">
+            <div className="flex justify-start w-full">
               <div className="rounded-2xl rounded-bl-none px-4 py-3 bg-zinc-900 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2">
                 <Loader2 size={14} className="animate-spin text-purple-400" />
                 <span className="animate-pulse">{translate('coach.status.analyzing')}</span>
@@ -569,13 +569,13 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
           {/* Coach spoken answer */}
           {lastAssistantMessage && !isThinking && (
-            <div className="flex justify-start">
-              <div className="max-w-[92%] rounded-2xl rounded-bl-none px-4 py-3.5 bg-zinc-900/90 border border-purple-500/40 text-zinc-100 text-xs sm:text-sm leading-relaxed shadow-lg space-y-2">
+            <div className="flex justify-start w-full">
+              <div className="max-w-[92%] rounded-2xl rounded-bl-none px-4 py-3.5 bg-zinc-900/90 border border-purple-500/40 text-zinc-100 text-xs sm:text-sm leading-relaxed shadow-lg space-y-2 break-words overflow-hidden">
                 <div className="flex items-center gap-2">
                   <Bot size={14} className="text-purple-400" />
                   <span className="text-[9px] uppercase font-bold text-purple-400">{translate('coach.avatar.name')}</span>
                 </div>
-                <p>{lastAssistantMessage.text}</p>
+                <p className="break-words whitespace-pre-wrap">{lastAssistantMessage.text}</p>
               </div>
             </div>
           )}

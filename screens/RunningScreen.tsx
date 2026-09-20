@@ -118,7 +118,7 @@ const RunningScreen: React.FC = () => {
                   <DeviceStatusTrigger />
               </div>
               <div className="flex-1 overflow-y-auto p-4 pb-24 custom-scrollbar">
-                  <h1 className="text-3xl font-black text-white text-center mb-8 uppercase tracking-tighter pt-4">{translate('running.track.title')}</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold text-zinc-100 text-center mb-6 uppercase tracking-wide pt-2 break-words max-w-full px-2">{translate('running.track.title')}</h1>
                   <div className="max-w-md mx-auto space-y-10">
                       
                       <section>
@@ -197,7 +197,7 @@ const RunningScreen: React.FC = () => {
                   </button>
               </div>
 
-              <h1 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{translate('running.briefing.title')}</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-zinc-100 uppercase tracking-normal mb-2 break-words max-w-full">{translate('running.briefing.title')}</h1>
               <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-6">Distance: {translate(`running.dist.${event}`)} // Level: {translate(`level.${level}`)}</p>
               
               <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
@@ -338,7 +338,7 @@ const RunningScreen: React.FC = () => {
                       <X className="w-4 h-4 mr-1" />{translate('running.exit')}
                   </button>
                </header>
-               <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight sm:tracking-tighter mb-12 text-center"># {translate('running.env.title')}</h1>
+               <h1 className="text-lg sm:text-xl font-bold text-zinc-100 uppercase tracking-wide mb-8 text-center break-words max-w-full px-2"># {translate('running.env.title')}</h1>
                <div className="flex-1 grid grid-cols-1 gap-6 max-w-md mx-auto w-full mb-12">
                     {availableEnvs.map((envItem) => (
                         <button key={envItem.type} onClick={() => { setEnv(envItem.type); setView('active'); setIsActive(true); setIsPrepPhase(true); }} className="h-44 relative overflow-hidden rounded-[2.5rem] border border-white/5 group active:scale-95 transition-all shadow-2xl">

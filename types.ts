@@ -70,6 +70,8 @@ export type Gender = 'male' | 'female';
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
 
 export interface Exercise {
+    id?: string;
+    canonicalId?: string;
     name: string;
     description: string;
     muscleGroups: string[];

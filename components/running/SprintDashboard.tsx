@@ -1082,7 +1082,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
                   </div>
                 </div>
                 
-                <h4 className="text-xs font-black text-white uppercase tracking-wider leading-tight">
+                <h4 className="text-xs font-semibold text-zinc-100 uppercase tracking-wide leading-snug break-words max-w-full">
                   {language === 'fr' ? activeRep.nameFr : (activeRep.nameEn || activeRep.nameFr)}
                 </h4>
                 
@@ -1520,7 +1520,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
               <AlertTriangle size={24} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wide break-words">
                 {t('quit_title')}
               </h3>
               <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
@@ -1560,7 +1560,7 @@ export const SprintDashboard: React.FC<SprintDashboardProps> = ({
               <HelpCircle size={24} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-wide break-words">
                 {t('complete_title')}
               </h3>
               <p className="text-xs text-neutral-400 mt-2 leading-relaxed">

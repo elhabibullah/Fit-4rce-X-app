@@ -198,7 +198,7 @@ export class HumanoidMotionEngine {
     if (solveResult.hipsElevationAdjust !== 0) {
       const currentHips = this.retargeter.hipsBone;
       if (currentHips) {
-        currentHips.position.y += solveResult.hipsElevationAdjust;
+        currentHips.position.y += solveResult.hipsElevationAdjust * this.retargeter.worldToLocalScale;
         currentHips.updateMatrixWorld(true);
       }
     }

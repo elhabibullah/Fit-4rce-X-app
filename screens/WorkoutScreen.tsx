@@ -357,6 +357,7 @@ const WorkoutScreen: React.FC = () => {
                             modelUrl={ex.modelUrl} 
                             isPaused={isPaused || phase === 'rest'} 
                             exerciseName={ex.name}
+                            exerciseId={(ex as any).canonicalId || ex.id || (ex as any).canonical_id}
                             isPrep={phase === 'prep'}
                             studioTheme={studioTheme}
                             onToggleStudioTheme={(next) => {
@@ -433,14 +434,14 @@ const WorkoutScreen: React.FC = () => {
 
                     {/* PREP COUNTDOWN OVERLAY */}
                     {phase === 'prep' && (
-                        <div className={`absolute inset-0 z-[200] ${studioTheme === 'dark' ? 'bg-zinc-950/60 backdrop-blur-[4px]' : 'bg-white/60 backdrop-blur-[3px]'} flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4 text-center`}>
-                            <div className="px-4 py-1.5 bg-black/80 border border-purple-500/50 rounded-full text-[#8A2BE2] text-xs font-bold tracking-[0.2em] uppercase mb-2">
+                        <div className={`absolute inset-0 z-[200] ${studioTheme === 'dark' ? 'bg-zinc-950/70 backdrop-blur-sm' : 'bg-white/70 backdrop-blur-sm'} flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4 text-center`}>
+                            <div className="px-3.5 py-1 bg-black/80 border border-purple-500/50 rounded-full text-[#8A2BE2] text-[11px] font-semibold tracking-wider uppercase mb-2">
                                 {translate('workout.active.prep')}
                             </div>
-                            <div className={`text-[7rem] sm:text-[11rem] font-black ${studioTheme === 'dark' ? 'text-white drop-shadow-[0_0_40px_rgba(138,43,226,0.8)]' : 'text-purple-600 drop-shadow-[0_0_40px_rgba(138,43,226,0.35)]'} leading-none tabular-nums animate-pulse`}>
+                            <div className={`text-6xl sm:text-8xl font-bold font-mono ${studioTheme === 'dark' ? 'text-white drop-shadow-[0_0_30px_rgba(138,43,226,0.6)]' : 'text-purple-600 drop-shadow-[0_0_30px_rgba(138,43,226,0.3)]'} leading-none tabular-nums animate-pulse`}>
                                 {prepTimer}
                             </div>
-                            <div className="px-6 py-3 bg-[#8A2BE2] text-white rounded-full font-bold uppercase tracking-wider text-xs sm:text-sm mt-6 shadow-[0_0_30px_rgba(138,43,226,0.6)] text-center max-w-[92%] break-words">
+                            <div className="px-4 py-2 bg-[#8A2BE2] text-white rounded-full font-medium text-xs sm:text-sm mt-4 shadow-[0_0_20px_rgba(138,43,226,0.5)] text-center max-w-[90%] break-words">
                                 {ex.name} • {translate('workout.active.set')} {currentSet}/{targetSets} ({targetReps} reps)
                             </div>
                         </div>
@@ -453,7 +454,7 @@ const WorkoutScreen: React.FC = () => {
                                 
                                 {/* TOP ROW: REST BADGE & QUICK PAUSE & EMS BAND */}
                                 <div className="flex items-center justify-center gap-2.5 flex-wrap">
-                                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-amber-500/20 border border-amber-500/50 rounded-full text-amber-300 text-[11px] font-bold uppercase tracking-[0.2em]">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 border border-amber-500/50 rounded-full text-amber-300 text-[11px] font-medium uppercase tracking-wider">
                                         <Clock size={13} className="animate-spin text-amber-400" />
                                         <span>{translate('workout.active.rest')}</span>
                                     </div>
@@ -479,16 +480,16 @@ const WorkoutScreen: React.FC = () => {
                                     <DeviceStatusTrigger showLabel />
                                 </div>
 
-                                {/* GIANT DIGITAL COUNTDOWN (SCALED FOR MOBILE) */}
+                                {/* DIGITAL COUNTDOWN (HARMONIC SIZE TO PREVENT OVERFLOW) */}
                                 <div className="relative flex items-center justify-center py-1">
-                                    <div className="text-6xl sm:text-8xl font-black font-mono text-white tracking-tighter drop-shadow-[0_0_30px_rgba(245,158,11,0.5)]">
+                                    <div className="text-5xl sm:text-7xl font-bold font-mono text-zinc-100 tracking-tight drop-shadow-[0_0_25px_rgba(245,158,11,0.4)]">
                                         {restTimer}
-                                        <span className="text-2xl sm:text-3xl text-amber-400 font-sans ml-1">s</span>
+                                        <span className="text-xl sm:text-2xl text-amber-400 font-sans ml-1">s</span>
                                     </div>
                                 </div>
 
-                                {/* REST CONTEXT BADGE (POWER TRAINING VS MASS GAINING VS FITNESS) */}
-                                <div className="px-3.5 py-2 bg-neutral-900/90 border border-neutral-800 rounded-xl text-zinc-300 text-xs text-center max-w-sm">
+                                {/* REST CONTEXT BADGE */}
+                                <div className="px-3.5 py-2 bg-neutral-900/90 border border-neutral-800 rounded-xl text-zinc-300 text-xs text-center max-w-sm break-words">
                                     {trainingGoal === 'power_training' && (
                                         <p className="flex items-center justify-center gap-1.5 font-normal">
                                             <Zap size={13} className="text-amber-400 shrink-0" />
@@ -510,11 +511,11 @@ const WorkoutScreen: React.FC = () => {
                                 </div>
 
                                 {/* UP NEXT PREVIEW */}
-                                <div className="bg-neutral-950/90 border border-purple-500/30 rounded-xl p-3.5 w-full max-w-sm">
-                                    <span className="text-[9px] font-bold text-purple-400 uppercase tracking-[0.25em] block mb-1">
+                                <div className="bg-neutral-950/90 border border-purple-500/30 rounded-xl p-3 w-full max-w-sm">
+                                    <span className="text-[9px] font-semibold text-purple-400 uppercase tracking-widest block mb-1">
                                         {translate('workout.active.next')}
                                     </span>
-                                    <h3 className="text-xs sm:text-sm font-bold text-white uppercase leading-snug">
+                                    <h3 className="text-xs sm:text-sm font-medium text-zinc-200 leading-snug break-words">
                                         {currentSet < targetSets ? (
                                             <>{translate('workout.active.set')} {currentSet + 1} / {targetSets} <span className="text-purple-400">({targetReps} reps)</span> • {ex.name}</>
                                         ) : (
@@ -527,7 +528,7 @@ const WorkoutScreen: React.FC = () => {
                                 <div className="flex items-center gap-2.5 w-full max-w-sm pt-1">
                                     <button
                                         onClick={handleSkipRest}
-                                        className="flex-1 py-3 bg-white text-black font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 shadow-2xl hover:bg-neutral-200 active:scale-95 transition-all"
+                                        className="flex-1 py-2.5 bg-white text-black font-semibold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg hover:bg-neutral-200 active:scale-95 transition-all"
                                     >
                                         <FastForward size={14} />
                                         <span>{translate('workout.active.skip_rest')}</span>
@@ -535,7 +536,7 @@ const WorkoutScreen: React.FC = () => {
 
                                     <button
                                         onClick={handleAddRestTime}
-                                        className="px-4 py-3 bg-neutral-900 border border-neutral-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-neutral-800 active:scale-95 transition-all"
+                                        className="px-3.5 py-2.5 bg-neutral-900 border border-neutral-700 text-zinc-200 font-medium text-xs uppercase tracking-wider rounded-xl hover:bg-neutral-800 active:scale-95 transition-all"
                                         title={translate('workout.active.add_time')}
                                     >
                                         {translate('workout.active.add_time')}
@@ -565,35 +566,35 @@ const WorkoutScreen: React.FC = () => {
                         
                         {/* LEFT: EXERCISE INFO & SET BADGES */}
                         <div className="flex-1 min-w-0 pr-2">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-[0.25em]">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1">
+                                <span className="text-[10px] font-bold text-[#8A2BE2] uppercase tracking-wider">
                                     {translate('workout.active.exercise')} {idx + 1} / {plan.exercises.length}
                                 </span>
 
-                                {/* SESSION PROTOCOL BADGE: 4×14 • Pause 30s PLACED DIRECTLY WITH EXERCISE & SESSIONS */}
-                                <span className="px-2.5 py-0.5 rounded-full bg-black/80 border border-zinc-800 text-white text-[10px] font-mono tracking-wider flex items-center gap-1.5 shadow-sm">
+                                {/* SESSION PROTOCOL BADGE: 4×14 • Pause 30s */}
+                                <span className="px-2 py-0.5 rounded-full bg-black/80 border border-zinc-800 text-zinc-200 text-[10px] font-mono flex items-center gap-1.5 shadow-sm">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                    <span className="font-bold text-[#8A2BE2]">{targetSets}×{targetReps}</span>
+                                    <span className="font-semibold text-[#8A2BE2]">{targetSets}×{targetReps}</span>
                                     <span className="text-zinc-400">• {translate('workout.rest.pause')} {restBetweenSets}s</span>
                                 </span>
                                 
-                                {/* SERIES BADGE (e.g. SÉRIE 2 / 4) */}
-                                <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold uppercase tracking-wider">
+                                {/* SERIES BADGE */}
+                                <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-medium uppercase tracking-wider">
                                     {translate('workout.active.set')} {currentSet} / {targetSets}
                                 </span>
 
                                 {/* REPS BADGE */}
-                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold uppercase tracking-wider">
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-medium uppercase tracking-wider">
                                     {targetReps} Reps
                                 </span>
                             </div>
 
-                            <h2 className={`${ex.name.length > 25 ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} font-black text-white uppercase leading-tight truncate`}>
+                            <h2 className="text-sm sm:text-base font-semibold text-zinc-100 leading-snug break-words max-w-full">
                                 {ex.name}
                             </h2>
 
                             {/* SETS PROGRESS CHIPS */}
-                            <div className="flex items-center gap-1.5 mt-1.5">
+                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                 {Array.from({ length: targetSets }).map((_, sIdx) => {
                                     const setNumber = sIdx + 1;
                                     const isDone = setNumber < currentSet;
@@ -601,12 +602,12 @@ const WorkoutScreen: React.FC = () => {
                                     return (
                                         <div 
                                             key={sIdx}
-                                            className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase transition-all ${
+                                            className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-mono font-medium uppercase transition-all ${
                                                 isDone 
                                                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
                                                     : isCurrent 
-                                                        ? 'bg-[#8A2BE2] text-white shadow-[0_0_10px_rgba(138,43,226,0.6)] animate-pulse' 
-                                                        : 'bg-zinc-900 text-zinc-600 border border-zinc-800'
+                                                        ? 'bg-[#8A2BE2] text-white shadow-[0_0_10px_rgba(138,43,226,0.6)] animate-pulse font-semibold' 
+                                                        : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
                                             }`}
                                         >
                                             {isDone && <CheckCircle2 size={10} />}
@@ -622,9 +623,9 @@ const WorkoutScreen: React.FC = () => {
                             {phase === 'work' && (
                                 <button
                                     onClick={handleCompleteSet}
-                                    className="flex-1 sm:flex-initial px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-all shrink-0"
+                                    className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 sm:py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs sm:text-sm uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition-all shrink-0"
                                 >
-                                    <CheckCircle2 size={18} />
+                                    <CheckCircle2 size={16} />
                                     <span>{translate('workout.active.validate_set')} ({targetReps} reps)</span>
                                 </button>
                             )}
@@ -632,9 +633,9 @@ const WorkoutScreen: React.FC = () => {
                             {phase === 'rest' && (
                                 <button
                                     onClick={handleSkipRest}
-                                    className="flex-1 sm:flex-initial px-5 py-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.4)] active:scale-95 transition-all shrink-0"
+                                    className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 sm:py-3 bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs sm:text-sm uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-95 transition-all shrink-0"
                                 >
-                                    <FastForward size={18} />
+                                    <FastForward size={16} />
                                     <span>{translate('workout.active.skip_rest')}</span>
                                 </button>
                             )}
@@ -665,10 +666,10 @@ const WorkoutScreen: React.FC = () => {
                     <Award size={44} className="text-purple-400" />
                 </div>
                 
-                <h2 className="text-xl sm:text-3xl font-black text-white uppercase mb-2 tracking-wide px-2 leading-none">
+                <h2 className="text-lg sm:text-2xl font-bold text-zinc-100 mb-2 px-2 text-center max-w-full break-words">
                     {translate('workout.finished.title')}
                 </h2>
-                <p className="text-zinc-400 text-xs mb-8 uppercase tracking-widest leading-relaxed max-w-sm mx-auto px-4">
+                <p className="text-zinc-400 text-xs mb-8 uppercase tracking-widest leading-relaxed max-w-sm mx-auto px-4 break-words">
                     {translate('workout.finished.desc')}
                 </p>
 
@@ -756,7 +757,7 @@ const WorkoutScreen: React.FC = () => {
                         <DeviceStatusTrigger showLabel />
                     </div>
                 </div>
-                <h1 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight sm:tracking-widest px-2 leading-none text-center">
+                <h1 className="text-base sm:text-xl font-bold text-zinc-100 uppercase tracking-wide px-2 leading-snug text-center max-w-full break-words">
                     {translate('workout.setup.title')}
                 </h1>
                 <div className="w-16 h-0.5 bg-[#8A2BE2] mx-auto mt-5 rounded-full shadow-[0_0_15px_#8A2BE2]" />

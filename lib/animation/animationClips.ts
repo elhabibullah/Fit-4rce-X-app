@@ -841,13 +841,13 @@ const WALK_CLIP = new HumanoidMotionClip('walk', 'Walk', 1.1, [
   },
 ]);
 
-// 14. JUMPING JACKS
+// 14. JUMPING JACKS (Fixed biomechanically: overhead arms reach without torso penetration)
 const JUMP_CLIP = new HumanoidMotionClip('jump', 'Jumping Jacks', 1.1, [
   {
     time: 0.0,
     hipsOffset: [0, 0, 0],
     bones: {
-      LeftArm: { pitch: 0.05, yaw: 0, roll: -0.10 },
+      LeftArm: { pitch: 0.05, yaw: 0, roll: 0.10 },
       RightArm: { pitch: 0.05, yaw: 0, roll: 0.10 },
       LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
       RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
@@ -855,10 +855,10 @@ const JUMP_CLIP = new HumanoidMotionClip('jump', 'Jumping Jacks', 1.1, [
   },
   {
     time: 0.50,
-    hipsOffset: [0, 0.08, 0],
+    hipsOffset: [0, 0.12, 0],
     bones: {
-      LeftArm: { pitch: 0.15, yaw: 0, roll: -1.75 }, // Overhead clap
-      RightArm: { pitch: 0.15, yaw: 0, roll: 1.75 },
+      LeftArm: { pitch: 2.60, yaw: 0, roll: 0.22 }, // Arms reach cleanly overhead
+      RightArm: { pitch: 2.60, yaw: 0, roll: 0.22 },
       LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.38 }, // Wide legs
       RightUpLeg: { pitch: 0, yaw: 0, roll: -0.38 },
       LeftLeg: { pitch: 0.15, yaw: 0, roll: 0 },
@@ -869,10 +869,148 @@ const JUMP_CLIP = new HumanoidMotionClip('jump', 'Jumping Jacks', 1.1, [
     time: 1.0,
     hipsOffset: [0, 0, 0],
     bones: {
-      LeftArm: { pitch: 0.05, yaw: 0, roll: -0.10 },
+      LeftArm: { pitch: 0.05, yaw: 0, roll: 0.10 },
       RightArm: { pitch: 0.05, yaw: 0, roll: 0.10 },
       LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
       RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+    },
+  },
+]);
+
+// 15. BURPEE: Full 6-phase military burpee (Drop -> Plank -> Pushup -> Crouch -> Explosive Jump -> Land)
+const BURPEE_CLIP = new HumanoidMotionClip('burpee', 'Burpee', 3.2, [
+  // 0.00: Ready standing posture
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.10, yaw: 0, roll: 0.10 },
+      RightArm: { pitch: 0.10, yaw: 0, roll: 0.10 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
+    },
+  },
+  // 0.18: Crouch squat drop & plant hands toward floor
+  {
+    time: 0.18,
+    hipsOffset: [0, -0.38, 0.12],
+    bones: {
+      Spine: { pitch: 0.45, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 1.25, yaw: 0, roll: 0.12 },
+      RightUpLeg: { pitch: 1.25, yaw: 0, roll: -0.12 },
+      LeftLeg: { pitch: 1.55, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 1.55, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.85, yaw: 0, roll: 0.10 },
+      RightArm: { pitch: 0.85, yaw: 0, roll: 0.10 },
+      LeftForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 1.20, yaw: 0, roll: 0 },
+      RightHand: { pitch: 1.20, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.36: Kick legs back into horizontal plank
+  {
+    time: 0.36,
+    hipsOffset: [0, 0, 0],
+    proneAngle: 1.48,
+    bones: {
+      Spine: { pitch: -0.04, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.45, yaw: 0, roll: 0.15 },
+      RightArm: { pitch: 1.45, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 1.35, yaw: 0, roll: 0 },
+      RightHand: { pitch: 1.35, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
+      LeftFoot: { pitch: 0.40, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.40, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.50: Chest dips down to floor (pushup dip with elbows flared 45 deg, arms never inside torso)
+  {
+    time: 0.50,
+    hipsOffset: [0, -0.08, 0],
+    proneAngle: 1.48,
+    bones: {
+      Spine: { pitch: -0.02, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.25, yaw: 0, roll: 0.35 },
+      RightArm: { pitch: 1.25, yaw: 0, roll: 0.35 },
+      LeftForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 1.35, yaw: 0, roll: 0 },
+      RightHand: { pitch: 1.35, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
+      LeftFoot: { pitch: 0.40, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.40, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.64: Press back up to plank
+  {
+    time: 0.64,
+    hipsOffset: [0, 0, 0],
+    proneAngle: 1.48,
+    bones: {
+      Spine: { pitch: -0.04, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.45, yaw: 0, roll: 0.15 },
+      RightArm: { pitch: 1.45, yaw: 0, roll: 0.15 },
+      LeftForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 1.35, yaw: 0, roll: 0 },
+      RightHand: { pitch: 1.35, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
+      LeftFoot: { pitch: 0.40, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.40, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.76: Snap feet forward under hips into deep crouch
+  {
+    time: 0.76,
+    hipsOffset: [0, -0.38, 0.12],
+    proneAngle: 0,
+    bones: {
+      Spine: { pitch: 0.45, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 1.25, yaw: 0, roll: 0.12 },
+      RightUpLeg: { pitch: 1.25, yaw: 0, roll: -0.12 },
+      LeftLeg: { pitch: 1.55, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 1.55, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.80, yaw: 0, roll: 0.10 },
+      RightArm: { pitch: 0.80, yaw: 0, roll: 0.10 },
+      LeftForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.88: Explosive vertical jump! Arms overhead
+  {
+    time: 0.88,
+    hipsOffset: [0, 0.35, 0],
+    bones: {
+      Spine: { pitch: -0.04, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftLeg: { pitch: 0.05, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.35, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.35, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 2.75, yaw: 0, roll: 0.18 }, // Overhead jump reach
+      RightArm: { pitch: 2.75, yaw: 0, roll: 0.18 },
+      LeftForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
+    },
+  },
+  // 1.00: Soft landing & return to ready stance
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.10, yaw: 0, roll: 0.10 },
+      RightArm: { pitch: 0.10, yaw: 0, roll: 0.10 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
     },
   },
 ]);
@@ -944,6 +1082,7 @@ export const CLIPS_REGISTRY: Record<string, HumanoidMotionClip> = {
   run: RUN_CLIP,
   walk: WALK_CLIP,
   jump: JUMP_CLIP,
+  burpee: BURPEE_CLIP,
   box: BOX_CLIP,
 };
 
