@@ -4,6 +4,7 @@ import {
     LANGUAGE_STRUCTURE, 
     TECHNIQUE_MODEL_URL 
 } from './constants.ts';
+import { ABDELWAHID_CV } from '../data/abdelwahidCV.ts';
 
 // --- TRANSLATION GENERATOR ---
 
@@ -135,14 +136,17 @@ export const getTranslatedConstants = (lang: Language, t: (key: string) => strin
         ]
       }
     ],
-    TRAINER_PROFILES: TRAINER_STRUCTURE.map(tData => ({
-        ...tData,
-        name: tData.id.charAt(0).toUpperCase() + tData.id.slice(1), 
-        titles: ['Elite Personal Trainer'],
-        languages: ['English', 'French', 'Arabic'],
-        bio: 'Dedicated to helping you reach your peak performance through personalized coaching and motivation.',
-        specializations: ['Functional Training', 'Strength']
-    })),
+    TRAINER_PROFILES: TRAINER_STRUCTURE.map(tData => {
+        const localized = ABDELWAHID_CV[lang] || ABDELWAHID_CV[Language.FR];
+        return {
+            ...tData,
+            name: localized.name,
+            titles: localized.titles,
+            languages: ['Français', 'Nederlands', 'English', 'العربية'],
+            bio: localized.summary,
+            specializations: localized.specializations
+        };
+    }),
     KUNG_FU_PROGRAM: KUNG_FU_DATA,
     NEO_TAI_CHI_PROGRAM: NEO_TAI_CHI_DATA,
     LANGUAGES: LANGUAGE_STRUCTURE.map(l => ({ ...l, name: l.code.toUpperCase() }))

@@ -51,7 +51,7 @@ export class GroundContactSolver {
     const rightHand = retargeter.bones.get('RightHand');
 
     // 1. IN PRONE / FLOOR EXERCISES (Pushups, Planks, Floor Core):
-    // Align hands completely FLAT on the floor (palms facing down)
+    // Align hands completely FLAT on the floor (palms facing down, wrist extended, not inverted)
     if (posture === 'prone' || Math.abs(bodyProneAngle) > 0.3) {
       if (constraints.handOrientation === 'flat_floor' || true) {
         this.orientHandFlatToFloor(retargeter, true);
@@ -67,8 +67,9 @@ export class GroundContactSolver {
       // Target podium surface in studio space is Y = -0.889
       const podiumSurfaceY = -0.889;
       let lowestY = Infinity;
-      const handThickness = 0.035;
-      const toeThickness = 0.040;
+      const handThickness = 0.025;
+      const toeThickness = retargeter.toePodiumClearance;
+
       if (leftHand) {
         leftHand.bone.getWorldPosition(this.tmpVec);
         lowestY = Math.min(lowestY, this.tmpVec.y - handThickness);
@@ -87,7 +88,7 @@ export class GroundContactSolver {
 
       if (lowestY !== Infinity) {
         const deltaWorldY = podiumSurfaceY - lowestY;
-        if (Math.abs(deltaWorldY) > 0.001) {
+        if (Math.abs(deltaWorldY) > 0.002) {
           result.hipsElevationAdjust = deltaWorldY;
         }
       }
@@ -96,31 +97,39 @@ export class GroundContactSolver {
     }
 
     // 2. IN STANDING / SQUATTING / LUNGING / JUMPING EXERCISES:
-    const feetBones = [leftFoot, rightFoot, leftToe, rightToe];
-    let lowestFootY = Infinity;
-    feetBones.forEach((fb) => {
-      if (fb) {
-        fb.bone.getWorldPosition(this.tmpVec);
-        if (this.tmpVec.y < lowestFootY) lowestFootY = this.tmpVec.y;
-      }
-    });
+    // Accurately compute sole world elevation from both ankles and toes
+    let lowestSoleY = Infinity;
+    if (leftFoot) {
+      leftFoot.bone.getWorldPosition(this.tmpVec);
+      lowestSoleY = Math.min(lowestSoleY, this.tmpVec.y - retargeter.anklePodiumClearance);
+    }
+    if (rightFoot) {
+      rightFoot.bone.getWorldPosition(this.tmpVec);
+      lowestSoleY = Math.min(lowestSoleY, this.tmpVec.y - retargeter.anklePodiumClearance);
+    }
+    if (leftToe) {
+      leftToe.bone.getWorldPosition(this.tmpVec);
+      lowestSoleY = Math.min(lowestSoleY, this.tmpVec.y - retargeter.toePodiumClearance);
+    }
+    if (rightToe) {
+      rightToe.bone.getWorldPosition(this.tmpVec);
+      lowestSoleY = Math.min(lowestSoleY, this.tmpVec.y - retargeter.toePodiumClearance);
+    }
 
     const podiumSurfaceY = -0.889;
-    if (lowestFootY !== Infinity) {
-      // Sole height in world coordinates
-      const footSoleY = lowestFootY - retargeter.anklePodiumClearance;
+    if (lowestSoleY !== Infinity) {
       const feetGrounded = constraints.leftFootGround || constraints.rightFootGround;
 
       if (feetGrounded) {
         // Grounded exercise (Squats, Lunges, Stances, Deadlifts): anchor lowest foot to podium
-        const deltaWorldY = podiumSurfaceY - footSoleY;
+        const deltaWorldY = podiumSurfaceY - lowestSoleY;
         if (Math.abs(deltaWorldY) > 0.002) {
           result.hipsElevationAdjust = deltaWorldY;
         }
       } else if (constraints.preventFloorPenetration) {
         // Airborne exercise (Jumps, burpee jump phase): only clamp if foot penetrates below podium
-        if (footSoleY < podiumSurfaceY) {
-          result.hipsElevationAdjust = podiumSurfaceY - footSoleY;
+        if (lowestSoleY < podiumSurfaceY) {
+          result.hipsElevationAdjust = podiumSurfaceY - lowestSoleY;
         }
       }
     }
@@ -130,29 +139,15 @@ export class GroundContactSolver {
 
   /**
    * Sets the hand bone so the PALM is 100% FLAT on the floor (palms facing down).
-   * Fingers point forward along floor (+Z) with natural slight inward angle.
+   * Uses anatomical wrist dorsiflexion without discarding bone roll, preventing reversed/inverted palms.
    */
   public orientHandFlatToFloor(retargeter: HunyuanSkeletalRetargeter, isLeft: boolean): void {
     const boneName: HumanoidBoneName = isLeft ? 'LeftHand' : 'RightHand';
     const calibrated = retargeter.bones.get(boneName);
     if (!calibrated) return;
 
-    // Desired world orientation:
-    // Palm pressed flat against the floor (facing down towards -Y)
-    // Fingers pointing forward along floor (+Z) with slight natural inward angle
-    const qPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-    const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), isLeft ? 0.10 : -0.10);
-    const targetWorldQ = new THREE.Quaternion().multiply(qYaw).multiply(qPitch);
-
-    const parentObj = calibrated.bone.parent;
-    if (parentObj) {
-      const pWQ = new THREE.Quaternion();
-      parentObj.getWorldQuaternion(pWQ);
-      calibrated.bone.quaternion.copy(pWQ.invert().multiply(targetWorldQ));
-    } else {
-      calibrated.bone.quaternion.copy(targetWorldQ);
-    }
-    calibrated.bone.updateMatrixWorld(true);
+    // Wrist extension / dorsiflexion: pitch 1.35 rad (approx 77 deg), fingers pointing forward with natural slight inward angle
+    retargeter.setAnatomicalRotation(boneName, 1.35, isLeft ? 0.08 : -0.08, isLeft ? -0.08 : 0.08);
   }
 
   /**

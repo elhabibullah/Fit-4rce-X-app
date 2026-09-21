@@ -421,26 +421,26 @@ export const SelfDefenseScreen: React.FC = () => {
     const programData = useMemo(() => {
         switch(selectedProgram) {
             case 'tai-chi': 
-                const ntc = constants.NEO_TAI_CHI_PROGRAM;
+                const ntc = constants?.NEO_TAI_CHI_PROGRAM;
                 return {
-                    name: ntc.program_name,
-                    intro: ntc.description,
-                    levels: ntc.levels.map(l => ({
+                    name: ntc?.program_name || 'Tai-Chi',
+                    intro: ntc?.description || '',
+                    levels: (ntc?.levels || []).map(l => ({
                         level_name: l.title,
                         description: l.objective,
-                        techniques: l.techniques
+                        techniques: l.techniques || []
                     }))
                 };
             case 'kung-fu':
             default:
-                const kf = constants.KUNG_FU_PROGRAM;
+                const kf = constants?.KUNG_FU_PROGRAM;
                 return {
-                    name: kf.program_name,
-                    intro: kf.description,
-                    levels: kf.levels.map(l => ({
+                    name: kf?.program_name || 'Kung-Fu',
+                    intro: kf?.description || '',
+                    levels: (kf?.levels || []).map(l => ({
                         level_name: l.level_name,
                         description: l.description,
-                        techniques: l.sections[0].movements
+                        techniques: l.sections?.[0]?.movements || []
                     }))
                 };
         }
@@ -491,7 +491,7 @@ export const SelfDefenseScreen: React.FC = () => {
                         </p>
                     </div>
 
-                    {currentLevel?.techniques[0] && (
+                    {currentLevel?.techniques?.[0] && (
                         <button
                             onClick={() => setSelectedTech(currentLevel.techniques[0])}
                             className="p-3.5 rounded-2xl bg-[#DAA520] text-black hover:bg-[#c5961d] shadow-[0_0_20px_rgba(218,165,32,0.4)] active:scale-95 transition-all flex flex-col items-center justify-center shrink-0"

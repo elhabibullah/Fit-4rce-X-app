@@ -320,12 +320,17 @@ const HunyuanRiggedCoach: React.FC<{
     if (isPuppeteerActive) return;
     const query = exerciseId || exerciseName || 'idle';
     if (!engineRef.current) {
-      engineRef.current = new HumanoidMotionEngine(scene);
+      if (groupRef.current) {
+        groupRef.current.position.set(offsetPos[0], offsetPos[1], offsetPos[2]);
+        groupRef.current.scale.set(modelScale, modelScale, modelScale);
+        groupRef.current.updateMatrixWorld(true);
+      }
+      engineRef.current = new HumanoidMotionEngine(scene, modelScale, -0.889);
       engineRef.current.setExercise(query, 0.0, true);
     } else {
       engineRef.current.setExercise(query, 0.35, false);
     }
-  }, [scene, exerciseId, exerciseName, isPuppeteerActive]);
+  }, [scene, exerciseId, exerciseName, isPuppeteerActive, modelScale, offsetPos]);
 
   useFrame((_, delta) => {
     if (!scene) return;
@@ -579,6 +584,7 @@ export interface HolographicCoachProps {
   hideThemeToggle?: boolean;
   puppeteerEngine?: HunyuanPuppeteerEngine | null;
   isPuppeteerActive?: boolean;
+  disableWheelForward?: boolean;
 }
 
 // HolographicCoach Main Component
@@ -598,6 +604,7 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
   hideThemeToggle = false,
   puppeteerEngine,
   isPuppeteerActive,
+  disableWheelForward = false,
 }) => {
   const [internalStudioTheme, setInternalStudioTheme] = useState<'white' | 'dark'>(() => {
     return (localStorage.getItem('f4x_studio_theme') as 'white' | 'dark') || 'white';
@@ -690,6 +697,10 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
             className="w-full h-full"
             style={{ touchAction: 'pan-y' }}
             onWheel={(e) => {
+              if (disableWheelForward) {
+                e.stopPropagation();
+                return;
+              }
               let el: HTMLElement | null = e.currentTarget.parentElement;
               while (el && el !== document.body) {
                 const overflowY = window.getComputedStyle(el).overflowY;

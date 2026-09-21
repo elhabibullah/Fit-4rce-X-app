@@ -30,8 +30,8 @@ export class HumanoidMotionEngine {
   public currentGroundOffsetZ: number = 0;
   public lastSolveResult: SolvedGroundContact | null = null;
 
-  constructor(scene: THREE.Object3D) {
-    this.retargeter = new HunyuanSkeletalRetargeter(scene);
+  constructor(scene: THREE.Object3D, modelScale?: number, podiumSurfaceY: number = -0.889) {
+    this.retargeter = new HunyuanSkeletalRetargeter(scene, modelScale, podiumSurfaceY);
     this.contactSolver = new GroundContactSolver();
     this.currentExerciseDef = resolveExerciseDefinition('idle');
     this.currentClip = CLIPS_REGISTRY.idle;

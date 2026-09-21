@@ -214,8 +214,23 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[150] flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
-      <Card className="max-w-5xl w-full h-[92vh] flex flex-col relative border-purple-500/30 shadow-[0_0_60px_rgba(138,43,226,0.15)] bg-neutral-950 p-4 sm:p-6 overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[9999] flex items-center justify-center p-2 sm:p-6 animate-fadeIn"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
+      {/* Standalone floating high-contrast close button for mobile & desktop */}
+      <button
+        onClick={handleClose}
+        className="fixed top-3 right-3 sm:top-5 sm:right-5 z-[10000] p-3 rounded-full bg-red-600 hover:bg-red-500 text-white shadow-2xl transition-transform active:scale-90 flex items-center justify-center cursor-pointer border border-white/20"
+        aria-label="Fermer le Studio 3D"
+        title="Fermer le Studio 3D"
+      >
+        <X className="w-6 h-6 stroke-[2.5]" />
+      </button>
+
+      <Card className="max-w-5xl w-full h-[95vh] sm:h-[92vh] flex flex-col relative border-purple-500/30 shadow-[0_0_60px_rgba(138,43,226,0.15)] bg-neutral-950 p-3 sm:p-6 overflow-hidden">
         {/* Hidden video element for MediaPipe stream */}
         <video
           ref={videoRef}
@@ -226,23 +241,25 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
         />
 
         {/* Top Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-neutral-800 shrink-0">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-neutral-800 shrink-0 pr-12 sm:pr-0">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-widest flex items-center gap-2">
+            <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-widest flex items-center gap-2">
               <span>Studio Biomécanique 3D</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono">
                 LABO HUMANOÏDE
               </span>
             </h2>
-            <p className="text-gray-400 text-xs mt-1">
+            <p className="text-gray-400 text-[11px] sm:text-xs mt-0.5 sm:mt-1">
               Testez en temps réel l'anatomie et les mouvements, ou pilotez directement le coach via votre webcam !
             </p>
           </div>
           <button
             onClick={handleClose}
-            className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-neutral-800 transition-colors"
+            className="p-2 sm:p-2.5 rounded-full text-gray-300 hover:text-white bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 transition-colors flex items-center gap-1 cursor-pointer"
+            title="Fermer"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-xs font-bold uppercase hidden sm:inline">Fermer</span>
           </button>
         </div>
 

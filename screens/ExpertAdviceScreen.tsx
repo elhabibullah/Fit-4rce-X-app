@@ -156,7 +156,7 @@ export const ExpertAdviceScreen: React.FC<ExpertAdviceScreenProps> = ({ onClose,
                         <img src={trainer.photoUrl} alt={trainer.name} className="w-32 h-32 rounded-full border-4 border-[#8A2BE2] object-cover" />
                         <div>
                             <h2 className="text-2xl font-semibold text-white">{trainer.name}</h2>
-                            <p className="text-purple-400 font-medium">{trainer.titles[0]}</p>
+                            <p className="text-purple-400 font-medium">{trainer.titles?.[0] || 'Personal Trainer'}</p>
                         </div>
                         <button 
                             onClick={() => setIsCoachDashboardOpen(true)}

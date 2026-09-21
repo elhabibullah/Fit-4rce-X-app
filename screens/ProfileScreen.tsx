@@ -1,6 +1,10 @@
 import React, { useRef, useState } from 'react';
 import Card from '../components/common/Card.tsx';
-import { ChevronRight, CreditCard, Globe, MessageSquareQuote, Watch, Info, Camera, Lock, User, History, Bookmark, RefreshCw, Shield, Bot } from 'lucide-react';
+import { 
+    ChevronRight, CreditCard, Globe, MessageSquareQuote, Watch, 
+    Info, Camera, User, History, Bookmark, Shield, Bot, 
+    Scale, Ruler, User2, Edit3 
+} from 'lucide-react';
 import { useApp } from '../hooks/useApp.ts';
 import { Screen } from '../types.ts';
 import Button from '../components/common/Button.tsx';
@@ -8,6 +12,7 @@ import PrivacyModal from '../components/profile/PrivacyModal.tsx';
 import ImageCropper from '../components/profile/ImageCropper.tsx';
 import { SensorsPermissionBanner } from '../components/common/SensorsPermissionBanner.tsx';
 import ModelTesterModal from '../components/profile/ModelTesterModal.tsx';
+import EditMetricsModal from '../components/profile/EditMetricsModal.tsx';
 
 const ProfileOption: React.FC<{ icon: React.ElementType; title: string; onClick?: () => void; disabled?: boolean; subtitle?: string }> = ({ icon: Icon, title, onClick, disabled = false, subtitle }) => {
     const IconComp = Icon as any;
@@ -31,11 +36,12 @@ const ProfileOption: React.FC<{ icon: React.ElementType; title: string; onClick?
 
 const ProfileScreen: React.FC = () => {
     const { 
-        profile, setScreen, resetApp, translate, isSyncing, syncProfile, 
+        profile, setScreen, resetApp, translate, 
         updateUserProfile, language, openDeviceModal
     } = useApp();
     const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
     const [isModelTesterOpen, setIsModelTesterOpen] = useState(false);
+    const [isEditMetricsOpen, setIsEditMetricsOpen] = useState(false);
     const [imageToCrop, setImageToCrop] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,9 +59,14 @@ const ProfileScreen: React.FC = () => {
         setImageToCrop(null);
     };
 
+    const genderLabel = profile?.gender 
+        ? translate(`gender.${profile.gender}`) 
+        : translate('gender.male');
+
     return (
-        <div className="space-y-6 pb-24 animate-fadeIn px-2" key={language}>
-            <header className="text-center pt-8">
+        <div className="w-full space-y-5 pb-44 animate-fadeIn px-2" key={language}>
+            {/* Profile Avatar & Title */}
+            <header className="text-center pt-6">
                 <div className="relative inline-block group">
                     <button 
                         onClick={() => fileInputRef.current?.click()}
@@ -74,13 +85,89 @@ const ProfileScreen: React.FC = () => {
                     </button>
                     <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />
                 </div>
-                <h1 className="text-xl font-bold mt-4 text-white uppercase tracking-widest">{profile?.full_name || translate('profile.notSet')}</h1>
+                <h1 className="text-xl font-bold mt-4 text-white uppercase tracking-widest">
+                    {profile?.full_name || translate('profile.notSet')}
+                </h1>
                 <div className="flex items-center justify-center gap-2 mt-1.5">
                     <Shield className="w-3.5 h-3.5 text-purple-400" />
-                    <span className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">{translate('profile.premiumMember')}</span>
+                    <span className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">
+                        {translate('profile.premiumMember')}
+                    </span>
                 </div>
             </header>
 
+            {/* Editable Biometrics Card (Poids, Taille, Genre, Âge) */}
+            <div className="bg-gradient-to-br from-zinc-900/90 to-zinc-950/90 border border-purple-500/30 rounded-2xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-800">
+                    <div className="flex items-center gap-2">
+                        <Scale className="w-4 h-4 text-purple-400" />
+                        <h2 className="text-xs font-black uppercase tracking-widest text-white">
+                            {translate('profileSetup.step3.title') || 'Mensurations Biométriques'}
+                        </h2>
+                    </div>
+                    <button
+                        onClick={() => setIsEditMetricsOpen(true)}
+                        className="flex items-center gap-1.5 text-[10px] font-bold text-purple-400 hover:text-purple-300 bg-purple-950/40 hover:bg-purple-900/50 px-2.5 py-1 rounded-lg border border-purple-500/30 transition-all active:scale-95"
+                    >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Modifier</span>
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2.5 text-center">
+                    {/* Weight */}
+                    <button
+                        onClick={() => setIsEditMetricsOpen(true)}
+                        className="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800/80 hover:border-purple-500/40 transition-colors text-left group"
+                    >
+                        <div className="flex items-center justify-between text-zinc-400 text-[10px] font-black uppercase tracking-wider mb-1">
+                            <span className="truncate">{translate('profileSetup.step3.weight')}</span>
+                            <Scale className="w-3 h-3 text-purple-400 group-hover:scale-110 transition-transform" />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-base sm:text-lg font-black font-mono text-white">
+                                {profile?.weight || '--'}
+                            </span>
+                            <span className="text-[10px] text-purple-400 font-mono font-bold">kg</span>
+                        </div>
+                    </button>
+
+                    {/* Height */}
+                    <button
+                        onClick={() => setIsEditMetricsOpen(true)}
+                        className="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800/80 hover:border-cyan-500/40 transition-colors text-left group"
+                    >
+                        <div className="flex items-center justify-between text-zinc-400 text-[10px] font-black uppercase tracking-wider mb-1">
+                            <span className="truncate">{translate('profileSetup.step3.height')}</span>
+                            <Ruler className="w-3 h-3 text-cyan-400 group-hover:scale-110 transition-transform" />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-base sm:text-lg font-black font-mono text-white">
+                                {profile?.height || '--'}
+                            </span>
+                            <span className="text-[10px] text-cyan-400 font-mono font-bold">cm</span>
+                        </div>
+                    </button>
+
+                    {/* Gender */}
+                    <button
+                        onClick={() => setIsEditMetricsOpen(true)}
+                        className="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800/80 hover:border-[#DAA520]/40 transition-colors text-left group"
+                    >
+                        <div className="flex items-center justify-between text-zinc-400 text-[10px] font-black uppercase tracking-wider mb-1">
+                            <span className="truncate">Genre</span>
+                            <User2 className="w-3 h-3 text-[#DAA520] group-hover:scale-110 transition-transform" />
+                        </div>
+                        <div className="flex items-baseline">
+                            <span className="text-xs sm:text-sm font-bold text-white capitalize truncate">
+                                {genderLabel}
+                            </span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            {/* Goal and Level Cards */}
             <div className="grid grid-cols-2 gap-3">
                 <Card className="text-center p-3.5 border-gray-800">
                     <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest">{translate('profile.goal')}</p>
@@ -94,25 +181,18 @@ const ProfileScreen: React.FC = () => {
 
             <SensorsPermissionBanner />
 
-            <div className="space-y-2 pt-2">
+            {/* Navigation Options */}
+            <div className="space-y-2 pt-1">
                 <ProfileOption icon={Bot} title="Studio 3D & Miroir Humanoïde" subtitle="Cyborg F4X • Sifu • Biomécanique" onClick={() => setIsModelTesterOpen(true)} />
                 <ProfileOption icon={Watch} title={translate('profile.gear.title')} onClick={openDeviceModal} />
                 <ProfileOption icon={CreditCard} title={translate('profile.subscription.title')} onClick={() => setScreen(Screen.SubscriptionManagement)} />
-                <ProfileOption icon={Info} title={translate('intro.header')} subtitle={translate('home.cardio.spinning.desc')} onClick={() => updateUserProfile({ onboarding_complete: false, onboarding_step: 'intro' })} />
                 <ProfileOption icon={History} title={translate('profile.history.title')} onClick={() => setScreen(Screen.WorkoutHistory)} />
                 <ProfileOption icon={Bookmark} title={translate('profile.saved.title')} onClick={() => setScreen(Screen.SavedWorkouts)} />
                 <ProfileOption icon={MessageSquareQuote} title={translate('profile.services.title')} onClick={() => setScreen(Screen.Trainers)} />
                 <ProfileOption icon={Globe} title={translate('profile.language.title')} onClick={() => setScreen(Screen.Language)} />
                 <ProfileOption icon={Info} title={translate('profile.about.title')} onClick={() => setScreen(Screen.AboutApp)} />
 
-                <div className="pt-4 space-y-3">
-                    <Button 
-                      variant="secondary" 
-                      onClick={() => updateUserProfile({ onboarding_complete: false, onboarding_step: 'language' })} 
-                      className="w-full !border-purple-500/40 !text-purple-400 hover:!bg-purple-950/40 py-3.5 uppercase text-xs font-bold tracking-widest"
-                    >
-                        {translate('profile.language.title')} & Onboarding
-                    </Button>
+                <div className="pt-4">
                     <Button 
                       variant="secondary" 
                       onClick={resetApp} 
@@ -125,6 +205,7 @@ const ProfileScreen: React.FC = () => {
 
             <PrivacyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
             <ModelTesterModal isOpen={isModelTesterOpen} onClose={() => setIsModelTesterOpen(false)} />
+            <EditMetricsModal isOpen={isEditMetricsOpen} onClose={() => setIsEditMetricsOpen(false)} />
             {imageToCrop && <ImageCropper src={imageToCrop} onSave={handleCropSave} onClose={() => setImageToCrop(null)} />}
         </div>
     );

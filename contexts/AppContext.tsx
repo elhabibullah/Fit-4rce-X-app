@@ -111,6 +111,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [showSignIn, setShowSignIn] = useState(false);
   const [isCoachOpen, setIsCoachOpen] = useState(false);
   const [selectedCoachPersona, setSelectedCoachPersona] = useState<AIProvider>('gemini');
+  const [expertToBook, setExpertToBook] = useState<TrainerProfile | null>(null);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
   const [deviceMetrics] = useState<LiveBioMetrics>({ heartRate: 72, caloriesBurned: 0, steps: 0, isActive: false });
   const [nutritionTab, setNutritionTab] = useState<string | null>(null);
@@ -327,7 +328,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsAppEntered(true);
     },
     isSyncing: false, syncProfile: () => showStatus("Profile Synchronized"), language, setLanguage, screen, setScreen,
-    expertToBook: null, openBookingScreen: () => {}, closeBookingScreen: () => {},
+    expertToBook, 
+    openBookingScreen: (t: TrainerProfile) => setExpertToBook(t), 
+    closeBookingScreen: () => setExpertToBook(null),
     isAppEntered, setIsAppEntered,
     onboardingStep, setOnboardingStep,
     showSignIn, setShowSignIn, statusMessage, showStatus,
@@ -356,7 +359,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isCoachOpen, selectedCoachPersona, nutritionTab, selectedPlan, isGeneratingWorkout,
     constants, workoutHistory, savedWorkouts, nutritionHistory, dailyMacros, dietPlan,
     deviceMetrics, translate, showStatus, updateUserProfile, setLanguage, setCurrency, 
-    logWorkout, startWorkoutFromVoice, isDeviceModalOpen, isAppEntered, onboardingStep
+    logWorkout, startWorkoutFromVoice, isDeviceModalOpen, isAppEntered, onboardingStep, expertToBook
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
