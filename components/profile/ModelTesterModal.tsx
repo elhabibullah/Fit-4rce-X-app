@@ -3,6 +3,8 @@ import Card from '../common/Card.tsx';
 import Button from '../common/Button.tsx';
 import { X, Upload, Info, AlertCircle, Play, Pause, Camera, Eye, RotateCw, Video, VideoOff, Crosshair, Sparkles } from 'lucide-react';
 import { HolographicCoach } from '../common/HolographicCoach.tsx';
+import { HolographicARModal } from '../common/HolographicARModal.tsx';
+import { useApp } from '../../hooks/useApp.ts';
 import { COACH_MODEL_URL, SIFU_MODEL_URL } from '../../lib/constants.ts';
 import { HunyuanPuppeteerEngine, type PuppeteerTrackingStats } from '../../lib/puppeteer/hunyuanPuppeteer.ts';
 import { loadGithubExercisesJson, getCachedGithubExercises, RawJsonExercise } from '../../lib/animation/githubExercisesLoader.ts';
@@ -42,6 +44,7 @@ const DEFAULT_MOVEMENTS = [
 ];
 
 const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) => {
+  const { translate } = useApp();
   const [selectedModel, setSelectedModel] = useState<string>(SIFU_MODEL_URL);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [exerciseName, setExerciseName] = useState<string>('martial_mabu');
@@ -49,6 +52,7 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
   const [speed, setSpeed] = useState<number>(1.0);
   const [cameraPreset, setCameraPreset] = useState<'face' | 'profile' | 'free'>('face');
   const [studioTheme, setStudioTheme] = useState<'white' | 'dark'>('white');
+  const [isAROpen, setIsAROpen] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -384,6 +388,15 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
               </button>
             </div>
 
+            {/* Holographic Projection Button */}
+            <button
+              onClick={() => setIsAROpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center shadow-lg shadow-purple-600/30 active:scale-95 transition-all"
+              title={translate('ar.hologram')}
+            >
+              <span>{translate('ar.hologram')}</span>
+            </button>
+
             {/* Play / Pause (only active when not in puppeteer mode) */}
             {!isPuppeteerActive && (
               <>
@@ -547,6 +560,16 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
           </Button>
         </div>
       </Card>
+
+      {/* Holographic AR Modal (Camera + Floor Anchor) */}
+      <HolographicARModal
+        isOpen={isAROpen}
+        onClose={() => setIsAROpen(false)}
+        modelUrl={selectedModel}
+        exerciseName={exerciseName}
+        isPaused={isPaused}
+        speed={speed}
+      />
     </div>
   );
 };

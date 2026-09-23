@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
     Pause, Play, X, ChevronLeft, ChevronRight, Activity, Timer as TimerIcon, Box, Sun, Moon, 
-    CheckCircle2, Flame, Dumbbell, Zap, RotateCcw, FastForward, Award, Clock, Bot
+    CheckCircle2, Flame, Dumbbell, Zap, RotateCcw, FastForward, Award, Clock, Bot, Sparkles
 } from 'lucide-react';
 import { generateWorkoutWithGemini, getWorkoutSeriesAndRest } from '../services/aiService.ts';
 import { WorkoutPlan, Screen, AIProvider } from '../types.ts';
@@ -9,6 +9,7 @@ import Loader from '../components/common/Loader.tsx';
 import { useApp } from '../hooks/useApp.ts';
 import Button from '../components/common/Button.tsx';
 import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
+import { HolographicARModal } from '../components/common/HolographicARModal.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
 
 type WorkoutView = 'setup' | 'loading' | 'active' | 'finished';
@@ -84,6 +85,7 @@ const WorkoutScreen: React.FC = () => {
     const [sessionDurationSeconds, setSessionDurationSeconds] = useState(0);
 
     const [customRequirements, setCustomRequirements] = useState('');
+    const [isARModalOpen, setIsARModalOpen] = useState(false);
     const [studioTheme, setStudioTheme] = useState<'white' | 'dark'>(() => {
         return (localStorage.getItem('f4x_studio_theme') as 'white' | 'dark') || 'white';
     });
@@ -365,35 +367,51 @@ const WorkoutScreen: React.FC = () => {
                                 localStorage.setItem('f4x_studio_theme', next);
                             }}
                             hideThemeToggle={true}
+                            hideARButton={true}
+                            hideBadge={true}
                         />
                     </div>
 
-                    {/* TOP CONTROLS & HUD */}
-                    <div className="absolute top-0 left-0 right-0 z-[500] p-3 sm:p-5 flex justify-between items-start pointer-events-none">
-                        <div className="flex items-center gap-2 pointer-events-auto">
+                    {/* FLOATING HOLOGRAPHIC BUTTON AT STAGE BOTTOM */}
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] pointer-events-auto">
+                        <button
+                            onClick={() => setIsARModalOpen(true)}
+                            className="px-4 py-1.5 sm:px-5 sm:py-2 rounded-full shadow-2xl active:scale-95 transition-transform border bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white border-purple-400/60 hover:from-purple-500 hover:to-indigo-500 flex items-center justify-center shadow-purple-900/40 backdrop-blur-md"
+                            title={translate('ar.hologram')}
+                        >
+                            <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap">
+                                {translate('ar.hologram')}
+                            </span>
+                        </button>
+                    </div>
+
+                    {/* TOP CONTROLS & HUD - ROOMY, NO OVERFLOW, PAUSE/PLAY FULLY VISIBLE */}
+                    <div className="absolute top-0 left-0 right-0 z-[500] p-2.5 sm:p-4 flex items-start justify-between gap-2 pointer-events-none">
+                        {/* LEFT GROUP: EXIT, EMS & THEME TOGGLE */}
+                        <div className="flex items-center gap-1.5 shrink-0 pointer-events-auto">
                             <button 
                                 onClick={handleClose} 
-                                className={`p-2.5 rounded-full shadow-2xl active:scale-90 transition-transform border ${
+                                className={`p-2 rounded-full shadow-xl active:scale-90 transition-transform border ${
                                     studioTheme === 'dark'
-                                        ? 'bg-neutral-900/90 text-white border-neutral-700'
-                                        : 'bg-white/90 text-black border-zinc-200'
+                                        ? 'bg-neutral-900/90 text-white border-neutral-700 hover:bg-neutral-800'
+                                        : 'bg-white/90 text-black border-zinc-200 hover:bg-zinc-100'
                                     }`}
                                 title={translate('workout.active.end_session')}
                             >
-                                <X size={18}/>
+                                <X size={16}/>
                             </button>
 
                             {/* EMS BAND TRIGGER */}
                             <DeviceStatusTrigger showLabel={false} />
 
-                            {/* STUDIO NIGHT / DAY MODE TOGGLE - PLACED AT THE TOP NEXT TO EMS */}
+                            {/* STUDIO NIGHT / DAY MODE TOGGLE */}
                             <button
                                 onClick={() => {
                                     const next = studioTheme === 'dark' ? 'white' : 'dark';
                                     setStudioTheme(next);
                                     localStorage.setItem('f4x_studio_theme', next);
                                 }}
-                                className={`p-2.5 rounded-full shadow-2xl active:scale-90 transition-transform border ${
+                                className={`p-2 rounded-full shadow-xl active:scale-90 transition-transform border ${
                                     studioTheme === 'dark'
                                         ? 'bg-neutral-900/90 text-amber-400 border-neutral-700 hover:bg-neutral-800'
                                         : 'bg-white/90 text-purple-600 border-zinc-200 hover:bg-zinc-100'
@@ -401,33 +419,34 @@ const WorkoutScreen: React.FC = () => {
                                 title={studioTheme === 'dark' ? "Passer au Studio Blanc" : "Passer en Mode Nuit (Studio Noir)"}
                                 aria-label="Basculer Mode Studio Nuit/Jour"
                             >
-                                {studioTheme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-purple-600" />}
+                                {studioTheme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-purple-600" />}
                             </button>
                         </div>
 
-                        {/* RIGHT HUD: TIMER & PLAY/PAUSE */}
-                        <div className="flex flex-col items-end gap-2 pointer-events-auto">
-                            <div className={`px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xl border ${
+                        {/* RIGHT HUD: TIMER & PLAY/PAUSE (PROMINENT & NEVER CUT OFF) */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0 pointer-events-auto mr-1">
+                            <div className={`px-3 py-1 rounded-xl flex items-center gap-1.5 shadow-xl border ${
                                 phase === 'rest' 
                                     ? 'bg-amber-500 text-black border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.5)]' 
                                     : 'bg-[#8A2BE2] text-white border-purple-400 shadow-[0_0_20px_rgba(138,43,226,0.4)]'
                             }`}>
-                                <TimerIcon size={15} />
-                                <span className="text-base sm:text-lg font-bold font-mono leading-none">
+                                <TimerIcon size={14} />
+                                <span className="text-sm sm:text-base font-bold font-mono leading-none">
                                     {phase === 'rest' ? restTimer : timer}s
                                 </span>
                             </div>
 
                             <button 
                                 onClick={() => setIsPaused(!isPaused)} 
-                                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all border ${
+                                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all border ${
                                     isPaused 
                                         ? 'bg-emerald-500 border-emerald-400 text-black shadow-[0_0_25px_rgba(16,185,129,0.5)] animate-pulse' 
                                         : 'bg-neutral-900/90 border-neutral-700 text-white hover:bg-neutral-800'
                                 }`}
                                 title={isPaused ? translate('workout.action.resume') : translate('workout.action.pause')}
+                                aria-label={isPaused ? "Reprendre l'entraînement" : "Mettre en pause"}
                             >
-                                {isPaused ? <Play size={20} fill="currentColor" className="ml-0.5" /> : <Pause size={20} fill="currentColor" />}
+                                {isPaused ? <Play size={18} fill="currentColor" className="ml-0.5 text-black" /> : <Pause size={18} fill="currentColor" className="text-white" />}
                             </button>
                         </div>
                     </div>
@@ -650,6 +669,20 @@ const WorkoutScreen: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* HOLOGRAPHIC AR OVERLAY MODAL */}
+                <HolographicARModal
+                    isOpen={isARModalOpen}
+                    onClose={() => setIsARModalOpen(false)}
+                    modelUrl={ex.modelUrl}
+                    exerciseName={ex.name}
+                    exerciseId={(ex as any).canonicalId || ex.id || (ex as any).canonical_id}
+                    isPaused={isPaused || phase === 'rest'}
+                    currentSet={currentSet}
+                    targetSets={targetSets}
+                    targetReps={targetReps}
+                    timer={phase === 'rest' ? restTimer : timer}
+                />
             </div>
         );
     }

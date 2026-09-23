@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Button from '../components/common/Button.tsx';
 import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
+import { HolographicARModal } from '../components/common/HolographicARModal.tsx';
 import { SIFU_MODEL_URL } from '../lib/constants.ts';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
 
@@ -37,6 +38,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
     const [isScrubbing, setIsScrubbing] = useState<boolean>(false);
     const [cameraPreset, setCameraPreset] = useState<'face' | 'profile' | 'free'>('face');
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+    const [isAROpen, setIsAROpen] = useState<boolean>(false);
     const [studioTheme, setStudioTheme] = useState<'dark' | 'white'>('white');
 
     // Continuous timeline progress tracking when playing
@@ -153,6 +155,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                         onToggleStudioTheme={setStudioTheme}
                         hideBadge={true}
                         hideThemeToggle={true}
+                        hideARButton={true}
                     />
 
                     {/* TOP PLAYER HUD: Camera Angles & Studio Mode */}
@@ -176,18 +179,29 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                             ))}
                         </div>
 
-                        {/* Theme Toggle Button */}
-                        <button
-                            onClick={() => setStudioTheme(prev => prev === 'dark' ? 'white' : 'dark')}
-                            className={`px-2.5 py-1 rounded-full border text-[8px] font-bold uppercase tracking-wider flex items-center gap-1.5 pointer-events-auto shadow-lg backdrop-blur-md transition-all ${
-                                studioTheme === 'white'
-                                    ? 'bg-white/90 border-neutral-200 text-neutral-800 hover:bg-neutral-100 hover:text-purple-700'
-                                    : 'bg-black/75 border-white/10 text-white hover:text-[#DAA520]'
-                            }`}
-                        >
-                            {studioTheme === 'white' ? <Moon size={11} className="text-purple-600" /> : <Sun size={11} className="text-[#DAA520]" />}
-                            <span>{studioTheme === 'white' ? 'Dojo Noir' : 'Studio Blanc'}</span>
-                        </button>
+                        <div className="flex items-center gap-1.5 pointer-events-auto">
+                            {/* Vue Holographique Button */}
+                            <button
+                                onClick={() => setIsAROpen(true)}
+                                className="px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-wider flex items-center justify-center shadow-lg backdrop-blur-md transition-all bg-gradient-to-r from-amber-600 to-yellow-600 text-white border-amber-400/50 hover:from-amber-500 hover:to-yellow-500 active:scale-95 shadow-amber-900/40"
+                                title={translate('ar.hologram')}
+                            >
+                                <span>{translate('ar.hologram')}</span>
+                            </button>
+
+                            {/* Theme Toggle Button */}
+                            <button
+                                onClick={() => setStudioTheme(prev => prev === 'dark' ? 'white' : 'dark')}
+                                className={`px-2.5 py-1 rounded-full border text-[8px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all ${
+                                    studioTheme === 'white'
+                                        ? 'bg-white/90 border-neutral-200 text-neutral-800 hover:bg-neutral-100 hover:text-purple-700'
+                                        : 'bg-black/75 border-white/10 text-white hover:text-[#DAA520]'
+                                }`}
+                            >
+                                {studioTheme === 'white' ? <Moon size={11} className="text-purple-600" /> : <Sun size={11} className="text-[#DAA520]" />}
+                                <span>{studioTheme === 'white' ? 'Dojo Noir' : 'Studio Blanc'}</span>
+                            </button>
+                        </div>
                     </div>
 
                     {/* DRILL PREP COUNTDOWN OVERLAY */}
@@ -406,6 +420,17 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                     </div>
                 )}
             </div>
+
+            {/* Holographic AR Modal (Camera + Floor Anchor) */}
+            <HolographicARModal
+                isOpen={isAROpen}
+                onClose={() => setIsAROpen(false)}
+                modelUrl={effectiveModelUrl}
+                exerciseName={technique.name}
+                exerciseId={technique.id || (technique as any).canonicalId || (technique as any).category}
+                isPaused={isPaused}
+                speed={speed}
+            />
         </div>
     );
 };

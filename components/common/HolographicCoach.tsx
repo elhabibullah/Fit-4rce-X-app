@@ -3,10 +3,12 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, useFBX, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Sparkles } from 'lucide-react';
 import { COACH_MODEL_URL } from '../../lib/constants.ts';
 import { HumanoidMotionEngine } from '../../lib/animation/humanoidMotionEngine.ts';
 import type { HunyuanPuppeteerEngine } from '../../lib/puppeteer/hunyuanPuppeteer.ts';
+import { HolographicARModal } from './HolographicARModal.tsx';
+import { useApp } from '../../hooks/useApp.ts';
 
 // Multi-language exercise name resolver for Hunyuan biomechanical animations
 export type ExerciseCategory =
@@ -582,6 +584,7 @@ export interface HolographicCoachProps {
   cameraPreset?: 'face' | 'profile' | 'free';
   hideBadge?: boolean;
   hideThemeToggle?: boolean;
+  hideARButton?: boolean;
   puppeteerEngine?: HunyuanPuppeteerEngine | null;
   isPuppeteerActive?: boolean;
   disableWheelForward?: boolean;
@@ -602,13 +605,16 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
   cameraPreset,
   hideBadge = false,
   hideThemeToggle = false,
+  hideARButton = true,
   puppeteerEngine,
   isPuppeteerActive,
   disableWheelForward = false,
 }) => {
+  const { translate } = useApp();
   const [internalStudioTheme, setInternalStudioTheme] = useState<'white' | 'dark'>(() => {
     return (localStorage.getItem('f4x_studio_theme') as 'white' | 'dark') || 'white';
   });
+  const [isARModalOpen, setIsARModalOpen] = useState(false);
 
   const currentTheme = propStudioTheme || internalStudioTheme;
   const isDark = currentTheme === 'dark';
@@ -652,30 +658,42 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
     <div className={`w-full h-full relative overflow-hidden flex flex-col justify-between select-none ${
       isTransparent ? 'bg-transparent' : (isDark ? 'bg-[#08080c]' : 'bg-white')
     }`}>
-      {/* TOP CONTROLS: Studio White vs Studio Black Toggle (when not managed by external header) */}
-      {!isTransparent && !hideThemeToggle && (
+      {/* TOP CONTROLS: Studio White vs Studio Black Toggle & Vue Holographique AR */}
+      {!isTransparent && (!hideThemeToggle || !hideARButton) && (
         <div className="absolute top-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
-          <button
-            onClick={toggleStudioTheme}
-            className={`px-3.5 py-2 rounded-full border text-[10px] font-black uppercase tracking-wider backdrop-blur-md transition-all shadow-lg flex items-center gap-2 active:scale-95 ${
-              isDark
-                ? 'bg-neutral-900/90 text-white border-neutral-700 hover:bg-neutral-800'
-                : 'bg-white/95 text-neutral-800 border-neutral-200 hover:bg-neutral-100'
-            }`}
-            title={isDark ? "Passer au Studio Blanc Matrix" : "Passer au Studio Noir"}
-          >
-            {isDark ? (
-              <>
-                <Sun size={13} className="text-amber-400" />
-                <span>Studio Blanc</span>
-              </>
-            ) : (
-              <>
-                <Moon size={13} className="text-purple-600" />
-                <span>Studio Noir</span>
-              </>
-            )}
-          </button>
+          {!hideARButton && (
+            <button
+              onClick={() => setIsARModalOpen(true)}
+              className="px-3.5 py-2 rounded-full border text-[10px] font-black uppercase tracking-wider backdrop-blur-md transition-all shadow-lg flex items-center justify-center active:scale-95 bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400/60 hover:from-purple-500 hover:to-indigo-500 shadow-purple-900/30"
+              title={translate('ar.hologram')}
+            >
+              <span>{translate('ar.hologram')}</span>
+            </button>
+          )}
+
+          {!hideThemeToggle && (
+            <button
+              onClick={toggleStudioTheme}
+              className={`px-3.5 py-2 rounded-full border text-[10px] font-black uppercase tracking-wider backdrop-blur-md transition-all shadow-lg flex items-center gap-2 active:scale-95 ${
+                isDark
+                  ? 'bg-neutral-900/90 text-white border-neutral-700 hover:bg-neutral-800'
+                  : 'bg-white/95 text-neutral-800 border-neutral-200 hover:bg-neutral-100'
+              }`}
+              title={isDark ? "Passer au Studio Blanc Matrix" : "Passer au Studio Noir"}
+            >
+              {isDark ? (
+                <>
+                  <Sun size={13} className="text-amber-400" />
+                  <span>Studio Blanc</span>
+                </>
+              ) : (
+                <>
+                  <Moon size={13} className="text-purple-600" />
+                  <span>Studio Noir</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
 
@@ -744,6 +762,17 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
           </div>
         </div>
       )}
+
+      {/* Holographic AR Modal (Camera + Floor Anchor) */}
+      <HolographicARModal
+        isOpen={isARModalOpen}
+        onClose={() => setIsARModalOpen(false)}
+        modelUrl={finalUrl}
+        exerciseName={categoryLabels[category] || exerciseName}
+        exerciseId={exerciseId}
+        isPaused={isPaused}
+        speed={speed}
+      />
     </div>
   );
 };
