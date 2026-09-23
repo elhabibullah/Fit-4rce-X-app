@@ -103,12 +103,85 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     },
     keywords: [
       'lunge', 'lunges', 'fente', 'fentes', 'split squat', 'walking lunge',
-      'fente avant', 'fente arriere', 'fentes dynamiques', 'fentes alternees',
+      'fente avant', 'fentes dynamiques', 'fentes alternees',
       'zancada', 'zancadas', 'afundo', 'afundos', 'ausfallschritt', 'ausfallschritte',
       'affondi', 'выпады',
       'ランジ',
       '箭步蹲', '弓步',
       'اندفاع', 'طعن'
+    ],
+  },
+
+  // 2B. REVERSE LUNGE (Fentes arrières avec pied posé au sol)
+  reverse_lunge: {
+    id: 'reverse_lunge',
+    name: 'Fentes Arrières (Reverse Lunges)',
+    category: 'lunge',
+    clipId: 'reverse_lunge',
+    startingPosture: 'standing',
+    cycleDuration: 3.4,
+    contacts: {
+      leftFootGround: true,
+      rightFootGround: true,
+      leftHandGround: false,
+      rightHandGround: false,
+      feetSpacing: 0.24,
+      handOrientation: 'free',
+      preventFloorPenetration: true,
+      minKneeFloorClearance: 0.06,
+    },
+    keywords: [
+      'reverse lunge', 'reverse lunges', 'reverse_lunge', 'reversed lunge', 'reversed lunges',
+      'fente arriere', 'fente arrière', 'fentes arriere', 'fentes arrières', 'fentes arriere alternees'
+    ],
+  },
+
+  // 2C. CRUNCH / ABDOS (Couché sur le dos, dos au sol, recadré sur le plateau)
+  crunch: {
+    id: 'crunch',
+    name: 'Abdos (Crunch)',
+    category: 'plank',
+    clipId: 'crunch',
+    startingPosture: 'supine',
+    cycleDuration: 2.4,
+    contacts: {
+      leftFootGround: true,
+      rightFootGround: true,
+      leftHandGround: false,
+      rightHandGround: false,
+      feetSpacing: 0.22,
+      handOrientation: 'free',
+      preventFloorPenetration: true,
+      minKneeFloorClearance: 0.10,
+    },
+    keywords: [
+      'crunch', 'crunches', 'abdo', 'abdos', 'abdominaux', 'situp', 'situps', 'sit-up',
+      'abdominal', 'gainage abdos', 'releve de buste', 'relevé de buste', 'enroulement'
+    ],
+  },
+
+  // 2D. GLUTE BRIDGE / PONT FESSIER (Dos au sol, bras le long du corps au sol, élévation de bassin)
+  glute_bridge: {
+    id: 'glute_bridge',
+    name: 'Pont Fessier (Glute Bridge)',
+    category: 'squat',
+    clipId: 'glute_bridge',
+    startingPosture: 'supine',
+    cycleDuration: 2.8,
+    contacts: {
+      leftFootGround: true,
+      rightFootGround: true,
+      leftHandGround: true,
+      rightHandGround: true,
+      feetSpacing: 0.24,
+      handOrientation: 'free',
+      preventFloorPenetration: true,
+      minKneeFloorClearance: 0.10,
+    },
+    keywords: [
+      'glute bridge', 'glute_bridge', 'pont fessier', 'pont_fessier', 'bridge',
+      'hip thrust', 'releve de bassin', 'relevé de bassin', 'fessiers au sol',
+      'reverse glute bridge', 'reverse gluten bridge', 'gluten bridge'
     ],
   },
 
@@ -488,28 +561,42 @@ export function resolveExerciseDefinition(query?: string | null): ExerciseDefini
     return EXERCISE_DEFINITIONS[clean];
   }
 
-  // 1b. Match common exercises from GitHub exercices-json (e.g. push_up -> pushup)
-  if (clean === 'push_up' || clean === 'jump_push_up') {
+  // 1b. Match common exercises from GitHub exercices-json & specific aliases
+  if (clean === 'push_up' || clean === 'jump_push_up' || clean.includes('pompe')) {
     return EXERCISE_DEFINITIONS.pushup;
+  }
+  if (clean.includes('reverse') && (clean.includes('lunge') || clean.includes('fente'))) {
+    return EXERCISE_DEFINITIONS.reverse_lunge;
+  }
+  if (clean.includes('bridge') || clean.includes('gluten') || clean.includes('pont fessier') || clean.includes('bassin')) {
+    return EXERCISE_DEFINITIONS.glute_bridge;
+  }
+  if (clean.includes('crunch') || clean.includes('abdo') || clean.includes('situp') || clean.includes('sit-up')) {
+    return EXERCISE_DEFINITIONS.crunch;
   }
   if (clean === 'back_squat' || clean === 'overhead_squat' || clean === 'pistol_squat' || clean === 'sumo_squat') {
     return EXERCISE_DEFINITIONS.squat;
   }
-  if (clean === 'reverse_lunge') {
-    return EXERCISE_DEFINITIONS.lunge;
+  if (clean === 'reverse_lunge' || clean.includes('fente arriere') || clean.includes('reversed lunge')) {
+    return EXERCISE_DEFINITIONS.reverse_lunge;
   }
 
-  // 2. High priority keyword scan
+  // 2. High priority keyword scan: sorted by descending keyword length so specific multi-word phrases match first
+  const allKeywords: { kw: string; def: ExerciseDefinition }[] = [];
   for (const def of Object.values(EXERCISE_DEFINITIONS)) {
     if (def.id === 'idle') continue;
     for (const kw of def.keywords) {
-      const cleanKw = kw
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-      if (clean.includes(cleanKw)) {
-        return def;
-      }
+      allKeywords.push({
+        kw: kw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
+        def,
+      });
+    }
+  }
+  allKeywords.sort((a, b) => b.kw.length - a.kw.length);
+
+  for (const { kw, def } of allKeywords) {
+    if (clean.includes(kw)) {
+      return def;
     }
   }
 

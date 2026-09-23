@@ -29,8 +29,10 @@ export class HumanoidMotionEngine {
   public currentGroundOffsetY: number = 0;
   public currentGroundOffsetZ: number = 0;
   public lastSolveResult: SolvedGroundContact | null = null;
+  public podiumSurfaceY: number = -0.889;
 
   constructor(scene: THREE.Object3D, modelScale?: number, podiumSurfaceY: number = -0.889) {
+    this.podiumSurfaceY = podiumSurfaceY;
     this.retargeter = new HunyuanSkeletalRetargeter(scene, modelScale, podiumSurfaceY);
     this.contactSolver = new GroundContactSolver();
     this.currentExerciseDef = resolveExerciseDefinition('idle');
@@ -181,7 +183,13 @@ export class HumanoidMotionEngine {
     this.currentGroundOffsetZ = THREE.MathUtils.lerp(this.currentGroundOffsetZ, targetGroundZ, lerpRate);
 
     // 1. Apply Pose to Hunyuan Skeleton via Retargeter
-    this.retargeter.applyPose(finalPose);
+    const poseToApply: HumanoidFramePose = {
+      ...finalPose,
+      proneAngle: this.currentProneAngle,
+      groundOffsetY: this.currentGroundOffsetY,
+      groundOffsetZ: this.currentGroundOffsetZ,
+    };
+    this.retargeter.applyPose(poseToApply);
 
     // 2. Execute Ground & Contact Solver
     // Enforces ground contact, flat palms for pushups, clearance for lunges, and zero floor intersection
@@ -189,7 +197,8 @@ export class HumanoidMotionEngine {
       this.retargeter,
       this.currentExerciseDef.startingPosture,
       this.currentExerciseDef.contacts,
-      this.currentProneAngle
+      this.currentProneAngle,
+      this.podiumSurfaceY
     );
     this.lastSolveResult = solveResult;
 

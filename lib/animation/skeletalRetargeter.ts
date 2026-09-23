@@ -161,27 +161,41 @@ export class HunyuanSkeletalRetargeter {
     });
 
     // 2. Compute exact anatomical heights and clearances from rest geometry
+    // Calculate world reference bottom: if meshBox is already in world position (e.g. parented to groupRef),
+    // meshBox.min.y is around podiumSurfaceY (-0.889). If scene is at origin, meshBox.min.y is in local units.
+    const isPositionedInWorld = Number.isFinite(meshBox.min.y) && meshBox.min.y < 0;
+    const floorReferenceY = isPositionedInWorld ? meshBox.min.y : (rawMeshMinY * scaleY);
+
     const hipsCalibrated = this.bones.get('Hips');
     if (hipsCalibrated) {
-      const hipsLocalAboveBottom = Math.max(0.5, hipsCalibrated.restLocalPos.y - rawMeshMinY);
-      this.standingHipsAboveFloor = hipsLocalAboveBottom * scaleY;
+      const wpHips = new THREE.Vector3();
+      hipsCalibrated.bone.getWorldPosition(wpHips);
+      const diffY = isPositionedInWorld ? (wpHips.y - floorReferenceY) : (wpHips.y - rawMeshMinY) * scaleY;
+      this.standingHipsAboveFloor = Math.max(0.65, Math.min(1.05, diffY));
       this.standingHipsWorldY = podiumSurfaceY + this.standingHipsAboveFloor;
+    } else {
+      this.standingHipsAboveFloor = 0.85;
+      this.standingHipsWorldY = podiumSurfaceY + 0.85;
     }
 
     const footCalibrated = this.bones.get('LeftFoot') || this.bones.get('RightFoot');
     if (footCalibrated) {
-      const ankleLocalAboveBottom = Math.max(0.05, footCalibrated.restLocalPos.y - rawMeshMinY);
-      this.anklePodiumClearance = ankleLocalAboveBottom * scaleY;
+      const wpFoot = new THREE.Vector3();
+      footCalibrated.bone.getWorldPosition(wpFoot);
+      const diffY = isPositionedInWorld ? (wpFoot.y - floorReferenceY) : (wpFoot.y - rawMeshMinY) * scaleY;
+      this.anklePodiumClearance = Math.max(0.04, Math.min(0.12, diffY));
     } else {
       this.anklePodiumClearance = 0.08;
     }
 
     const toeCalibrated = this.bones.get('LeftToeBase') || this.bones.get('RightToeBase');
     if (toeCalibrated) {
-      const toeLocalAboveBottom = Math.max(0.005, toeCalibrated.restLocalPos.y - rawMeshMinY);
-      this.toePodiumClearance = toeLocalAboveBottom * scaleY;
+      const wpToe = new THREE.Vector3();
+      toeCalibrated.bone.getWorldPosition(wpToe);
+      const diffY = isPositionedInWorld ? (wpToe.y - floorReferenceY) : (wpToe.y - rawMeshMinY) * scaleY;
+      this.toePodiumClearance = Math.max(0.005, Math.min(0.035, diffY));
     } else {
-      this.toePodiumClearance = 0.01;
+      this.toePodiumClearance = 0.015;
     }
 
     this.isCalibrated = this.bones.size > 0;
@@ -208,19 +222,27 @@ export class HunyuanSkeletalRetargeter {
 
     const calibratedHips = this.bones.get('Hips');
 
-    // 2. Continuous Prone / Floor blend: guarantees smooth non-popping transitions for burpees/pushups
+    // 2. Continuous Prone / Supine / Floor blend: guarantees smooth non-popping transitions
     const proneAngle = pose.proneAngle || 0;
-    const proneFactor = Math.sin(Math.min(Math.PI / 2, Math.max(0, Math.abs(proneAngle))));
-    const targetFloorHipsAbovePodium = 0.18;
-    const worldFloorDrop = Math.max(0.20, this.standingHipsAboveFloor - targetFloorHipsAbovePodium);
+    const isSupine = proneAngle < -0.3;
+    const absProne = Math.abs(proneAngle);
+    const proneFactor = Math.sin(Math.min(Math.PI / 2, Math.max(0, absProne)));
+
+    // Prone (pushup/plank on hands): ~0.32m above floor.
+    // Supine (crunch/glute bridge - dos au sol): ~0.10m above floor.
+    const targetFloorHipsAbovePodium = isSupine ? 0.10 : 0.32;
+    const worldFloorDrop = Math.max(0.15, this.standingHipsAboveFloor - targetFloorHipsAbovePodium);
     const localFloorDrop = worldFloorDrop * this.worldToLocalScale;
-    const localForwardShift = 0.22 * this.worldToLocalScale;
+
+    // Longitudinal centering on circular podium
+    const baseShift = isSupine ? 0.0 : 0.22;
+    const localForwardShift = baseShift * this.worldToLocalScale;
 
     // Apply root/hips translation
     if (this.hipsBone && calibratedHips) {
       const offsetX = (pose.hipsOffset[0] || 0) * this.worldToLocalScale;
       const offsetY = (pose.hipsOffset[1] || 0) * this.worldToLocalScale;
-      const offsetZ = (pose.hipsOffset[2] || 0) * this.worldToLocalScale;
+      const offsetZ = ((pose.hipsOffset[2] || 0) + (pose.groundOffsetZ || 0)) * this.worldToLocalScale;
 
       this.hipsBone.position.x = calibratedHips.restLocalPos.x + offsetX;
       this.hipsBone.position.y = calibratedHips.restLocalPos.y - (localFloorDrop * proneFactor) + offsetY;
@@ -328,16 +350,16 @@ export class HunyuanSkeletalRetargeter {
     const qRoll = new THREE.Quaternion().setFromAxisAngle(this.tmpVecZ, coronal);
     const qLocalDelta = new THREE.Quaternion().multiply(qYaw).multiply(qRoll).multiply(qPitch);
 
-    // Compute target world orientation
-    const targetWorldQ = qLocalDelta.multiply(calibrated.restWorldQ);
-
+    // Compute target world orientation incorporating parent bone's current orientation
     const parentObj = calibrated.bone.parent;
     if (parentObj) {
-      const pWQ = new THREE.Quaternion();
-      parentObj.getWorldQuaternion(pWQ);
-      calibrated.bone.quaternion.copy(pWQ.invert().multiply(targetWorldQ));
+      parentObj.getWorldQuaternion(this.tmpParentWQ);
+      this.tmpTargetWQ.copy(this.tmpParentWQ).multiply(qLocalDelta).multiply(calibrated.restWorldQ);
+      const invParentWQ = this.tmpParentWQ.clone().invert();
+      calibrated.bone.quaternion.copy(invParentWQ.multiply(this.tmpTargetWQ));
     } else {
-      calibrated.bone.quaternion.copy(targetWorldQ);
+      this.tmpTargetWQ.copy(qLocalDelta).multiply(calibrated.restWorldQ);
+      calibrated.bone.quaternion.copy(this.tmpTargetWQ);
     }
     calibrated.bone.updateMatrixWorld(true);
   }
