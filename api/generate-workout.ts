@@ -30,7 +30,7 @@ export default async function handler(req: any, res: any) {
   const fitnessLevel = body.fitnessLevel || body.options?.level || 'intermediate';
   const equipment = body.equipment || body.options?.equipment || 'bodyweight';
   const combinedPrompt = body.prompt || body.combinedPrompt || '';
-  const targetLang = body.language || 'fr';
+  const targetLang = body.language || 'en';
 
   let targetSets = 4;
   let targetReps = 14;
@@ -53,11 +53,17 @@ export default async function handler(req: any, res: any) {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `You are Fit-4rce X Master Sports Biomechanist & Conditioning Coach.
-Generate a high-variety, professionally periodized 5-exercise workout plan in ${targetLang}.
+Generate an authentic, professional 5-exercise workout plan in the exact target language: "${targetLang}".
+
+CRITICAL LANGUAGE RULE:
+- All exercise names, descriptions, title, and instructions MUST BE IN ${targetLang}. If ${targetLang} is "en", DO NOT use French names.
+- NO INVENTED OR WEIRD NAMES. Use ONLY standard, real exercises known by certified personal trainers (e.g. in English: Push-ups, Squats, Lunges, Plank, Burpees, Crunches, Glute Bridge, Jumping Jacks, High Knees, Inverted Rows).
+- Every exercise must include a valid "canonicalId" from: "push_up", "squat", "lunge", "reverse_lunge", "plank", "burpee", "crunch", "glute_bridge", "jumping_jack", "high_knees", "bent_over_row", "bicep_curl", "overhead_press", "deadlift".
 
 Workout Discipline: ${workoutType}
 Fitness Level: ${fitnessLevel}
-Equipment Mode: ${equipment} (bodyweight = sans matériel, home = haltères/bandes/tapis, gym = salle complète/barres/machines)
+Equipment Mode: ${equipment}
+Specific User Instructions: ${combinedPrompt}
 Specific User Instructions: ${combinedPrompt}
 
 CRITICAL DIVERSITY & ANATOMICAL MANDATE:

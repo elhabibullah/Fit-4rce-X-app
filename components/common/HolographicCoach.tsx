@@ -232,14 +232,14 @@ const StudioStage: React.FC<{ isDark: boolean }> = ({ isDark }) => {
       {/* 1. Feathered soft contact shadow beneath the training platform */}
       {shadowTexture && (
         <mesh position={[0, -0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[3.8, 3.8]} />
+          <planeGeometry args={[4.5, 4.5]} />
           <meshBasicMaterial map={shadowTexture} transparent opacity={0.9} depthWrite={false} />
         </mesh>
       )}
 
       {/* 2. Elevated Training Podium */}
       <mesh position={[0, 0.015, 0]}>
-        <cylinderGeometry args={[1.45, 1.48, 0.03, 64]} />
+        <cylinderGeometry args={[1.75, 1.78, 0.03, 64]} />
         <meshStandardMaterial
           color={isDark ? '#141419' : '#f8fafc'}
           roughness={isDark ? 0.35 : 0.25}
@@ -249,7 +249,7 @@ const StudioStage: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 
       {/* 3. Satin Architectural Rim */}
       <mesh position={[0, 0.0302, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.40, 1.45, 64]} />
+        <ringGeometry args={[1.70, 1.75, 64]} />
         <meshStandardMaterial
           color={isDark ? '#272732' : '#e2e8f0'}
           roughness={0.2}
@@ -259,7 +259,7 @@ const StudioStage: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 
       {/* 4. Illuminated Energy Halo Ring */}
       <mesh position={[0, 0.031, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.34, 1.37, 64]} />
+        <ringGeometry args={[1.63, 1.67, 64]} />
         <meshBasicMaterial
           color={isDark ? '#a855f7' : '#9333ea'}
           transparent
@@ -270,7 +270,7 @@ const StudioStage: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 
       {/* 5. Inner Mat Center */}
       <mesh position={[0, 0.0305, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.33, 64]} />
+        <circleGeometry args={[1.62, 64]} />
         <meshStandardMaterial
           color={isDark ? '#0b0b10' : '#ffffff'}
           roughness={0.5}

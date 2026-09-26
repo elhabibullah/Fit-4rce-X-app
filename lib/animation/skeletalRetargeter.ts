@@ -235,7 +235,7 @@ export class HunyuanSkeletalRetargeter {
     const localFloorDrop = worldFloorDrop * this.worldToLocalScale;
 
     // Longitudinal centering on circular podium
-    const baseShift = isSupine ? 0.0 : 0.22;
+    const baseShift = isSupine ? 0.0 : 0.12;
     const localForwardShift = baseShift * this.worldToLocalScale;
 
     // Apply root/hips translation

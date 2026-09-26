@@ -367,72 +367,72 @@ const REVERSE_LUNGE_CLIP = new HumanoidMotionClip('reverse_lunge', 'Reverse Lung
 
 // 3C. CRUNCH: Supine abdominal curling (couché sur le dos, dos au sol, bras symétriques)
 const CRUNCH_CLIP = new HumanoidMotionClip('crunch', 'Crunch (Abdos)', 2.4, [
-  // 0.00: Supine on floor - back and hips resting flush on podium, knees bent, feet flat
+  // 0.00: Supine on floor - back and hips resting flush on podium, knees bent, arms straight along thighs
   {
     time: 0.0,
     hipsOffset: [0, 0, 0],
-    proneAngle: -1.57, // Face UP, back on the floor (dos au sol)
+    proneAngle: -1.57, // Face UP, back flat on the floor (dos au sol)
     groundOffsetZ: 0.0,
     bones: {
       Spine: { pitch: 0, yaw: 0, roll: 0 },
       Spine1: { pitch: 0, yaw: 0, roll: 0 },
       Head: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.25, yaw: 0.15, roll: 0.35 }, // Completely symmetrical hands supporting near temples
-      RightArm: { pitch: 1.25, yaw: 0.15, roll: 0.35 },
-      LeftForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-      LeftHand: { pitch: 0.10, yaw: 0, roll: 0 },
-      RightHand: { pitch: 0.10, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.95, yaw: 0.05, roll: 0.05 }, // Knees bent ~90 deg, feet flat near hips
-      RightUpLeg: { pitch: 0.95, yaw: -0.05, roll: 0.05 },
+      LeftArm: { pitch: 0.65, yaw: 0, roll: 0.06 }, // Symmetrical arms reaching cleanly along thighs
+      RightArm: { pitch: 0.65, yaw: 0, roll: 0.06 },
+      LeftForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.05, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.95, yaw: 0.04, roll: 0.04 }, // Knees bent ~90 deg, feet flat near hips
+      RightUpLeg: { pitch: 0.95, yaw: -0.04, roll: 0.04 },
       LeftLeg: { pitch: 1.50, yaw: 0, roll: 0 },
       RightLeg: { pitch: 1.50, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0.35, yaw: 0, roll: 0 },
       RightFoot: { pitch: 0.35, yaw: 0, roll: 0 },
     },
   },
-  // 0.45: Concentric curl - thoracic spine flexes up, curling shoulders off the floor
+  // 0.45: Concentric curl - thoracic spine flexes up, curling shoulders smoothly off the floor
   {
     time: 0.45,
     hipsOffset: [0, 0, 0],
     proneAngle: -1.57,
     groundOffsetZ: 0.0,
     bones: {
-      Spine: { pitch: 0.38, yaw: 0, roll: 0 }, // Abdominal flexion lifting upper back
-      Spine1: { pitch: 0.25, yaw: 0, roll: 0 },
-      Head: { pitch: 0.22, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.25, yaw: 0.15, roll: 0.35 },
-      RightArm: { pitch: 1.25, yaw: 0.15, roll: 0.35 },
-      LeftForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-      LeftHand: { pitch: 0.10, yaw: 0, roll: 0 },
-      RightHand: { pitch: 0.10, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.95, yaw: 0.05, roll: 0.05 },
-      RightUpLeg: { pitch: 0.95, yaw: -0.05, roll: 0.05 },
+      Spine: { pitch: 0.36, yaw: 0, roll: 0 }, // Strict sagittal abdominal flexion
+      Spine1: { pitch: 0.24, yaw: 0, roll: 0 },
+      Head: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.82, yaw: 0, roll: 0.06 }, // Arms glide forward toward knees
+      RightArm: { pitch: 0.82, yaw: 0, roll: 0.06 },
+      LeftForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.05, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.95, yaw: 0.04, roll: 0.04 },
+      RightUpLeg: { pitch: 0.95, yaw: -0.04, roll: 0.04 },
       LeftLeg: { pitch: 1.50, yaw: 0, roll: 0 },
       RightLeg: { pitch: 1.50, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0.35, yaw: 0, roll: 0 },
       RightFoot: { pitch: 0.35, yaw: 0, roll: 0 },
     },
   },
-  // 0.60: Squeeze abdominal peak
+  // 0.60: Squeeze abdominal peak - hold contraction
   {
     time: 0.60,
     hipsOffset: [0, 0, 0],
     proneAngle: -1.57,
     groundOffsetZ: 0.0,
     bones: {
-      Spine: { pitch: 0.38, yaw: 0, roll: 0 },
-      Spine1: { pitch: 0.25, yaw: 0, roll: 0 },
-      Head: { pitch: 0.22, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.25, yaw: 0.15, roll: 0.35 },
-      RightArm: { pitch: 1.25, yaw: 0.15, roll: 0.35 },
-      LeftForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-      LeftHand: { pitch: 0.10, yaw: 0, roll: 0 },
-      RightHand: { pitch: 0.10, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.95, yaw: 0.05, roll: 0.05 },
-      RightUpLeg: { pitch: 0.95, yaw: -0.05, roll: 0.05 },
+      Spine: { pitch: 0.36, yaw: 0, roll: 0 },
+      Spine1: { pitch: 0.24, yaw: 0, roll: 0 },
+      Head: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.82, yaw: 0, roll: 0.06 },
+      RightArm: { pitch: 0.82, yaw: 0, roll: 0.06 },
+      LeftForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.05, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.95, yaw: 0.04, roll: 0.04 },
+      RightUpLeg: { pitch: 0.95, yaw: -0.04, roll: 0.04 },
       LeftLeg: { pitch: 1.50, yaw: 0, roll: 0 },
       RightLeg: { pitch: 1.50, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0.35, yaw: 0, roll: 0 },
@@ -449,14 +449,14 @@ const CRUNCH_CLIP = new HumanoidMotionClip('crunch', 'Crunch (Abdos)', 2.4, [
       Spine: { pitch: 0, yaw: 0, roll: 0 },
       Spine1: { pitch: 0, yaw: 0, roll: 0 },
       Head: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.25, yaw: 0.15, roll: 0.35 },
-      RightArm: { pitch: 1.25, yaw: 0.15, roll: 0.35 },
-      LeftForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 1.40, yaw: 0, roll: 0 },
-      LeftHand: { pitch: 0.10, yaw: 0, roll: 0 },
-      RightHand: { pitch: 0.10, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.95, yaw: 0.05, roll: 0.05 },
-      RightUpLeg: { pitch: 0.95, yaw: -0.05, roll: 0.05 },
+      LeftArm: { pitch: 0.65, yaw: 0, roll: 0.06 },
+      RightArm: { pitch: 0.65, yaw: 0, roll: 0.06 },
+      LeftForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.05, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.95, yaw: 0.04, roll: 0.04 },
+      RightUpLeg: { pitch: 0.95, yaw: -0.04, roll: 0.04 },
       LeftLeg: { pitch: 1.50, yaw: 0, roll: 0 },
       RightLeg: { pitch: 1.50, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0.35, yaw: 0, roll: 0 },
@@ -628,8 +628,8 @@ const PLANK_CLIP = new HumanoidMotionClip('plank', 'Plank', 3.0, [
       RightForeArm: { pitch: 1.50, yaw: 0, roll: 0 },
       LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
       RightUpLeg: { pitch: 0, yaw: 0, roll: -0.06 },
-      LeftFoot: { pitch: 0.40, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0.40, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.30, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.30, yaw: 0, roll: 0 },
     },
   },
   {
@@ -644,8 +644,8 @@ const PLANK_CLIP = new HumanoidMotionClip('plank', 'Plank', 3.0, [
       RightForeArm: { pitch: 1.50, yaw: 0, roll: 0 },
       LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
       RightUpLeg: { pitch: 0, yaw: 0, roll: -0.06 },
-      LeftFoot: { pitch: 0.40, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0.40, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.30, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.30, yaw: 0, roll: 0 },
     },
   },
   {
@@ -660,8 +660,8 @@ const PLANK_CLIP = new HumanoidMotionClip('plank', 'Plank', 3.0, [
       RightForeArm: { pitch: 1.50, yaw: 0, roll: 0 },
       LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
       RightUpLeg: { pitch: 0, yaw: 0, roll: -0.06 },
-      LeftFoot: { pitch: 0.40, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0.40, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.30, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.30, yaw: 0, roll: 0 },
     },
   },
 ]);

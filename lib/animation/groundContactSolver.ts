@@ -157,27 +157,15 @@ export class GroundContactSolver {
     }
 
     // 2. IN SUPINE / FACE-UP FLOOR EXERCISES (Crunch, Abdos, Glute Bridge - DOS AU SOL):
-    // Anchors upper back, shoulders, and head firmly on the podium floor without bouncing
+    // Anchors pelvis and sacrum stably on the podium floor without dropping hips as the upper body curls up
     if (posture === 'supine' || bodyProneAngle < -0.3) {
-      let upperBodyFloorY = Infinity;
-      const spine = retargeter.bones.get('Spine1') || retargeter.bones.get('Spine');
-      const head = retargeter.bones.get('Head');
-
-      // Back surface of thoracic spine / shoulders is primary anchor to floor
-      if (spine) {
-        spine.bone.getWorldPosition(this.tmpVec);
-        upperBodyFloorY = Math.min(upperBodyFloorY, this.tmpVec.y - 0.09);
-      }
-      // Back of head
-      if (head) {
-        head.bone.getWorldPosition(this.tmpVec);
-        upperBodyFloorY = Math.min(upperBodyFloorY, this.tmpVec.y - 0.08);
-      }
-
-      // In glute bridge and crunches, the upper back/scapulae remain on the floor as the pivot!
-      if (Number.isFinite(upperBodyFloorY)) {
-        const deltaWorldY = podiumSurfaceY - upperBodyFloorY;
-        if (Math.abs(deltaWorldY) > 0.001) {
+      const hips = retargeter.bones.get('Hips');
+      if (hips) {
+        hips.bone.getWorldPosition(this.tmpVec);
+        // Hips / pelvis lower surface rests stably on podium mat (~0.08m radius from hip center)
+        const pelvisBottomY = this.tmpVec.y - 0.08;
+        const deltaWorldY = podiumSurfaceY - pelvisBottomY;
+        if (Math.abs(deltaWorldY) > 0.002) {
           result.hipsElevationAdjust = deltaWorldY;
         }
       }
@@ -255,7 +243,7 @@ export class GroundContactSolver {
    */
   private orientFootForFloorContact(retargeter: HunyuanSkeletalRetargeter, toe: CalibratedBone | undefined): void {
     if (!toe) return;
-    // Set toe pitch to +0.45 so the ball of the foot and toes lay naturally forward on the floor (tucked under, not curled backwards)
-    retargeter.setAnatomicalRotation(toe.name, 0.45, 0, 0);
+    // Set toe pitch to -0.25 so the ball of the foot and toes lay naturally flat on the floor (tucked under, never curled backwards)
+    retargeter.setAnatomicalRotation(toe.name, -0.25, 0, 0);
   }
 }

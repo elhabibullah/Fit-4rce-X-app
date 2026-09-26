@@ -651,11 +651,11 @@ Return a JSON object with:
       return;
     }
 
-    const smartFallback = generateSmartWorkout(workoutType || combinedPrompt, targetSets, targetReps, restBetweenSets, language || 'fr', equipment);
+    const smartFallback = generateSmartWorkout(workoutType || combinedPrompt, targetSets, targetReps, restBetweenSets, language || 'en', equipment);
     res.json(smartFallback);
   } catch (error: any) {
     console.error("API error generate-workout:", error);
-    const smartFallback = generateSmartWorkout(workoutType || combinedPrompt, targetSets, targetReps, restBetweenSets, language || 'fr', equipment);
+    const smartFallback = generateSmartWorkout(workoutType || combinedPrompt, targetSets, targetReps, restBetweenSets, language || 'en', equipment);
     res.json(smartFallback);
   }
 });

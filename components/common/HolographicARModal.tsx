@@ -302,43 +302,39 @@ const UnifiedPyramid360Scene: React.FC<{
   speed?: number;
   pyramidOffset?: number;
   facetScale?: number;
-}> = ({ url, exerciseName, exerciseId, isPaused, speed, pyramidOffset = 0.38, facetScale = 0.32 }) => {
-  const { viewport } = useThree();
-  const minDim = Math.min(viewport.width, viewport.height);
-
-  // Dynamic responsive geometry: guarantees 100% visibility on any screen aspect ratio (GSM portrait to tablet)
-  const responsiveOffset = Math.min(pyramidOffset, minDim * 0.28);
-  const responsiveScale = Math.min(facetScale, minDim * 0.22);
-
+  showGuides?: boolean;
+}> = ({ url, exerciseName, exerciseId, isPaused, speed, pyramidOffset = 0.65, facetScale = 0.46, showGuides = true }) => {
   return (
     <group position={[0, 0, 0]}>
-      {/* Central Alignment Apex Crosshair: exact 1cm square apex tip for physical transparent prism */}
-      <group position={[0, 0, 0]}>
-        {/* Square apex target marker */}
-        <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
-          <ringGeometry args={[0.035, 0.045, 4]} />
-          <meshBasicMaterial color="#06b6d4" transparent opacity={0.85} side={THREE.DoubleSide} />
-        </mesh>
-        <mesh position={[0, 0, 0]}>
-          <circleGeometry args={[0.015, 16]} />
-          <meshBasicMaterial color="#c084fc" transparent opacity={0.9} side={THREE.DoubleSide} />
-        </mesh>
-        {/* Subtle guide ring */}
-        <mesh position={[0, 0, -0.01]}>
-          <ringGeometry args={[0.12, 0.135, 32]} />
-          <meshBasicMaterial color="#9333ea" transparent opacity={0.3} side={THREE.DoubleSide} />
-        </mesh>
-      </group>
+      {/* Central Alignment Apex Crosshair and Prism Outline */}
+      {showGuides && (
+        <group position={[0, 0, 0]}>
+          {/* 1cm Apex Square Target for physical transparent pyramid tip */}
+          <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
+            <ringGeometry args={[0.035, 0.048, 4]} />
+            <meshBasicMaterial color="#06b6d4" transparent opacity={0.85} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0]}>
+            <circleGeometry args={[0.016, 16]} />
+            <meshBasicMaterial color="#c084fc" transparent opacity={0.9} side={THREE.DoubleSide} />
+          </mesh>
+          {/* 45-degree diagonal alignment axes */}
+          <mesh position={[0, 0, -0.01]} rotation={[0, 0, Math.PI / 4]}>
+            <ringGeometry args={[0.18, 0.19, 4]} />
+            <meshBasicMaterial color="#a855f7" transparent opacity={0.35} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      )}
 
       {/* 1. SOUTH FACET (Bottom face): Front view. Head points DOWN (away from apex), feet point UP towards apex */}
-      <group position={[0, -responsiveOffset, 0]} rotation={[0, 0, Math.PI]}>
+      <group position={[0, -pyramidOffset, 0]} rotation={[0, 0, Math.PI]}>
         <ARModelRig
           url={url}
           exerciseName={exerciseName}
           exerciseId={exerciseId}
           isPaused={isPaused}
           speed={speed}
-          scaleMultiplier={responsiveScale}
+          scaleMultiplier={facetScale}
           rotationY={0}
           heightOffset={0}
           showFloorReticle={false}
@@ -346,45 +342,45 @@ const UnifiedPyramid360Scene: React.FC<{
       </group>
 
       {/* 2. NORTH FACET (Top face): Back view. Head points UP (away from apex), feet point DOWN towards apex */}
-      <group position={[0, responsiveOffset, 0]} rotation={[0, 0, 0]}>
+      <group position={[0, pyramidOffset, 0]} rotation={[0, 0, 0]}>
         <ARModelRig
           url={url}
           exerciseName={exerciseName}
           exerciseId={exerciseId}
           isPaused={isPaused}
           speed={speed}
-          scaleMultiplier={responsiveScale}
+          scaleMultiplier={facetScale}
           rotationY={Math.PI}
           heightOffset={0}
           showFloorReticle={false}
         />
       </group>
 
-      {/* 3. WEST FACET (Left face): Left profile view. Head points LEFT (away from apex), feet point RIGHT towards apex */}
-      <group position={[-responsiveOffset, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+      {/* 3. WEST FACET (Left face): Right profile view. Head points LEFT (away from apex), feet point RIGHT towards apex */}
+      <group position={[-pyramidOffset, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
         <ARModelRig
           url={url}
           exerciseName={exerciseName}
           exerciseId={exerciseId}
           isPaused={isPaused}
           speed={speed}
-          scaleMultiplier={responsiveScale}
-          rotationY={Math.PI / 2}
+          scaleMultiplier={facetScale}
+          rotationY={-Math.PI / 2}
           heightOffset={0}
           showFloorReticle={false}
         />
       </group>
 
-      {/* 4. EAST FACET (Right face): Right profile view. Head points RIGHT (away from apex), feet point LEFT towards apex */}
-      <group position={[responsiveOffset, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+      {/* 4. EAST FACET (Right face): Left profile view. Head points RIGHT (away from apex), feet point LEFT towards apex */}
+      <group position={[pyramidOffset, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
         <ARModelRig
           url={url}
           exerciseName={exerciseName}
           exerciseId={exerciseId}
           isPaused={isPaused}
           speed={speed}
-          scaleMultiplier={responsiveScale}
-          rotationY={-Math.PI / 2}
+          scaleMultiplier={facetScale}
+          rotationY={Math.PI / 2}
           heightOffset={0}
           showFloorReticle={false}
         />
@@ -420,7 +416,9 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(1.0);
   const [rotationY, setRotationY] = useState<number>(0);
   const [heightOffset, setHeightOffset] = useState<number>(0.0);
-  const [pyramidDistance, setPyramidDistance] = useState<number>(0.38);
+  const [pyramidDistance, setPyramidDistance] = useState<number>(0.65);
+  const [showPyramidGuides, setShowPyramidGuides] = useState<boolean>(true);
+  const [isCameraStreaming, setIsCameraStreaming] = useState<boolean>(false);
   const [wallProjectionStyle, setWallProjectionStyle] = useState<'simulated_wall' | 'live_camera_wall' | 'pure_cinema'>('simulated_wall');
   const [wallDistance, setWallDistance] = useState<number>(-1.2);
   const [isPaused, setIsPaused] = useState<boolean>(externalIsPaused);
@@ -448,6 +446,24 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
     }
   };
 
+  const attachAndPlayVideo = useCallback(async (video: HTMLVideoElement, stream: MediaStream) => {
+    try {
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+      if (video.srcObject !== stream) {
+        video.srcObject = stream;
+      }
+      await video.play();
+      setIsCameraStreaming(true);
+    } catch (err) {
+      console.warn('Camera video waiting for user gesture or loading:', err);
+      setIsCameraStreaming(false);
+    }
+  }, []);
+
   // Start Camera Stream
   const startCamera = useCallback(async (facing: 'environment' | 'user') => {
     try {
@@ -459,36 +475,39 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
 
       const constraints: MediaStreamConstraints = {
         video: {
-          facingMode: { ideal: facing },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
+          facingMode: facing === 'user' ? 'user' : 'environment',
         },
         audio: false,
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(console.error);
-      }
       setHasCameraPermission(true);
+      if (videoRef.current) {
+        await attachAndPlayVideo(videoRef.current, stream);
+      }
     } catch (err: any) {
       console.warn('Camera access warning:', err);
       try {
         const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         streamRef.current = fallbackStream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = fallbackStream;
-          videoRef.current.play().catch(console.error);
-        }
         setHasCameraPermission(true);
+        if (videoRef.current) {
+          await attachAndPlayVideo(videoRef.current, fallbackStream);
+        }
       } catch (fallbackErr: any) {
         setHasCameraPermission(false);
+        setIsCameraStreaming(false);
         setErrorMessage(translate('ar.camera_permission_desc'));
       }
     }
-  }, [translate]);
+  }, [attachAndPlayVideo, translate]);
+
+  useEffect(() => {
+    if (videoRef.current && streamRef.current && !isCameraStreaming) {
+      attachAndPlayVideo(videoRef.current, streamRef.current);
+    }
+  }, [hasCameraPermission, projectionMode, attachAndPlayVideo, isCameraStreaming]);
 
   useEffect(() => {
     const needsCamera = isOpen && (
@@ -506,6 +525,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
+      setIsCameraStreaming(false);
       setIsTorchOn(false);
     }
 
@@ -514,6 +534,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
+      setIsCameraStreaming(false);
       setIsTorchOn(false);
     };
   }, [isOpen, projectionMode, wallProjectionStyle, cameraFacing, startCamera]);
@@ -608,7 +629,15 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
             autoPlay
             playsInline
             muted
-            className={`absolute inset-0 w-full h-full object-cover z-0 ${
+            onLoadedMetadata={() => {
+              if (videoRef.current && streamRef.current) {
+                attachAndPlayVideo(videoRef.current, streamRef.current);
+              }
+            }}
+            onPlaying={() => setIsCameraStreaming(true)}
+            className={`absolute inset-0 w-full h-full object-cover z-0 pointer-events-none transition-opacity duration-500 ${
+              isCameraStreaming ? 'opacity-100' : 'opacity-0'
+            } ${
               cameraFacing === 'user' ? 'transform -scale-x-100' : ''
             }`}
           />
@@ -616,8 +645,35 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
           {/* Subdued ambient cyber grid */}
           <div className="absolute inset-0 z-5 pointer-events-none opacity-15 bg-[radial-gradient(#8a2be2_1px,transparent_1px)] [background-size:24px_24px]" />
 
-          {/* THREE.JS 3D CANVAS - OCCUPIES 100% OF SCREEN WITH MODEL DEAD-CENTER */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center">
+          {/* If video hasn't started playing or waiting for permission: Show live room projection prompt */}
+          {!isCameraStreaming && hasCameraPermission !== false && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-black/85 backdrop-blur-md text-center">
+              <div className="w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/50 flex items-center justify-center text-purple-400 mb-4 animate-pulse">
+                <Camera size={32} />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-white mb-2">
+                {translate('ar.room')} · {translate('ar.guide_room_title')}
+              </h3>
+              <p className="text-xs text-gray-300 max-w-sm mb-6 leading-relaxed">
+                {translate('ar.camera_permission_desc')}
+              </p>
+              <button
+                onClick={() => {
+                  startCamera(cameraFacing);
+                  if (videoRef.current && streamRef.current) {
+                    attachAndPlayVideo(videoRef.current, streamRef.current);
+                  }
+                }}
+                className="px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-widest shadow-2xl active:scale-95 transition-all flex items-center gap-2"
+              >
+                <Zap size={16} />
+                <span>{translate('ar.allow_camera')}</span>
+              </button>
+            </div>
+          )}
+
+          {/* THREE.JS 3D CANVAS - OCCUPIES 100% OF SCREEN WITH MODEL SUPERIMPOSED IN YOUR ROOM */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-auto">
             <Canvas
               gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
               camera={{ position: [0, 0, 2.7], fov: 38 }}
@@ -678,7 +734,8 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
                 isPaused={isPaused}
                 speed={speed}
                 pyramidOffset={pyramidDistance}
-                facetScale={0.38 * scaleMultiplier}
+                facetScale={0.46 * scaleMultiplier}
+                showGuides={showPyramidGuides}
               />
             </Suspense>
           </Canvas>
@@ -686,28 +743,39 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
           {/* Quick Prism Presets Bar */}
           <div className="absolute top-16 z-30 px-3 py-1.5 rounded-full bg-neutral-950/85 backdrop-blur-md border border-purple-500/40 flex items-center gap-1.5 shadow-2xl">
             <button
-              onClick={() => { setPyramidDistance(0.40); setScaleMultiplier(0.9); }}
+              onClick={() => { setPyramidDistance(0.58); setScaleMultiplier(0.95); }}
               className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase transition-all ${
-                Math.abs(pyramidDistance - 0.40) < 0.03 ? 'bg-purple-600 text-white shadow' : 'text-gray-300 hover:text-white'
+                Math.abs(pyramidDistance - 0.58) < 0.04 ? 'bg-purple-600 text-white shadow' : 'text-gray-300 hover:text-white'
               }`}
             >
               {translate('ar.prism_gsm')}
             </button>
             <button
-              onClick={() => { setPyramidDistance(0.48); setScaleMultiplier(1.0); }}
+              onClick={() => { setPyramidDistance(0.65); setScaleMultiplier(1.05); }}
               className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase transition-all ${
-                Math.abs(pyramidDistance - 0.48) < 0.03 ? 'bg-purple-600 text-white shadow' : 'text-gray-300 hover:text-white'
+                Math.abs(pyramidDistance - 0.65) < 0.04 ? 'bg-purple-600 text-white shadow' : 'text-gray-300 hover:text-white'
               }`}
             >
               {translate('ar.prism_standard')}
             </button>
             <button
-              onClick={() => { setPyramidDistance(0.62); setScaleMultiplier(1.2); }}
+              onClick={() => { setPyramidDistance(0.85); setScaleMultiplier(1.25); }}
               className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase transition-all ${
-                Math.abs(pyramidDistance - 0.62) < 0.03 ? 'bg-purple-600 text-white shadow' : 'text-gray-300 hover:text-white'
+                Math.abs(pyramidDistance - 0.85) < 0.04 ? 'bg-purple-600 text-white shadow' : 'text-gray-300 hover:text-white'
               }`}
             >
               {translate('ar.prism_tablet')}
+            </button>
+            <div className="w-px h-3.5 bg-white/20 mx-0.5" />
+            <button
+              onClick={() => setShowPyramidGuides(!showPyramidGuides)}
+              className={`px-2 py-1 rounded-full text-[9px] font-bold flex items-center gap-1 transition-all ${
+                showPyramidGuides ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-gray-400 hover:text-white'
+              }`}
+              title="Guides d'alignement"
+            >
+              <Eye size={12} />
+              <span>Guides</span>
             </button>
           </div>
 
