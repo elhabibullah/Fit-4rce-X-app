@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, Suspense, useMemo } from 'react';
 import { 
   X, Camera, RotateCw, ZoomIn, ZoomOut, 
   Check, FlipHorizontal, Play, Pause, 
   Sliders, Maximize, HelpCircle, Monitor, Box, 
-  Smartphone
+  Smartphone, Share2, Sparkles, Eye, Zap, Cast
 } from 'lucide-react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useFBX } from '@react-three/drei';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
@@ -28,6 +28,29 @@ interface HolographicARModalProps {
   targetReps?: number;
   timer?: number;
 }
+
+// Glowing 3D Loader Ring while model loads in WebGL
+const ARMatrixLoader: React.FC<{ isDark?: boolean }> = () => {
+  const ringRef = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (ringRef.current) {
+      ringRef.current.rotation.z = state.clock.getElapsedTime() * 2.0;
+    }
+  });
+
+  return (
+    <group position={[0, 0, 0]}>
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.5, 0.55, 48]} />
+        <meshBasicMaterial color="#c084fc" transparent opacity={0.85} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.48, 32]} />
+        <meshBasicMaterial color="#06b6d4" transparent opacity={0.2} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+};
 
 // Floor Reticle under the android's feet
 const ARFloorReticle: React.FC<{ size: number; floorY: number }> = ({ size, floorY }) => {
@@ -58,6 +81,118 @@ const ARFloorReticle: React.FC<{ size: number; floorY: number }> = ({ size, floo
         <ringGeometry args={[0.22 * size, 0.26 * size, 32]} />
         <meshBasicMaterial color="#06b6d4" transparent opacity={0.85} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
+    </group>
+  );
+};
+
+// Realistic Architectural Studio Wall for Wall Projection Mode & Room Fallback
+const VirtualStudioWall: React.FC<{ floorY: number; wallDistance?: number; isPureCinema?: boolean }> = ({ 
+  floorY, 
+  wallDistance = -1.2,
+  isPureCinema = false
+}) => {
+  if (isPureCinema) return null;
+
+  return (
+    <group position={[0, 0, 0]}>
+      {/* Illuminated Studio Floor with gentle reflection */}
+      <mesh position={[0, floorY - 0.005, -0.6]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[16, 12]} />
+        <meshStandardMaterial color="#14141c" roughness={0.7} metalness={0.2} />
+      </mesh>
+      
+      {/* Prominently Illuminated Room / Gym Studio Wall directly behind Android Coach */}
+      <mesh position={[0, floorY + 2.0, wallDistance]} rotation={[0, 0, 0]}>
+        <planeGeometry args={[16, 9]} />
+        <meshStandardMaterial color="#20202e" roughness={0.85} metalness={0.1} />
+      </mesh>
+
+      {/* Decorative Wall Projection Frame Border (16:9 Cinema Projection Area) */}
+      <mesh position={[0, floorY + 1.25, wallDistance + 0.005]}>
+        <planeGeometry args={[4.2, 2.6]} />
+        <meshBasicMaterial color="#3b1d60" transparent opacity={0.35} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, floorY + 1.25, wallDistance + 0.008]}>
+        <ringGeometry args={[2.08, 2.12, 4]} />
+        <meshBasicMaterial color="#a855f7" transparent opacity={0.6} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+
+      {/* Architectural Baseboard on Wall */}
+      <mesh position={[0, floorY + 0.06, wallDistance + 0.015]}>
+        <boxGeometry args={[16, 0.12, 0.04]} />
+        <meshStandardMaterial color="#333348" roughness={0.4} metalness={0.5} />
+      </mesh>
+
+      {/* Projected Holographic Light Pool / Wall Glow from Projector */}
+      <mesh position={[0, floorY + 1.1, wallDistance + 0.01]}>
+        <circleGeometry args={[1.6, 48]} />
+        <meshBasicMaterial color="#a855f7" transparent opacity={0.25} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      
+      {/* Projector Ceiling / Overhead Downlight Grazing Wall */}
+      <spotLight
+        position={[0, floorY + 4.5, wallDistance + 2.2]}
+        target-position={[0, floorY + 1.0, wallDistance]}
+        intensity={4.5}
+        angle={Math.PI / 2.5}
+        penumbra={0.6}
+        color="#c084fc"
+      />
+
+      {/* Wall Spotlight illuminating the projector screen */}
+      <spotLight
+        position={[0, floorY + 2.5, 2.0]}
+        target-position={[0, floorY + 1.1, wallDistance]}
+        intensity={3.8}
+        angle={Math.PI / 3.2}
+        penumbra={0.5}
+        color="#e0e7ff"
+      />
+    </group>
+  );
+};
+
+// Holographic Floor Projector Emitter Base for Cinema Projector Mode
+const HolographicCinemaEmitter: React.FC<{ floorY: number }> = ({ floorY }) => {
+  const beamRef = useRef<THREE.Mesh>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+    if (ringRef.current) {
+      ringRef.current.rotation.z = t * 0.6;
+    }
+    if (beamRef.current) {
+      const mat = beamRef.current.material as THREE.MeshBasicMaterial;
+      if (mat) {
+        mat.opacity = 0.12 + Math.sin(t * 3) * 0.03;
+      }
+    }
+  });
+
+  return (
+    <group position={[0, floorY, 0]}>
+      {/* Upward Volumetric Holographic Beam Cone */}
+      <mesh ref={beamRef} position={[0, 0.9, 0]} rotation={[0, 0, 0]}>
+        <cylinderGeometry args={[0.95, 0.45, 1.8, 32, 1, true]} />
+        <meshBasicMaterial color="#06b6d4" transparent opacity={0.14} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+
+      {/* Projector Pod base on floor */}
+      <group rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0, 0.005]}>
+          <ringGeometry args={[0.42, 0.46, 48]} />
+          <meshBasicMaterial color="#c084fc" transparent opacity={0.9} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh ref={ringRef} position={[0, 0, 0.01]}>
+          <ringGeometry args={[0.7, 0.74, 48]} />
+          <meshBasicMaterial color="#06b6d4" transparent opacity={0.8} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, 0, 0.015]}>
+          <circleGeometry args={[0.38, 32]} />
+          <meshBasicMaterial color="#8a2be2" transparent opacity={0.25} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
     </group>
   );
 };
@@ -157,38 +292,104 @@ const ARModelRig: React.FC<{
   );
 };
 
-// Mini synchronized canvas for 4-faced holographic pyramid
-const PyramidFacet: React.FC<{
+// Unified 4-Faced 360° Holographic Pyramid (Pepper's Ghost) running in ONE single Canvas
+// Calibrated with heads pointing OUTWARD towards the 4 edges and feet towards center apex
+const UnifiedPyramid360Scene: React.FC<{
   url: string;
   exerciseName?: string;
   exerciseId?: string;
   isPaused?: boolean;
   speed?: number;
-}> = ({ url, exerciseName, exerciseId, isPaused, speed }) => {
-  return (
-    <Canvas
-      gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-      camera={{ position: [0, 0, 2.7], fov: 38 }}
-      dpr={[1, 1.5]}
-    >
-      <color attach="background" args={['#000000']} />
-      <ambientLight intensity={1.6} color="#ffffff" />
-      <directionalLight position={[0, 4, 3]} intensity={2.0} color="#ffffff" />
-      <directionalLight position={[0, 2, -2]} intensity={1.5} color="#c084fc" />
-      <pointLight position={[0, 0, 1.5]} intensity={1.8} color="#06b6d4" />
+  pyramidOffset?: number;
+  facetScale?: number;
+}> = ({ url, exerciseName, exerciseId, isPaused, speed, pyramidOffset = 0.38, facetScale = 0.32 }) => {
+  const { viewport } = useThree();
+  const minDim = Math.min(viewport.width, viewport.height);
 
-      <ARModelRig
-        url={url}
-        exerciseName={exerciseName}
-        exerciseId={exerciseId}
-        isPaused={isPaused}
-        speed={speed}
-        scaleMultiplier={0.9}
-        rotationY={0}
-        heightOffset={0}
-        showFloorReticle={false}
-      />
-    </Canvas>
+  // Dynamic responsive geometry: guarantees 100% visibility on any screen aspect ratio (GSM portrait to tablet)
+  const responsiveOffset = Math.min(pyramidOffset, minDim * 0.28);
+  const responsiveScale = Math.min(facetScale, minDim * 0.22);
+
+  return (
+    <group position={[0, 0, 0]}>
+      {/* Central Alignment Apex Crosshair: exact 1cm square apex tip for physical transparent prism */}
+      <group position={[0, 0, 0]}>
+        {/* Square apex target marker */}
+        <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
+          <ringGeometry args={[0.035, 0.045, 4]} />
+          <meshBasicMaterial color="#06b6d4" transparent opacity={0.85} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, 0, 0]}>
+          <circleGeometry args={[0.015, 16]} />
+          <meshBasicMaterial color="#c084fc" transparent opacity={0.9} side={THREE.DoubleSide} />
+        </mesh>
+        {/* Subtle guide ring */}
+        <mesh position={[0, 0, -0.01]}>
+          <ringGeometry args={[0.12, 0.135, 32]} />
+          <meshBasicMaterial color="#9333ea" transparent opacity={0.3} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+
+      {/* 1. SOUTH FACET (Bottom face): Front view. Head points DOWN (away from apex), feet point UP towards apex */}
+      <group position={[0, -responsiveOffset, 0]} rotation={[0, 0, Math.PI]}>
+        <ARModelRig
+          url={url}
+          exerciseName={exerciseName}
+          exerciseId={exerciseId}
+          isPaused={isPaused}
+          speed={speed}
+          scaleMultiplier={responsiveScale}
+          rotationY={0}
+          heightOffset={0}
+          showFloorReticle={false}
+        />
+      </group>
+
+      {/* 2. NORTH FACET (Top face): Back view. Head points UP (away from apex), feet point DOWN towards apex */}
+      <group position={[0, responsiveOffset, 0]} rotation={[0, 0, 0]}>
+        <ARModelRig
+          url={url}
+          exerciseName={exerciseName}
+          exerciseId={exerciseId}
+          isPaused={isPaused}
+          speed={speed}
+          scaleMultiplier={responsiveScale}
+          rotationY={Math.PI}
+          heightOffset={0}
+          showFloorReticle={false}
+        />
+      </group>
+
+      {/* 3. WEST FACET (Left face): Left profile view. Head points LEFT (away from apex), feet point RIGHT towards apex */}
+      <group position={[-responsiveOffset, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <ARModelRig
+          url={url}
+          exerciseName={exerciseName}
+          exerciseId={exerciseId}
+          isPaused={isPaused}
+          speed={speed}
+          scaleMultiplier={responsiveScale}
+          rotationY={Math.PI / 2}
+          heightOffset={0}
+          showFloorReticle={false}
+        />
+      </group>
+
+      {/* 4. EAST FACET (Right face): Right profile view. Head points RIGHT (away from apex), feet point LEFT towards apex */}
+      <group position={[responsiveOffset, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+        <ARModelRig
+          url={url}
+          exerciseName={exerciseName}
+          exerciseId={exerciseId}
+          isPaused={isPaused}
+          speed={speed}
+          scaleMultiplier={responsiveScale}
+          rotationY={-Math.PI / 2}
+          heightOffset={0}
+          showFloorReticle={false}
+        />
+      </group>
+    </group>
   );
 };
 
@@ -219,13 +420,33 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
   const [scaleMultiplier, setScaleMultiplier] = useState<number>(1.0);
   const [rotationY, setRotationY] = useState<number>(0);
   const [heightOffset, setHeightOffset] = useState<number>(0.0);
+  const [pyramidDistance, setPyramidDistance] = useState<number>(0.38);
+  const [wallProjectionStyle, setWallProjectionStyle] = useState<'simulated_wall' | 'live_camera_wall' | 'pure_cinema'>('simulated_wall');
+  const [wallDistance, setWallDistance] = useState<number>(-1.2);
   const [isPaused, setIsPaused] = useState<boolean>(externalIsPaused);
   const [showTuningDrawer, setShowTuningDrawer] = useState<boolean>(false);
   const [snapshotTaken, setSnapshotTaken] = useState<boolean>(false);
+  const [isTorchOn, setIsTorchOn] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Toggle phone LED torch/flashlight
+  const toggleTorch = async () => {
+    try {
+      const track = streamRef.current?.getVideoTracks()[0];
+      if (track) {
+        const nextTorch = !isTorchOn;
+        await (track as any).applyConstraints?.({
+          advanced: [{ torch: nextTorch }],
+        });
+        setIsTorchOn(nextTorch);
+      }
+    } catch (e) {
+      console.warn('Torch constraint not supported', e);
+    }
+  };
 
   // Start Camera Stream
   const startCamera = useCallback(async (facing: 'environment' | 'user') => {
@@ -270,7 +491,12 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
   }, [translate]);
 
   useEffect(() => {
-    if (isOpen && projectionMode === 'camera_ar') {
+    const needsCamera = isOpen && (
+      projectionMode === 'camera_ar' || 
+      (projectionMode === 'projector_cinema' && wallProjectionStyle === 'live_camera_wall')
+    );
+
+    if (needsCamera) {
       startCamera(cameraFacing);
     } else {
       if (streamRef.current) {
@@ -280,6 +506,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
+      setIsTorchOn(false);
     }
 
     return () => {
@@ -287,8 +514,9 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
+      setIsTorchOn(false);
     };
-  }, [isOpen, projectionMode, cameraFacing, startCamera]);
+  }, [isOpen, projectionMode, wallProjectionStyle, cameraFacing, startCamera]);
 
   // Flip Camera between back and front
   const toggleCameraFacing = () => {
@@ -297,12 +525,25 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
     startCamera(nextFacing);
   };
 
-  // Toggle Fullscreen for Projector Mode
+  // Toggle Fullscreen for Projector & Pyramid Modes
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen?.().catch(console.warn);
     } else {
       document.exitFullscreen?.().catch(console.warn);
+    }
+  };
+
+  // Screen Cast / Share Presentation Helper
+  const handleShareCast = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `Fit-4rce X Hologram · ${exerciseName}`,
+        text: `Watch 3D Holographic Coach ${exerciseName} in full screen!`,
+        url: window.location.href,
+      }).catch(console.warn);
+    } else {
+      toggleFullscreen();
     }
   };
 
@@ -387,17 +628,19 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
               <directionalLight position={[-3, 2, -2]} intensity={1.2} color="#a855f7" />
               <pointLight position={[0, 0.3, 1.5]} intensity={1.6} color="#06b6d4" />
 
-              <ARModelRig
-                url={modelUrl}
-                exerciseName={exerciseName}
-                exerciseId={exerciseId}
-                isPaused={isPaused}
-                speed={speed}
-                scaleMultiplier={scaleMultiplier}
-                rotationY={rotationY}
-                heightOffset={heightOffset}
-                showFloorReticle={true}
-              />
+              <Suspense fallback={<ARMatrixLoader />}>
+                <ARModelRig
+                  url={modelUrl}
+                  exerciseName={exerciseName}
+                  exerciseId={exerciseId}
+                  isPaused={isPaused}
+                  speed={speed}
+                  scaleMultiplier={scaleMultiplier}
+                  rotationY={rotationY}
+                  heightOffset={heightOffset}
+                  showFloorReticle={true}
+                />
+              </Suspense>
 
               <OrbitControls
                 enableZoom={false}
@@ -413,70 +656,108 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
 
       {/* ======================================================== */}
       {/* MODE 2: PYRAMIDE HOLOGRAPHIQUE 360° (SUR TABLE)         */}
+      {/* Running synchronously in ONE single WebGL Canvas        */}
       {/* ======================================================== */}
       {projectionMode === 'pyramid_360' && (
         <div className="absolute inset-0 z-10 bg-black flex items-center justify-center overflow-hidden">
-          {/* Alignment Crosshair for Pyramid Tip */}
-          <div className="absolute z-20 w-10 h-10 rounded-full border border-purple-500/50 flex items-center justify-center pointer-events-none">
-            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <div className="absolute w-5 h-0.5 bg-purple-500/60" />
-            <div className="absolute h-5 w-0.5 bg-purple-500/60" />
-          </div>
+          <Canvas
+            gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+            camera={{ position: [0, 0, 3.8], fov: 44 }}
+            dpr={[1, 2]}
+          >
+            <color attach="background" args={['#000000']} />
+            <ambientLight intensity={1.8} color="#ffffff" />
+            <directionalLight position={[0, 4, 3]} intensity={2.2} color="#ffffff" />
+            <directionalLight position={[0, 0, 4]} intensity={1.6} color="#c084fc" />
 
-          {/* Top Quadrant (180deg) */}
-          <div className="absolute top-4 sm:top-8 w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] transform rotate-180 pointer-events-none">
-            <PyramidFacet url={modelUrl} exerciseName={exerciseName} exerciseId={exerciseId} isPaused={isPaused} speed={speed} />
-          </div>
+            <Suspense fallback={<ARMatrixLoader />}>
+              <UnifiedPyramid360Scene
+                url={modelUrl}
+                exerciseName={exerciseName}
+                exerciseId={exerciseId}
+                isPaused={isPaused}
+                speed={speed}
+                pyramidOffset={pyramidDistance}
+                facetScale={0.38 * scaleMultiplier}
+              />
+            </Suspense>
+          </Canvas>
 
-          {/* Bottom Quadrant (0deg) */}
-          <div className="absolute bottom-4 sm:bottom-8 w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] transform rotate-0 pointer-events-none">
-            <PyramidFacet url={modelUrl} exerciseName={exerciseName} exerciseId={exerciseId} isPaused={isPaused} speed={speed} />
-          </div>
-
-          {/* Left Quadrant (90deg) */}
-          <div className="absolute left-2 sm:left-12 w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] transform rotate-90 pointer-events-none">
-            <PyramidFacet url={modelUrl} exerciseName={exerciseName} exerciseId={exerciseId} isPaused={isPaused} speed={speed} />
-          </div>
-
-          {/* Right Quadrant (-90deg) */}
-          <div className="absolute right-2 sm:right-12 w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] transform -rotate-90 pointer-events-none">
-            <PyramidFacet url={modelUrl} exerciseName={exerciseName} exerciseId={exerciseId} isPaused={isPaused} speed={speed} />
+          {/* Quick Prism Presets Bar */}
+          <div className="absolute top-16 z-30 px-3 py-1.5 rounded-full bg-neutral-950/85 backdrop-blur-md border border-purple-500/40 flex items-center gap-1.5 shadow-2xl">
+            <button
+              onClick={() => { setPyramidDistance(0.40); setScaleMultiplier(0.9); }}
+              className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase transition-all ${
+                Math.abs(pyramidDistance - 0.40) < 0.03 ? 'bg-purple-600 text-white shadow' : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              {translate('ar.prism_gsm')}
+            </button>
+            <button
+              onClick={() => { setPyramidDistance(0.48); setScaleMultiplier(1.0); }}
+              className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase transition-all ${
+                Math.abs(pyramidDistance - 0.48) < 0.03 ? 'bg-purple-600 text-white shadow' : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              {translate('ar.prism_standard')}
+            </button>
+            <button
+              onClick={() => { setPyramidDistance(0.62); setScaleMultiplier(1.2); }}
+              className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase transition-all ${
+                Math.abs(pyramidDistance - 0.62) < 0.03 ? 'bg-purple-600 text-white shadow' : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              {translate('ar.prism_tablet')}
+            </button>
           </div>
 
           {/* Instructions tag */}
-          <div className="absolute bottom-20 z-30 px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-purple-500/40 text-purple-300 text-[10px] font-bold shadow-2xl pointer-events-none text-center">
+          <div className="absolute bottom-20 z-30 px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-purple-500/40 text-purple-300 text-[10px] font-bold shadow-2xl pointer-events-none text-center max-w-xs">
             {translate('ar.pyramid_hint')}
           </div>
         </div>
       )}
 
       {/* ======================================================== */}
-      {/* MODE 3: PROJECTEUR CINÉMA / VOILE TRANSPARENT (1M80)    */}
+      {/* MODE 3: PROJECTEUR CINÉMA / PROJECTION MURALE (1M80)    */}
+      {/* Ultra-High Contrast Pure Black Screen with Beaming Cone  */}
       {/* ======================================================== */}
       {projectionMode === 'projector_cinema' && (
-        <div className="absolute inset-0 z-10 bg-black flex items-center justify-center">
+        <div className="absolute inset-0 z-10 bg-black flex items-center justify-center overflow-hidden">
           <Canvas
             gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
             camera={{ position: [0, 0, 2.7], fov: 38 }}
             dpr={[1, 2]}
           >
             <color attach="background" args={['#000000']} />
-            <ambientLight intensity={1.7} color="#ffffff" />
+            <ambientLight intensity={wallProjectionStyle === 'simulated_wall' ? 1.5 : 1.9} color="#ffffff" />
             <directionalLight position={[0, 4, 3]} intensity={2.2} color="#ffffff" />
             <directionalLight position={[0, 2, -3]} intensity={2.0} color="#a855f7" />
             <pointLight position={[0, 0.2, 1.5]} intensity={1.8} color="#06b6d4" />
 
-            <ARModelRig
-              url={modelUrl}
-              exerciseName={exerciseName}
-              exerciseId={exerciseId}
-              isPaused={isPaused}
-              speed={speed}
-              scaleMultiplier={scaleMultiplier}
-              rotationY={rotationY}
-              heightOffset={heightOffset}
-              showFloorReticle={true}
+            {/* Virtual Studio Gym Wall with Projector Cone & Spotlight */}
+            <VirtualStudioWall 
+              floorY={-0.725 + heightOffset} 
+              wallDistance={wallDistance} 
+              isPureCinema={wallProjectionStyle === 'pure_cinema'} 
             />
+
+            {/* Glowing Floor Hologram Projector Unit with Upward Volumetric Beams */}
+            <HolographicCinemaEmitter floorY={-0.725 + heightOffset} />
+
+            <Suspense fallback={<ARMatrixLoader />}>
+              <ARModelRig
+                url={modelUrl}
+                exerciseName={exerciseName}
+                exerciseId={exerciseId}
+                isPaused={isPaused}
+                speed={speed}
+                scaleMultiplier={scaleMultiplier}
+                rotationY={rotationY}
+                heightOffset={heightOffset}
+                showFloorReticle={true}
+              />
+            </Suspense>
 
             <OrbitControls
               enableZoom={false}
@@ -485,9 +766,36 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
             />
           </Canvas>
 
-          {/* Projector instruction badge */}
-          <div className="absolute top-16 z-30 px-3.5 py-1 rounded-full bg-neutral-900/80 border border-amber-500/40 text-amber-300 text-[10px] font-bold shadow-xl pointer-events-none">
-            {translate('ar.projector_hint')}
+          {/* Projector instruction banner & quick actions */}
+          <div className="absolute top-16 z-30 px-3 py-1.5 rounded-2xl bg-neutral-950/90 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[11px] font-bold shadow-2xl flex items-center gap-2 max-w-[95vw] overflow-x-auto">
+            <div className="flex items-center gap-1 p-0.5 bg-black/60 rounded-xl border border-white/10 shrink-0">
+              <button
+                onClick={() => setWallProjectionStyle('simulated_wall')}
+                className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase transition-all ${
+                  wallProjectionStyle === 'simulated_wall'
+                    ? 'bg-amber-500 text-black shadow'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {translate('ar.simulated_wall')}
+              </button>
+              <button
+                onClick={() => setWallProjectionStyle('pure_cinema')}
+                className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase transition-all ${
+                  wallProjectionStyle === 'pure_cinema'
+                    ? 'bg-amber-500 text-black shadow'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {translate('ar.true_projector')}
+              </button>
+            </div>
+            <button
+              onClick={toggleFullscreen}
+              className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/50 text-[10px] font-black uppercase tracking-wider transition-all shrink-0"
+            >
+              {translate('ar.fullscreen')}
+            </button>
           </div>
         </div>
       )}
@@ -564,14 +872,23 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
             </button>
           )}
 
-          {projectionMode === 'projector_cinema' && (
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 rounded-full bg-black/75 backdrop-blur-md text-white border border-white/20 active:scale-90 transition-all shadow-lg"
-              title={translate('ar.fullscreen')}
-            >
-              <Maximize size={16} />
-            </button>
+          {(projectionMode === 'projector_cinema' || projectionMode === 'pyramid_360') && (
+            <>
+              <button
+                onClick={handleShareCast}
+                className="p-2 rounded-full bg-black/75 backdrop-blur-md text-white border border-white/20 active:scale-90 transition-all shadow-lg"
+                title="Cast / AirPlay"
+              >
+                <Share2 size={16} />
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 rounded-full bg-black/75 backdrop-blur-md text-white border border-white/20 active:scale-90 transition-all shadow-lg"
+                title={translate('ar.fullscreen')}
+              >
+                <Maximize size={16} />
+              </button>
+            </>
           )}
 
           <button
@@ -611,7 +928,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
       {/* OPTIONAL TUNING DRAWER (COLLAPSED BY DEFAULT) */}
       {showTuningDrawer && (
         <div className="relative z-30 px-3 sm:px-4 mt-2 max-w-sm mx-auto w-full pointer-events-auto">
-          <div className="bg-black/90 backdrop-blur-xl border border-purple-500/40 rounded-2xl p-3 shadow-2xl space-y-2 animate-fadeIn">
+          <div className="bg-black/90 backdrop-blur-xl border border-purple-500/40 rounded-2xl p-3 shadow-2xl space-y-2.5 animate-fadeIn">
             <div className="flex items-center justify-between text-[11px] text-gray-300 font-bold">
               <span>{translate('ar.height_centering')}</span>
               <span className="font-mono text-cyan-400">
@@ -627,9 +944,50 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
               onChange={(e) => setHeightOffset(parseFloat(e.target.value))}
               className="w-full h-1 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
             />
-            <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10">
+
+            {projectionMode === 'pyramid_360' && (
+              <>
+                <div className="flex items-center justify-between text-[11px] text-gray-300 font-bold pt-1">
+                  <span>{translate('ar.pyramid_spread')}</span>
+                  <span className="font-mono text-purple-400">
+                    {Math.round(pyramidDistance * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0.25"
+                  max="0.80"
+                  step="0.02"
+                  value={pyramidDistance}
+                  onChange={(e) => setPyramidDistance(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-purple-400"
+                />
+              </>
+            )}
+
+            {projectionMode === 'projector_cinema' && (
+              <>
+                <div className="flex items-center justify-between text-[11px] text-gray-300 font-bold pt-1">
+                  <span>{translate('ar.wall_distance')}</span>
+                  <span className="font-mono text-amber-400">
+                    {Math.abs(Math.round(wallDistance * 100))}cm
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="-1.2"
+                  max="-0.3"
+                  step="0.05"
+                  value={wallDistance}
+                  onChange={(e) => setWallDistance(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                />
+              </>
+            )}
+
+            <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-white/10">
               <button
-                onClick={() => { setHeightOffset(0); setScaleMultiplier(1.0); setRotationY(0); }}
+                onClick={() => { setHeightOffset(0); setScaleMultiplier(1.0); setRotationY(0); setPyramidDistance(0.44); setWallDistance(-0.65); }}
                 className="flex-1 py-1 rounded-lg bg-neutral-800 text-[10px] font-bold text-gray-300 hover:text-white"
               >
                 {translate('ar.reset_center')}

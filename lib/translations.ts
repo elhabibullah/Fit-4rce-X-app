@@ -677,6 +677,14 @@ const en: TranslationMap = {
     'ar.zoom_out': 'Zoom Out',
     'ar.pause': 'Pause',
     'ar.resume': 'Resume',
+    'ar.pyramid_spread': 'Pyramid Distance',
+    'ar.wall_projection': 'Wall Projection',
+    'ar.simulated_wall': 'Simulated Studio Wall',
+    'ar.true_projector': 'Physical Projector / Cast',
+    'ar.wall_distance': 'Wall Distance',
+    'ar.prism_gsm': 'GSM / Smartphone',
+    'ar.prism_standard': 'Standard Prism',
+    'ar.prism_tablet': 'Tablet / Large',
   };
 
 const fr: TranslationMap = {
@@ -1346,6 +1354,14 @@ const fr: TranslationMap = {
     'ar.zoom_out': 'Réduire',
     'ar.pause': 'Pause',
     'ar.resume': 'Reprendre',
+    'ar.pyramid_spread': 'Écartement Pyramide',
+    'ar.wall_projection': 'Projection Murale',
+    'ar.simulated_wall': 'Mur Studio Simulé',
+    'ar.true_projector': 'Projecteur Réel / Cast',
+    'ar.wall_distance': 'Distance au Mur',
+    'ar.prism_gsm': 'GSM / Smartphone',
+    'ar.prism_standard': 'Prisme Standard',
+    'ar.prism_tablet': 'Tablette / Grand Écran',
   };
 
 const ar: TranslationMap = {
@@ -2011,6 +2027,14 @@ const ar: TranslationMap = {
     'ar.zoom_out': 'تصغير',
     'ar.pause': 'إيقاف مؤقت',
     'ar.resume': 'استئناف',
+    'ar.pyramid_spread': 'مسافة الهرم',
+    'ar.wall_projection': 'عرض جداري',
+    'ar.simulated_wall': 'جدار استوديو افتراضي',
+    'ar.true_projector': 'جهاز عرض حقيقي / بث',
+    'ar.wall_distance': 'المسافة إلى الجدار',
+    'ar.prism_gsm': 'هاتف ذكي / GSM',
+    'ar.prism_standard': 'منشور قياسي',
+    'ar.prism_tablet': 'جهاز لوحي / شاشة كبيرة',
   };
 
 const es: TranslationMap = {
@@ -2657,6 +2681,14 @@ const es: TranslationMap = {
     'ar.zoom_out': 'Reducir',
     'ar.pause': 'Pausa',
     'ar.resume': 'Reanudar',
+    'ar.pyramid_spread': 'Distancia de la Pirámide',
+    'ar.wall_projection': 'Proyección en Pared',
+    'ar.simulated_wall': 'Pared de Estudio Simulada',
+    'ar.true_projector': 'Proyector Real / Cast',
+    'ar.wall_distance': 'Distancia a la Pared',
+    'ar.prism_gsm': 'GSM / Smartphone',
+    'ar.prism_standard': 'Prisma Estándar',
+    'ar.prism_tablet': 'Tableta / Pantalla Grande',
   };
 
 const pt: TranslationMap = {
@@ -3303,6 +3335,14 @@ const pt: TranslationMap = {
     'ar.zoom_out': 'Diminuir',
     'ar.pause': 'Pausar',
     'ar.resume': 'Retomar',
+    'ar.pyramid_spread': 'Distância da Pirâmide',
+    'ar.wall_projection': 'Projeção na Parede',
+    'ar.simulated_wall': 'Parede de Estúdio Simulada',
+    'ar.true_projector': 'Projetor Físico / Cast',
+    'ar.wall_distance': 'Distância da Parede',
+    'ar.prism_gsm': 'GSM / Smartphone',
+    'ar.prism_standard': 'Prisma Padrão',
+    'ar.prism_tablet': 'Tablet / Tela Grande',
   };
 
 const ja: TranslationMap = {
@@ -3968,6 +4008,14 @@ const ja: TranslationMap = {
     'ar.zoom_out': '縮小',
     'ar.pause': '一時停止',
     'ar.resume': '再開',
+    'ar.pyramid_spread': 'ピラミッド距離',
+    'ar.wall_projection': '壁面投影',
+    'ar.simulated_wall': 'シミュレートスタジオ壁',
+    'ar.true_projector': '実機プロジェクター / キャスト',
+    'ar.wall_distance': '壁までの距離',
+    'ar.prism_gsm': 'スマホ / GSM',
+    'ar.prism_standard': '標準プリズム',
+    'ar.prism_tablet': 'タブレット / 大画面',
   };
 
 const zh: TranslationMap = {
@@ -4633,6 +4681,14 @@ const zh: TranslationMap = {
     'ar.zoom_out': '缩小',
     'ar.pause': '暂停',
     'ar.resume': '继续',
+    'ar.pyramid_spread': '金字塔间距',
+    'ar.wall_projection': '墙面投影',
+    'ar.simulated_wall': '模拟工作室墙壁',
+    'ar.true_projector': '实体投影仪 / 投屏',
+    'ar.wall_distance': '墙壁距离',
+    'ar.prism_gsm': '智能手机 / GSM',
+    'ar.prism_standard': '标准棱镜',
+    'ar.prism_tablet': '平板 / 大屏幕',
   };
 
 const ru: TranslationMap = {
@@ -5298,6 +5354,14 @@ const ru: TranslationMap = {
     'ar.zoom_out': 'Уменьшить',
     'ar.pause': 'Пауза',
     'ar.resume': 'Продолжить',
+    'ar.pyramid_spread': 'Расстояние пирамиды',
+    'ar.wall_projection': 'Настенная проекция',
+    'ar.simulated_wall': 'Виртуальная стена студии',
+    'ar.true_projector': 'Физический проектор / Cast',
+    'ar.wall_distance': 'Расстояние до стены',
+    'ar.prism_gsm': 'Смартфон / GSM',
+    'ar.prism_standard': 'Стандартная призма',
+    'ar.prism_tablet': 'Планшет / Большой экран',
   };
 
 export const TRANSLATIONS: Record<Language, TranslationMap> = {

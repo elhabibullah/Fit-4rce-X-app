@@ -73,7 +73,7 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     },
     keywords: [
       'squat', 'squats', 'air squat', 'goblet squat', 'back squat', 'front squat',
-      'flexion', 'cuisse', 'fessier', 'quad', 'glute', 'leg day', 'jump squat',
+      'flexion de jambes', 'cuisse', 'cuisses', 'quad', 'quadriceps', 'leg day', 'jump squat',
       'sentadilla', 'sentadillas', 'agachamento', 'agachamentos',
       'kniebeuge', 'kniebeugen', 'squats dynamiques', 'squat dynamique',
       'приседания', 'присед',
@@ -179,9 +179,10 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
       minKneeFloorClearance: 0.10,
     },
     keywords: [
+      'glute', 'glutes', 'gluten', 'fessier', 'fessiers',
       'glute bridge', 'glute_bridge', 'pont fessier', 'pont_fessier', 'bridge',
       'hip thrust', 'releve de bassin', 'relevé de bassin', 'fessiers au sol',
-      'reverse glute bridge', 'reverse gluten bridge', 'gluten bridge'
+      'reverse glute bridge', 'reverse gluten bridge', 'gluten bridge', 'pont'
     ],
   },
 
@@ -306,8 +307,8 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     startingPosture: 'standing',
     cycleDuration: 3.2,
     contacts: {
-      leftFootGround: false,
-      rightFootGround: false,
+      leftFootGround: true,
+      rightFootGround: true,
       leftHandGround: true,
       rightHandGround: true,
       feetSpacing: 0.30,
@@ -562,14 +563,17 @@ export function resolveExerciseDefinition(query?: string | null): ExerciseDefini
   }
 
   // 1b. Match common exercises from GitHub exercices-json & specific aliases
-  if (clean === 'push_up' || clean === 'jump_push_up' || clean.includes('pompe')) {
+  if (clean === 'push_up' || clean === 'jump_push_up' || clean.includes('pompe') || clean.includes('pompage')) {
     return EXERCISE_DEFINITIONS.pushup;
+  }
+  if (clean.includes('burpee') || clean.includes('burpe') || clean.includes('берпи')) {
+    return EXERCISE_DEFINITIONS.burpee;
+  }
+  if (clean.includes('glute') || clean.includes('gluten') || clean.includes('fessier') || clean.includes('bridge') || clean.includes('pont fessier') || clean.includes('bassin') || clean.includes('hip thrust')) {
+    return EXERCISE_DEFINITIONS.glute_bridge;
   }
   if (clean.includes('reverse') && (clean.includes('lunge') || clean.includes('fente'))) {
     return EXERCISE_DEFINITIONS.reverse_lunge;
-  }
-  if (clean.includes('bridge') || clean.includes('gluten') || clean.includes('pont fessier') || clean.includes('bassin')) {
-    return EXERCISE_DEFINITIONS.glute_bridge;
   }
   if (clean.includes('crunch') || clean.includes('abdo') || clean.includes('situp') || clean.includes('sit-up')) {
     return EXERCISE_DEFINITIONS.crunch;

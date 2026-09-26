@@ -177,7 +177,8 @@ export class HumanoidMotionEngine {
     const targetGroundY = finalPose.groundOffsetY || 0;
     const targetGroundZ = finalPose.groundOffsetZ || 0;
 
-    const lerpRate = Math.min(1.0, (delta > 0 ? delta : 0.016) * 10.0);
+    // Snappy, agile transitions for multi-phase dynamic movements (burpees, jump landings)
+    const lerpRate = Math.min(1.0, (delta > 0 ? delta : 0.016) * 35.0);
     this.currentProneAngle = THREE.MathUtils.lerp(this.currentProneAngle, targetProne, lerpRate);
     this.currentGroundOffsetY = THREE.MathUtils.lerp(this.currentGroundOffsetY, targetGroundY, lerpRate);
     this.currentGroundOffsetZ = THREE.MathUtils.lerp(this.currentGroundOffsetZ, targetGroundZ, lerpRate);
@@ -198,7 +199,8 @@ export class HumanoidMotionEngine {
       this.currentExerciseDef.startingPosture,
       this.currentExerciseDef.contacts,
       this.currentProneAngle,
-      this.podiumSurfaceY
+      this.podiumSurfaceY,
+      finalPose.hipsOffset[1]
     );
     this.lastSolveResult = solveResult;
 

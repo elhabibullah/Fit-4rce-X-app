@@ -124,6 +124,23 @@ export interface JointLimit {
 }
 
 export const ANATOMICAL_LIMITS: Partial<Record<HumanoidBoneName, JointLimit>> = {
+  // Upper Arm / Shoulder joint: Full 3D ball-and-socket range of motion (sagittal flexion, coronal overhead abduction for jumping jacks)
+  LeftArm: {
+    minPitch: THREE.MathUtils.degToRad(-90),
+    maxPitch: THREE.MathUtils.degToRad(185),
+    minYaw: THREE.MathUtils.degToRad(-95),
+    maxYaw: THREE.MathUtils.degToRad(95),
+    minRoll: THREE.MathUtils.degToRad(-35),
+    maxRoll: THREE.MathUtils.degToRad(185),
+  },
+  RightArm: {
+    minPitch: THREE.MathUtils.degToRad(-90),
+    maxPitch: THREE.MathUtils.degToRad(185),
+    minYaw: THREE.MathUtils.degToRad(-95),
+    maxYaw: THREE.MathUtils.degToRad(95),
+    minRoll: THREE.MathUtils.degToRad(-35),
+    maxRoll: THREE.MathUtils.degToRad(185),
+  },
   // Knee: Anatomical hinge joint flexion (up to 160 deg).
   LeftLeg: {
     minPitch: THREE.MathUtils.degToRad(-5),

@@ -34,7 +34,8 @@ export class GroundContactSolver {
     posture: StartingPosture,
     constraints: ContactConstraints,
     bodyProneAngle: number,
-    podiumSurfaceY: number = -0.889
+    podiumSurfaceY: number = -0.889,
+    hipsOffsetY: number = 0
   ): SolvedGroundContact {
     const result: SolvedGroundContact = {
       hipsElevationAdjust: 0,
@@ -63,12 +64,12 @@ export class GroundContactSolver {
         result.rightHandFlat = true;
       }
 
-      // Orient toes for natural ground contact
+      // Orient toes forward for natural ground contact (under foot, never bent backwards)
       if (leftToe) this.orientFootForFloorContact(retargeter, leftToe);
       if (rightToe) this.orientFootForFloorContact(retargeter, rightToe);
 
-      const handThickness = 0.022; // Thickness from wrist/palm center to floor surface
-      const toeClearance = retargeter.toePodiumClearance;
+      const handThickness = 0.035; // Palm clearance from wrist to solid floor
+      const toeClearance = 0.030;  // Ball of foot / toe clearance to solid floor
 
       // 1A. Evaluate current front contact (hands) and rear contact (toes)
       let handY = 0;
@@ -126,6 +127,7 @@ export class GroundContactSolver {
       }
 
       // 1C. Re-evaluate lowest contact surface and snap exactly to podium surface
+      // Guarantees zero penetration: neither fingertips nor toes ever penetrate below podium
       let lowestContactY = Infinity;
       if (leftHand) {
         leftHand.bone.getWorldPosition(this.tmpVec);
@@ -155,39 +157,26 @@ export class GroundContactSolver {
     }
 
     // 2. IN SUPINE / FACE-UP FLOOR EXERCISES (Crunch, Abdos, Glute Bridge - DOS AU SOL):
-    // Anchors back, head, hips, and soles firmly on the podium floor without inversion
+    // Anchors upper back, shoulders, and head firmly on the podium floor without bouncing
     if (posture === 'supine' || bodyProneAngle < -0.3) {
-      let lowestContactY = Infinity;
-      const spine = retargeter.bones.get('Spine') || retargeter.bones.get('Hips');
+      let upperBodyFloorY = Infinity;
+      const spine = retargeter.bones.get('Spine1') || retargeter.bones.get('Spine');
       const head = retargeter.bones.get('Head');
 
-      // Back surface of torso
+      // Back surface of thoracic spine / shoulders is primary anchor to floor
       if (spine) {
         spine.bone.getWorldPosition(this.tmpVec);
-        lowestContactY = Math.min(lowestContactY, this.tmpVec.y - 0.10);
+        upperBodyFloorY = Math.min(upperBodyFloorY, this.tmpVec.y - 0.09);
       }
       // Back of head
       if (head) {
         head.bone.getWorldPosition(this.tmpVec);
-        lowestContactY = Math.min(lowestContactY, this.tmpVec.y - 0.08);
-      }
-      // Hips / Pelvis
-      if (retargeter.hipsBone) {
-        retargeter.hipsBone.getWorldPosition(this.tmpVec);
-        lowestContactY = Math.min(lowestContactY, this.tmpVec.y - 0.11);
-      }
-      // Planted feet soles
-      if (leftFoot) {
-        leftFoot.bone.getWorldPosition(this.tmpVec);
-        lowestContactY = Math.min(lowestContactY, this.tmpVec.y - retargeter.anklePodiumClearance);
-      }
-      if (rightFoot) {
-        rightFoot.bone.getWorldPosition(this.tmpVec);
-        lowestContactY = Math.min(lowestContactY, this.tmpVec.y - retargeter.anklePodiumClearance);
+        upperBodyFloorY = Math.min(upperBodyFloorY, this.tmpVec.y - 0.08);
       }
 
-      if (Number.isFinite(lowestContactY)) {
-        const deltaWorldY = podiumSurfaceY - lowestContactY;
+      // In glute bridge and crunches, the upper back/scapulae remain on the floor as the pivot!
+      if (Number.isFinite(upperBodyFloorY)) {
+        const deltaWorldY = podiumSurfaceY - upperBodyFloorY;
         if (Math.abs(deltaWorldY) > 0.001) {
           result.hipsElevationAdjust = deltaWorldY;
         }
@@ -198,39 +187,51 @@ export class GroundContactSolver {
       return result;
     }
 
-    // 2. IN STANDING / SQUATTING / LUNGING / JUMPING EXERCISES:
-    // Accurately compute sole world elevation from both ankles and toes
-    let lowestSoleY = Infinity;
+    // 3. IN STANDING / SQUATTING / LUNGING / JUMPING EXERCISES:
+    // Accurately compute sole world elevation from heels and toes
+    let lowestHeelY = Infinity;
     if (leftFoot) {
       leftFoot.bone.getWorldPosition(this.tmpVec);
-      lowestSoleY = Math.min(lowestSoleY, this.tmpVec.y - retargeter.anklePodiumClearance);
+      lowestHeelY = Math.min(lowestHeelY, this.tmpVec.y - retargeter.anklePodiumClearance);
     }
     if (rightFoot) {
       rightFoot.bone.getWorldPosition(this.tmpVec);
-      lowestSoleY = Math.min(lowestSoleY, this.tmpVec.y - retargeter.anklePodiumClearance);
+      lowestHeelY = Math.min(lowestHeelY, this.tmpVec.y - retargeter.anklePodiumClearance);
     }
+
+    let lowestToeY = Infinity;
     if (leftToe) {
       leftToe.bone.getWorldPosition(this.tmpVec);
-      lowestSoleY = Math.min(lowestSoleY, this.tmpVec.y - retargeter.toePodiumClearance);
+      lowestToeY = Math.min(lowestToeY, this.tmpVec.y - retargeter.toePodiumClearance);
     }
     if (rightToe) {
       rightToe.bone.getWorldPosition(this.tmpVec);
-      lowestSoleY = Math.min(lowestSoleY, this.tmpVec.y - retargeter.toePodiumClearance);
+      lowestToeY = Math.min(lowestToeY, this.tmpVec.y - retargeter.toePodiumClearance);
+    }
+
+    // In grounded exercises (Squats, Stances), weight is firmly on the HEELS:
+    // Anchor heels solid to the floor plane so heels NEVER lift off the ground!
+    let lowestSoleY = Number.isFinite(lowestHeelY) ? lowestHeelY : lowestToeY;
+    if (Number.isFinite(lowestToeY)) {
+      lowestSoleY = Math.min(lowestSoleY, lowestToeY);
     }
 
     if (Number.isFinite(lowestSoleY)) {
-      const feetGrounded = constraints.leftFootGround || constraints.rightFootGround;
+      const isAirborneJump = hipsOffsetY > 0.08;
+      const feetGrounded = !isAirborneJump && (constraints.leftFootGround || constraints.rightFootGround);
 
       if (feetGrounded) {
-        // Grounded exercise (Squats, Lunges, Stances, Deadlifts): anchor lowest foot to podium
-        const deltaWorldY = podiumSurfaceY - lowestSoleY;
+        // Grounded exercise (Squats, Lunges, Stances): anchor to podium with weight on heels
+        const targetSole = Number.isFinite(lowestHeelY) ? lowestHeelY : lowestSoleY;
+        const deltaWorldY = podiumSurfaceY - targetSole;
         if (Math.abs(deltaWorldY) > 0.001) {
           result.hipsElevationAdjust = deltaWorldY;
         }
         result.leftFootGrounded = Boolean(constraints.leftFootGround);
         result.rightFootGrounded = Boolean(constraints.rightFootGround);
-      } else if (constraints.preventFloorPenetration) {
-        // Airborne exercise (Jumps, burpee jump phase): only clamp if foot penetrates below podium
+      } else if (constraints.preventFloorPenetration || isAirborneJump) {
+        // Airborne exercise (Jumping jacks peak, burpee vertical jump phase):
+        // Allow the coach to leap into the air freely! Only clamp if foot penetrates below podium surface.
         if (lowestSoleY < podiumSurfaceY) {
           result.hipsElevationAdjust = podiumSurfaceY - lowestSoleY;
         }
@@ -242,38 +243,19 @@ export class GroundContactSolver {
 
   /**
    * Sets the hand bone so the PALM is 100% FLAT on the floor (palms facing down, fingers forward).
-   * Constructs direct world-space basis: +Y fingers forward, +Z palm facing DOWN into floor.
    */
   public orientHandFlatToFloor(retargeter: HunyuanSkeletalRetargeter, isLeft: boolean): void {
     const boneName: HumanoidBoneName = isLeft ? 'LeftHand' : 'RightHand';
-    const calibrated = retargeter.bones.get(boneName);
-    if (!calibrated) return;
-
-    // Fingers point forward along floor (+Z) with natural ergonomic slight inward angle
-    const inward = isLeft ? -0.10 : 0.10;
-    const yDir = new THREE.Vector3(inward, 0, 0.995).normalize(); // Local +Y in world
-    const zDir = new THREE.Vector3(0, -1, 0);                      // Local +Z (palm normal) points directly DOWN to floor
-    const xDir = new THREE.Vector3().crossVectors(yDir, zDir).normalize();
-
-    const basisMat = new THREE.Matrix4().makeBasis(xDir, yDir, zDir);
-    const targetWorldQ = new THREE.Quaternion().setFromRotationMatrix(basisMat);
-
-    const parent = calibrated.bone.parent;
-    if (parent) {
-      const pWQ = new THREE.Quaternion();
-      parent.getWorldQuaternion(pWQ);
-      calibrated.bone.quaternion.copy(pWQ.invert().multiply(targetWorldQ));
-    } else {
-      calibrated.bone.quaternion.copy(targetWorldQ);
-    }
-    calibrated.bone.updateMatrixWorld(true);
+    // Anatomical wrist extension puts palm flush on floor with zero joint twisting
+    retargeter.setAnatomicalRotation(boneName, 1.35, 0, 0);
   }
 
   /**
-   * Sets the toe bone so the foot contacts the floor naturally in prone positions
+   * Sets the toe bone so the foot contacts the floor naturally in prone positions without backward curling
    */
   private orientFootForFloorContact(retargeter: HunyuanSkeletalRetargeter, toe: CalibratedBone | undefined): void {
     if (!toe) return;
-    retargeter.setAnatomicalRotation(toe.name, 0.65, 0, 0);
+    // Set toe pitch to +0.45 so the ball of the foot and toes lay naturally forward on the floor (tucked under, not curled backwards)
+    retargeter.setAnatomicalRotation(toe.name, 0.45, 0, 0);
   }
 }

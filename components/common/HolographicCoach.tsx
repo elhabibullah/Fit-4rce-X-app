@@ -13,12 +13,14 @@ import { useApp } from '../../hooks/useApp.ts';
 // Multi-language exercise name resolver for Hunyuan biomechanical animations
 export type ExerciseCategory =
   | 'squat'
+  | 'glute_bridge'
   | 'pushup'
   | 'inverted_row'
   | 'jack'
   | 'burpee'
   | 'lunge'
   | 'boxing'
+  | 'crunch'
   | 'plank'
   | 'walk'
   | 'run'
@@ -39,6 +41,8 @@ export const getExerciseType = (name?: string, id?: string): ExerciseCategory =>
     .trim();
 
   // Direct canonical IDs
+  if (ex === 'glute_bridge' || ex === 'glutes' || ex === 'glute' || ex.includes('gluten') || ex.includes('fessier') || ex.includes('bridge') || ex.includes('hip thrust')) return 'glute_bridge';
+  if (ex === 'crunch' || ex === 'crunches' || ex.includes('abdo') || ex.includes('sit-up') || ex.includes('situp')) return 'crunch';
   if (ex === 'push_up' || ex === 'pushup' || ex === 'jump_push_up') return 'pushup';
   if (ex === 'squat' || ex === 'back_squat' || ex === 'sumo_squat' || ex === 'pistol_squat') return 'squat';
   if (ex === 'lunge' || ex === 'reverse_lunge') return 'lunge';
@@ -124,11 +128,19 @@ export const getExerciseType = (name?: string, id?: string): ExerciseCategory =>
     return 'lunge';
   }
 
+  // 5b. Glutes / Pont Fessier
+  if (
+    ex.includes('glute') || ex.includes('gluten') || ex.includes('fessier') ||
+    ex.includes('bridge') || ex.includes('thrust') || ex.includes('bassin')
+  ) {
+    return 'glute_bridge';
+  }
+
   // 6. Squats / Cuisses / Jambes
   if (
     ex.includes('squat') || ex.includes('cuisse') ||
-    ex.includes('flexion') || ex.includes('quad') || ex.includes('glute') ||
-    ex.includes('fessier') || ex.includes('chaise') || ex.includes('chair') ||
+    ex.includes('flexion') || ex.includes('quad') ||
+    ex.includes('chaise') || ex.includes('chair') ||
     ex.includes('sentadilla') || ex.includes('agachamento') || ex.includes('kniebeuge') ||
     ex.includes('присед')
   ) {
@@ -145,11 +157,18 @@ export const getExerciseType = (name?: string, id?: string): ExerciseCategory =>
     return 'boxing';
   }
 
-  // 8. Plank / Gainage / Core
+  // 8. Crunches / Abdos
+  if (
+    ex.includes('crunch') || ex.includes('abdo') || ex.includes('sit-up') ||
+    ex.includes('situp') || ex.includes('releve de buste')
+  ) {
+    return 'crunch';
+  }
+
+  // 9. Plank / Gainage / Core
   if (
     ex.includes('plank') || ex.includes('gainage') || ex.includes('planche') ||
-    ex.includes('abdo') || ex.includes('core') || ex.includes('crunch') ||
-    ex.includes('ventre') || ex.includes('hollow') || ex.includes('sit-up') ||
+    ex.includes('core') || ex.includes('ventre') || ex.includes('hollow') ||
     ex.includes('plancha') || ex.includes('prancha') || ex.includes('unterarmstuetz') ||
     ex.includes('планка')
   ) {
@@ -296,7 +315,7 @@ const HunyuanRiggedCoach: React.FC<{
     // Podium surface level in studio space is Y = -0.889m
     const podiumSurfaceY = -0.889;
 
-    // Center horizontally and place soles directly on the podium
+    // Strict dead-center horizontal alignment on anatomical midline and floor anchoring
     const posX = -center.x * scale;
     const posY = podiumSurfaceY - (box.min.y * scale);
     const posZ = -center.z * scale;
@@ -469,14 +488,14 @@ const CameraHipsTracker: React.FC<{
       hipsBoneRef.current.getWorldPosition(tempPos.current);
       if (controlsRef.current) {
         const target = controlsRef.current.target;
-        // Smoothly adapt target to follow hips center of gravity while keeping the podium solidly in frame
-        const safeTargetY = Math.max(-0.32, tempPos.current.y);
+        // Smoothly adapt target to follow hips vertical height while keeping lateral camera strictly centered
+        const safeTargetY = Math.max(-0.40, Math.min(0.20, tempPos.current.y));
         target.y = THREE.MathUtils.lerp(target.y, safeTargetY, 0.08);
-        target.x = THREE.MathUtils.lerp(target.x, tempPos.current.x, 0.08);
-        target.z = THREE.MathUtils.lerp(target.z, tempPos.current.z, 0.08);
+        target.x = THREE.MathUtils.lerp(target.x, 0, 0.1);
+        target.z = THREE.MathUtils.lerp(target.z, 0, 0.1);
         controlsRef.current.update();
       } else {
-        camera.lookAt(tempPos.current);
+        camera.lookAt(0, tempPos.current.y, 0);
       }
     }
   });
@@ -637,12 +656,14 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
   const category = isPrep ? 'idle' : getExerciseType(exerciseName, exerciseId);
   const categoryLabels: Record<ExerciseCategory, string> = {
     squat: 'Squats',
+    glute_bridge: 'Pont Fessier (Glutes)',
     pushup: 'Pompes',
     inverted_row: 'Tirage Horizontal (Row)',
     jack: 'Jumping Jacks',
     burpee: 'Burpees',
     lunge: 'Fentes',
     boxing: 'Shadow Boxing',
+    crunch: 'Abdos (Crunches)',
     plank: 'Gainage Planche',
     walk: 'Marche Active',
     run: 'Course Dynamique',
@@ -679,17 +700,17 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
                   ? 'bg-neutral-900/90 text-white border-neutral-700 hover:bg-neutral-800'
                   : 'bg-white/95 text-neutral-800 border-neutral-200 hover:bg-neutral-100'
               }`}
-              title={isDark ? "Passer au Studio Blanc Matrix" : "Passer au Studio Noir"}
+              title={isDark ? "Studio White" : "Studio Dark"}
             >
               {isDark ? (
                 <>
                   <Sun size={13} className="text-amber-400" />
-                  <span>Studio Blanc</span>
+                  <span>White</span>
                 </>
               ) : (
                 <>
                   <Moon size={13} className="text-purple-600" />
-                  <span>Studio Noir</span>
+                  <span>Dark</span>
                 </>
               )}
             </button>

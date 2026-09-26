@@ -44,12 +44,12 @@ const HUMANOID_PARENT_MAP: Partial<Record<HumanoidBoneName, HumanoidBoneName>> =
   RightFoot: 'RightLeg',
   RightToeBase: 'RightFoot',
 
-  LeftShoulder: 'Spine1',
+  LeftShoulder: 'Spine2',
   LeftArm: 'LeftShoulder',
   LeftForeArm: 'LeftArm',
   LeftHand: 'LeftForeArm',
 
-  RightShoulder: 'Spine1',
+  RightShoulder: 'Spine2',
   RightArm: 'RightShoulder',
   RightForeArm: 'RightArm',
   RightHand: 'RightForeArm',
@@ -64,8 +64,8 @@ function getBoneWorldPitchSign(name: HumanoidBoneName): number {
   if (name.includes('UpLeg')) return -1;
   // Knee flexes backward: relative to thigh, adds positive rotation around +X
   if (name.includes('Leg') && !name.includes('Up')) return 1;
-  // Foot dorsiflexes forward: subtracts rotation around +X
-  if (name.includes('Foot')) return -1;
+  // Foot and toe dorsiflex forward: subtracts rotation around +X
+  if (name.includes('Foot') || name.includes('Toe')) return -1;
   // Spine, neck, head point UP: forward flexion requires positive rotation around +X
   if (name.includes('Spine') || name.includes('Neck') || name.includes('Head')) return 1;
   // Upper arm points DOWN: forward flexion requires negative rotation around +X
