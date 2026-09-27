@@ -58,29 +58,26 @@ export const getExerciseType = (name?: string, id?: string): ExerciseCategory =>
   if (ex === 'run' || ex === 'sprint') return 'run';
   if (ex === 'walk') return 'walk';
 
-  // Inverted Row / Tirage horizontal / Suspension row / Australian pull-up
-  if (
-    ex.includes('row') || ex.includes('tirage') || ex.includes('inverted') ||
-    ex.includes('traction') || ex.includes('australian') || ex.includes('pull-up') ||
-    ex.includes('pullup') || ex.includes('dorsal') || ex.includes('dos')
-  ) {
-    return 'inverted_row';
-  }
-
-  // Martial Arts / Self-Defense Techniques (Sifu Abdelwahid & Kung Fu / Tai Chi)
-  if (ex.includes('mabu') || ex.includes('cavalier') || ex.includes('horse stance') || ex.includes('enracinement') || ex.includes('stance')) {
+  // Comprehensive Martial Arts / Kung-Fu / Tai-Chi technique mappings
+  // Guarantees Sifu ALWAYS executes authentic, fluid martial movements (never freezes in idle)
+  if (ex.includes('mabu') || ex.includes('cavalier') || ex.includes('horse') || ex.includes('stance') || ex.includes('enracinement') || ex.includes('zhan') || ex.includes('base') || ex.includes('l1-m1') || ex.includes('l1-t1')) {
     return 'martial_mabu';
   }
-  if (ex.includes('palm') || ex.includes('paume') || ex.includes('ondulatoire') || ex.includes('deflection')) {
+  if (ex.includes('fist') || ex.includes('poing') || ex.includes('chain') || ex.includes('frappe') || ex.includes('thrust') || ex.includes('explosive') || ex.includes('l1-m2') || ex.includes('l2-m1') || ex.includes('l3-m1') || ex.includes('direct')) {
+    return 'martial_punch';
+  }
+  if (ex.includes('palm') || ex.includes('paume') || ex.includes('deflect') || ex.includes('deviation') || ex.includes('lap') || ex.includes('pak') || ex.includes('redir') || ex.includes('spiral') || ex.includes('l1-m3') || ex.includes('l2-m2') || ex.includes('l3-m2') || ex.includes('l3-m5') || ex.includes('biu') || ex.includes('chum')) {
     return 'martial_palm';
   }
-  if (ex.includes('kick') || ex.includes('fouette') || ex.includes('balayage') || ex.includes('pied') || ex.includes('jambe')) {
+  if (ex.includes('kick') || ex.includes('pied') || ex.includes('balayage') || ex.includes('jambe') || ex.includes('fouette') || ex.includes('l2-m3') || ex.includes('l3-m3') || ex.includes('fouett')) {
     return 'martial_kick';
   }
-  if (ex.includes('tai') || ex.includes('chi') || ex.includes('onde') || ex.includes('flow') || ex.includes('spiral') || ex.includes('nuage') || ex.includes('fluid') || ex.includes('shift')) {
+  if (ex.includes('tai') || ex.includes('chi') || ex.includes('flow') || ex.includes('nuage') || ex.includes('onde') || ex.includes('fluid') || ex.includes('shift') || ex.includes('breath') || ex.includes('slow') || ex.includes('ntc') || ex.includes('smooth') || ex.includes('intent') || ex.includes('yin') || ex.includes('yang')) {
     return 'martial_taichi';
   }
-  if (ex.includes('fist') || ex.includes('poing') || ex.includes('thrust') || ex.includes('chain') || ex.includes('wing chun') || ex.includes('frappe direct')) {
+  if (ex.startsWith('kf-') || ex.includes('kung') || ex.includes('sifu') || ex.includes('wing') || ex.includes('martial')) {
+    // Rotating martial fallbacks for any level forms
+    if (ex.includes('m4') || ex.includes('m5')) return 'martial_palm';
     return 'martial_punch';
   }
 
@@ -307,8 +304,8 @@ const HunyuanRiggedCoach: React.FC<{
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
 
-    // Master unified human height in meters: 1.45m provides ideal framing on both mobile and desktop
-    const targetHeight = 1.45;
+    // Master unified human height in meters: 1.68m gives commanding martial presence
+    const targetHeight = 1.68;
     const rawH = size.y > 0.5 ? size.y : 5.7;
     const scale = targetHeight / rawH;
 
@@ -446,15 +443,15 @@ const CameraPresetHandler: React.FC<{
 
     if (prevPresetRef.current !== preset) {
       if (preset === 'face') {
-        camera.position.set(0, 0.05, 3.0);
+        camera.position.set(0, 0.05, 2.35);
         if (controlsRef.current) {
-          controlsRef.current.target.set(0, -0.16, 0);
+          controlsRef.current.target.set(0, -0.05, 0);
           controlsRef.current.update();
         }
       } else if (preset === 'profile') {
-        camera.position.set(3.0, 0.05, 0);
+        camera.position.set(2.4, 0.05, 0);
         if (controlsRef.current) {
-          controlsRef.current.target.set(0, -0.16, 0);
+          controlsRef.current.target.set(0, -0.05, 0);
           controlsRef.current.update();
         }
       }
@@ -521,8 +518,8 @@ const CoachCanvas: React.FC<{
   const controlsRef = useRef<any>(null);
 
   const initialCameraPos = useMemo<[number, number, number]>(() => {
-    if (cameraPreset === 'profile') return [3.2, 0.1, 0];
-    return [0, 0.1, 3.1];
+    if (cameraPreset === 'profile') return [2.4, 0.05, 0];
+    return [0, 0.05, 2.35];
   }, [cameraPreset]);
 
   return (
@@ -573,15 +570,15 @@ const CoachCanvas: React.FC<{
         />
       </Suspense>
 
-      {/* Fluid 360-degree Orbit Controls with wheel/touch propagation to page scroll */}
+      {/* Fluid 360-degree Orbit Controls with zoom support */}
       <OrbitControls
         ref={controlsRef}
-        enableZoom={false}
+        enableZoom={true}
         enablePan={false}
         makeDefault
-        target={[0, -0.16, 0]}
-        minDistance={1.6}
-        maxDistance={4.8}
+        target={[0, -0.05, 0]}
+        minDistance={1.0}
+        maxDistance={4.2}
         minPolarAngle={Math.PI / 4}
         maxPolarAngle={Math.PI / 1.75}
       />

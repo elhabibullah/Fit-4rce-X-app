@@ -583,41 +583,42 @@ app.post('/api/generate-workout', async (req: express.Request, res: express.Resp
       try {
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: `You are Fit-4rce X Master Sports Biomechanist, Olympic Conditioning Coach and Martial Arts Master.
-Generate a professionally periodized 5-exercise workout plan in ${language || 'fr'}.
+          contents: `You are Fit-4rce X Master Sports Biomechanist, Olympic Conditioning Coach and Movement Master.
+Generate a professionally periodized 5-exercise workout plan in the exact requested language: ${language || 'en'}.
 
 Workout Discipline: ${workoutType || 'fitness'}
-Equipment Mode: ${equipment} (bodyweight = sans matériel, home = haltères/bandes/tapis, gym = salle complète/barres/machines)
+Equipment Mode: ${equipment} (bodyweight, home dumbbells/mat, or gym full equipment)
 User Specifics & Request: "${prompt || combinedPrompt}"
 
 CRITICAL MANDATES:
-1. NO INVENTED OR WEIRD NAMES. Use ONLY authentic, real exercises known by certified personal trainers, Olympic coaches, and Kung-Fu masters.
-2. For each exercise, you MUST provide an exact "canonicalId" from this supported 3D motion library list:
-   - "push_up": standard pushups, pompes, pompage, incline/decline pushups, dips, flexiones, liegestütze
-   - "squat": bodyweight squats, air squats, sumo squats, pistol squats, flexions de jambes, sentadillas, kniebeugen
-   - "lunge": forward lunges, reverse lunges, fentes avant, fentes arrière, zancadas, ausfallschritte
-   - "plank": standard forearm plank, active plank, gainage planche ventrale, plancha
+1. STRICT LANGUAGE ENFORCEMENT: If ${language || 'en'} is "en", ALL exercise names, descriptions, title, and guidance MUST be in standard English. Absolutely NO French when English is chosen.
+2. NO INVENTED OR WEIRD NAMES. Use ONLY authentic, real exercises known by certified personal trainers and coaches.
+3. For each exercise, you MUST provide an exact "canonicalId" from this supported 3D motion library list:
+   - "push_up": standard pushups, incline/decline pushups
+   - "squat": bodyweight squats, air squats, sumo squats
+   - "lunge": forward lunges, reverse lunges
+   - "plank": standard forearm plank, active straight-arm plank
    - "burpee": full burpees with jump
-   - "jumping_jack": jumping jacks, sauts cardio
-   - "high_knees": high knees running in place, montées de genoux
-   - "crunch": abdominal crunch, situps, relevés de buste, bicycle crunches
-   - "glute_bridge": glute bridge, pont fessier, hip thrust
-   - "superman": back extension superman, extensions lombaires
-   - "bent_over_row": inverted row, horizontal pull-up, rowing haltère, tirage dorsal
+   - "jumping_jack": jumping jacks
+   - "high_knees": high knees running in place
+   - "crunch": abdominal crunches, situps
+   - "glute_bridge": glute bridge, hip thrust
+   - "superman": back extension superman
+   - "bent_over_row": inverted row, dumbbell row
    - "bicep_curl": dumbbell or resistance bicep curl
-   - "overhead_press": shoulder military press, développé épaules
-   - "deadlift": deadlift, soulevé de terre
-   - "martial_mabu": Kung-Fu horse stance (posture du cavalier Ma Bu)
-   - "martial_punch": martial arts punches / frappes de poing
-   - "martial_palm": defensive palm deflections / paumes martiales
-   - "martial_kick": martial kicks / coups de pied
-   - "martial_taichi": Tai Chi / Qi Gong fluid movements
-3. The display "name" MUST be translated naturally into ${language || 'fr'} (e.g. in French: "Pompes au sol", "Squats au poids du corps", "Fentes alternées", "Gainage planche", "Burpees"). DO NOT show English technical IDs in the user-visible name.
+   - "overhead_press": shoulder military press
+   - "deadlift": conventional or Romanian deadlift
+   - "martial_mabu": horse stance (Ma Bu)
+   - "martial_punch": martial punches
+   - "martial_palm": defensive palm deflections
+   - "martial_kick": martial kicks
+   - "martial_taichi": Tai Chi fluid movements
+4. The display "name" MUST be translated naturally into ${language || 'en'} (e.g. in English: "Standard Push-Ups", "Bodyweight Squats", "Forward Lunges", "Plank", "Burpees", "Abdominal Crunches", "Glute Bridge").
 
 The session protocol requires exactly ${targetSets} sets of ${targetReps} reps per exercise with ${restBetweenSets}s rest pause between sets.
 Return a JSON object with:
-- "title": string (accurate, engaging title in ${language || 'fr'})
-- "description": string (clear summary in ${language || 'fr'})
+- "title": string (accurate, engaging title in ${language || 'en'})
+- "description": string (clear summary in ${language || 'en'})
 - "exercises": array of 5 distinct, well-balanced objects, each having { "canonicalId": string, "name": string, "description": string, "equipment": string, "sets": ${targetSets}, "reps": ${targetReps}, "restSeconds": ${restBetweenSets} }`,
           config: {
             responseMimeType: 'application/json'

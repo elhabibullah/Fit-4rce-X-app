@@ -55,94 +55,54 @@ export class GroundContactSolver {
     const rightHand = retargeter.bones.get('RightHand');
 
     // 1. IN PRONE / CHEST-DOWN FLOOR EXERCISES (Pushups, Planks, Burpee floor phase):
-    // Two-point sagittal alignment: level both hands (front) and toes (rear) to the horizontal floor plane
+    // Align front contact (hands) and rear contact (toes) flat on the horizontal floor plane
     if (posture === 'prone' || bodyProneAngle > 0.3) {
-      if (constraints.handOrientation === 'flat_floor' || true) {
-        this.orientHandFlatToFloor(retargeter, true);
-        this.orientHandFlatToFloor(retargeter, false);
-        result.leftHandFlat = true;
-        result.rightHandFlat = true;
-      }
-
-      // Orient toes forward for natural ground contact (under foot, never bent backwards)
-      if (leftToe) this.orientFootForFloorContact(retargeter, leftToe);
-      if (rightToe) this.orientFootForFloorContact(retargeter, rightToe);
+      result.leftHandFlat = true;
+      result.rightHandFlat = true;
 
       const handThickness = 0.035; // Palm clearance from wrist to solid floor
-      const toeClearance = 0.030;  // Ball of foot / toe clearance to solid floor
+      const toeClearance = 0.025;  // Ball of foot / toe clearance to solid floor
 
       // 1A. Evaluate current front contact (hands) and rear contact (toes)
       let handY = 0;
-      let handZ = 0;
       let handCount = 0;
       if (leftHand) {
         leftHand.bone.getWorldPosition(this.tmpVecHandL);
         handY += this.tmpVecHandL.y;
-        handZ += this.tmpVecHandL.z;
         handCount++;
       }
       if (rightHand) {
         rightHand.bone.getWorldPosition(this.tmpVecHandR);
         handY += this.tmpVecHandR.y;
-        handZ += this.tmpVecHandR.z;
         handCount++;
       }
       if (handCount > 0) {
         handY = handY / handCount - handThickness;
-        handZ = handZ / handCount;
       }
 
       let toeY = 0;
-      let toeZ = 0;
       let toeCount = 0;
       const contactToes = [leftToe || leftFoot, rightToe || rightFoot];
       contactToes.forEach((t) => {
         if (t) {
           t.bone.getWorldPosition(this.tmpVecToe);
           toeY += this.tmpVecToe.y;
-          toeZ += this.tmpVecToe.z;
           toeCount++;
         }
       });
       if (toeCount > 0) {
         toeY = toeY / toeCount - toeClearance;
-        toeZ = toeZ / toeCount;
       }
 
-      // 1B. Two-Point Sagittal Alignment: Pitch rotation around Hips (center of gravity)
-      // Eliminates tilt discrepancy so both hands and feet touch the floor plane simultaneously
-      if (handCount > 0 && toeCount > 0) {
-        const dZ = handZ - toeZ;
-        const dY = handY - toeY;
-        if (Math.abs(dZ) > 0.20) {
-          const pitchAdjust = Math.atan2(dY, dZ);
-          // Apply pitch rotation to align sagittal plane with horizontal floor
-          if (Math.abs(pitchAdjust) > 0.002) {
-            const qPitch = new THREE.Quaternion().setFromAxisAngle(this.tmpVecX, pitchAdjust);
-            retargeter.hipsBone?.quaternion.premultiply(qPitch);
-            retargeter.hipsBone?.updateMatrixWorld(true);
-            result.pronePitchAdjust = pitchAdjust;
-          }
-        }
-      }
-
-      // 1C. Re-evaluate lowest contact surface and snap exactly to podium surface
+      // 1B. Re-evaluate lowest contact surface and snap exactly to podium surface
       // Guarantees zero penetration: neither fingertips nor toes ever penetrate below podium
       let lowestContactY = Infinity;
-      if (leftHand) {
-        leftHand.bone.getWorldPosition(this.tmpVec);
-        lowestContactY = Math.min(lowestContactY, this.tmpVec.y - handThickness);
+      if (handCount > 0) {
+        lowestContactY = Math.min(lowestContactY, handY);
       }
-      if (rightHand) {
-        rightHand.bone.getWorldPosition(this.tmpVec);
-        lowestContactY = Math.min(lowestContactY, this.tmpVec.y - handThickness);
+      if (toeCount > 0) {
+        lowestContactY = Math.min(lowestContactY, toeY);
       }
-      contactToes.forEach((t) => {
-        if (t) {
-          t.bone.getWorldPosition(this.tmpVec);
-          lowestContactY = Math.min(lowestContactY, this.tmpVec.y - toeClearance);
-        }
-      });
 
       if (Number.isFinite(lowestContactY)) {
         const deltaWorldY = podiumSurfaceY - lowestContactY;
@@ -157,15 +117,25 @@ export class GroundContactSolver {
     }
 
     // 2. IN SUPINE / FACE-UP FLOOR EXERCISES (Crunch, Abdos, Glute Bridge - DOS AU SOL):
-    // Anchors pelvis and sacrum stably on the podium floor without dropping hips as the upper body curls up
+    // Smoothly prevents sinking below the floor while letting glute bridge hips lift freely!
     if (posture === 'supine' || bodyProneAngle < -0.3) {
+      let lowestPointY = Infinity;
       const hips = retargeter.bones.get('Hips');
-      if (hips) {
-        hips.bone.getWorldPosition(this.tmpVec);
-        // Hips / pelvis lower surface rests stably on podium mat (~0.08m radius from hip center)
-        const pelvisBottomY = this.tmpVec.y - 0.08;
-        const deltaWorldY = podiumSurfaceY - pelvisBottomY;
-        if (Math.abs(deltaWorldY) > 0.002) {
+      const spine = retargeter.bones.get('Spine');
+      const spine2 = retargeter.bones.get('Spine2');
+
+      const supineBones = [hips, spine, spine2, leftFoot, rightFoot];
+      supineBones.forEach((b) => {
+        if (b) {
+          b.bone.getWorldPosition(this.tmpVec);
+          const clearance = (b === leftFoot || b === rightFoot) ? retargeter.anklePodiumClearance : 0.08;
+          lowestPointY = Math.min(lowestPointY, this.tmpVec.y - clearance);
+        }
+      });
+
+      if (Number.isFinite(lowestPointY)) {
+        const deltaWorldY = podiumSurfaceY - lowestPointY;
+        if (deltaWorldY > 0.001) {
           result.hipsElevationAdjust = deltaWorldY;
         }
       }
@@ -230,12 +200,12 @@ export class GroundContactSolver {
   }
 
   /**
-   * Sets the hand bone so the PALM is 100% FLAT on the floor (palms facing down, fingers forward).
+   * Sets the hand bone so the PALM is natural and flat on the floor (palms facing down, fingers forward).
    */
   public orientHandFlatToFloor(retargeter: HunyuanSkeletalRetargeter, isLeft: boolean): void {
     const boneName: HumanoidBoneName = isLeft ? 'LeftHand' : 'RightHand';
-    // Anatomical wrist extension puts palm flush on floor with zero joint twisting
-    retargeter.setAnatomicalRotation(boneName, 1.35, 0, 0);
+    // Natural anatomical wrist alignment resting flat on floor without twisting
+    retargeter.setAnatomicalRotation(boneName, 0.05, 0, 0);
   }
 
   /**
@@ -243,7 +213,7 @@ export class GroundContactSolver {
    */
   private orientFootForFloorContact(retargeter: HunyuanSkeletalRetargeter, toe: CalibratedBone | undefined): void {
     if (!toe) return;
-    // Set toe pitch to -0.25 so the ball of the foot and toes lay naturally flat on the floor (tucked under, never curled backwards)
-    retargeter.setAnatomicalRotation(toe.name, -0.25, 0, 0);
+    // Keep toes tucked forward under the ball of the foot (never curled backwards)
+    retargeter.setAnatomicalRotation(toe.name, 0.0, 0, 0);
   }
 }

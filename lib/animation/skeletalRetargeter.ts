@@ -234,8 +234,8 @@ export class HunyuanSkeletalRetargeter {
     const worldFloorDrop = Math.max(0.15, this.standingHipsAboveFloor - targetFloorHipsAbovePodium);
     const localFloorDrop = worldFloorDrop * this.worldToLocalScale;
 
-    // Longitudinal centering on circular podium
-    const baseShift = isSupine ? 0.0 : 0.12;
+    // Longitudinal centering on circular podium (guarantees neither head nor toes exceed the podium rim)
+    const baseShift = isSupine ? 0.0 : 0.26;
     const localForwardShift = baseShift * this.worldToLocalScale;
 
     // Apply root/hips translation
@@ -350,17 +350,8 @@ export class HunyuanSkeletalRetargeter {
     const qRoll = new THREE.Quaternion().setFromAxisAngle(this.tmpVecZ, coronal);
     const qLocalDelta = new THREE.Quaternion().multiply(qYaw).multiply(qRoll).multiply(qPitch);
 
-    // Compute target world orientation incorporating parent bone's current orientation
-    const parentObj = calibrated.bone.parent;
-    if (parentObj) {
-      parentObj.getWorldQuaternion(this.tmpParentWQ);
-      this.tmpTargetWQ.copy(this.tmpParentWQ).multiply(qLocalDelta).multiply(calibrated.restWorldQ);
-      const invParentWQ = this.tmpParentWQ.clone().invert();
-      calibrated.bone.quaternion.copy(invParentWQ.multiply(this.tmpTargetWQ));
-    } else {
-      this.tmpTargetWQ.copy(qLocalDelta).multiply(calibrated.restWorldQ);
-      calibrated.bone.quaternion.copy(this.tmpTargetWQ);
-    }
+    // Apply anatomical joint rotation in bone local space relative to its rest pose
+    calibrated.bone.quaternion.copy(calibrated.restLocalQ).multiply(qLocalDelta);
     calibrated.bone.updateMatrixWorld(true);
   }
 

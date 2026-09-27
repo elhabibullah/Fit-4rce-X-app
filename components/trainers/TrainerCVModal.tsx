@@ -30,8 +30,8 @@ const TrainerCVModal: React.FC<TrainerCVModalProps> = ({ isOpen, onClose, traine
             <button 
               onClick={onClose} 
               className="fixed top-3 right-3 sm:top-5 sm:right-5 z-[10000] p-3 rounded-full bg-red-600 hover:bg-red-500 text-white shadow-2xl transition-transform active:scale-90 flex items-center justify-center cursor-pointer border border-white/20"
-              aria-label="Fermer"
-              title="Fermer le profil du coach"
+              aria-label={translate('ar.close')}
+              title={translate('ar.close')}
             >
                 <X className="w-6 h-6 stroke-[2.5]"/>
             </button>
@@ -45,10 +45,10 @@ const TrainerCVModal: React.FC<TrainerCVModalProps> = ({ isOpen, onClose, traine
                     <button 
                       onClick={onClose} 
                       className="flex items-center gap-1 text-gray-300 hover:text-white px-3 py-1 rounded-full bg-zinc-900 border border-zinc-700 text-xs font-bold uppercase transition-colors"
-                      aria-label="Fermer"
+                      aria-label={translate('ar.close')}
                     >
                         <X className="w-4 h-4"/>
-                        <span>Fermer</span>
+                        <span>{translate('ar.close')}</span>
                     </button>
                 </div>
 

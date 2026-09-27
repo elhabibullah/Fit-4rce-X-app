@@ -260,10 +260,10 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
           <button
             onClick={handleClose}
             className="p-2 sm:p-2.5 rounded-full text-gray-300 hover:text-white bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 transition-colors flex items-center gap-1 cursor-pointer"
-            title="Fermer"
+            title={translate('ar.close')}
           >
             <X className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="text-xs font-bold uppercase hidden sm:inline">Fermer</span>
+            <span className="text-xs font-bold uppercase hidden sm:inline">{translate('ar.close')}</span>
           </button>
         </div>
 
