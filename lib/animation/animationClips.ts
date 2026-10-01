@@ -619,63 +619,171 @@ const INVERTED_ROW_CLIP = new HumanoidMotionClip('inverted_row', 'Inverted Row',
   },
 ]);
 
-// 5. PLANK: Ground floor prone rock-solid core isometric hold
-const PLANK_CLIP = new HumanoidMotionClip('plank', 'Plank', 3.0, [
+// 5. PLANK: Ground floor prone rock-solid core isometric hold (Forearm Plank / Gainage sur avant-bras)
+// Perfectly grounded: elbows at 90 deg under shoulders, forearms and palms flat on floor, rigid straight spine, zero floating
+const PLANK_CLIP = new HumanoidMotionClip('plank', 'Plank (Gainage)', 3.0, [
   {
     time: 0.0,
-    hipsOffset: [0, -0.05, 0],
-    proneAngle: 1.48,
-    groundOffsetZ: 0.25,
+    hipsOffset: [0, -0.02, 0],
+    proneAngle: 1.57,           // Full horizontal plane (corps parallèle au sol)
+    groundOffsetY: -0.16,       // Lowers hips so forearms and elbows rest firmly on the floor
+    groundOffsetZ: 0.18,        // Centered longitudinally on training area
     bones: {
-      Spine: { pitch: -0.03, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.40, yaw: 0, roll: 0.12 },
-      RightArm: { pitch: 1.40, yaw: 0, roll: 0.12 },
-      LeftForeArm: { pitch: 1.50, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 1.50, yaw: 0, roll: 0 },
-      LeftHand: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightHand: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.06 },
-      LeftFoot: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0.05, yaw: 0, roll: 0 },
+      Spine: { pitch: -0.04, yaw: 0, roll: 0 },   // Solid hollow-body abdominal bracing
+      Spine1: { pitch: 0.04, yaw: 0, roll: 0 },   // Active scapular protraction
+      Head: { pitch: -0.15, yaw: 0, roll: 0 },    // Neutral cervical alignment, gaze down at mat
+      LeftArm: { pitch: 1.57, yaw: 0, roll: 0.10 },   // Upper arm vertical down from shoulder to floor
+      RightArm: { pitch: 1.57, yaw: 0, roll: 0.10 },  // Upper arm vertical down from shoulder to floor
+      LeftForeArm: { pitch: -1.57, yaw: 0, roll: 0 }, // 90° elbow flexion, forearm flat forward on floor
+      RightForeArm: { pitch: -1.57, yaw: 0, roll: 0 },// 90° elbow flexion, forearm flat forward on floor
+      LeftHand: { pitch: 0.0, yaw: 0, roll: 0 },      // Palms and wrists resting flat on floor
+      RightHand: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },    // Thighs straight and active
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftLeg: { pitch: 0, yaw: 0, roll: 0 },         // Knees straight, locked in plank
+      RightLeg: { pitch: 0, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.45, yaw: 0, roll: 0 },    // Balls of feet firmly planted, toes on ground
+      RightFoot: { pitch: -0.45, yaw: 0, roll: 0 },
     },
   },
   {
     time: 0.5,
-    hipsOffset: [0, -0.045, 0],
-    proneAngle: 1.48,
-    groundOffsetZ: 0.25,
+    hipsOffset: [0, -0.015, 0],
+    proneAngle: 1.57,
+    groundOffsetY: -0.16,
+    groundOffsetZ: 0.18,
     bones: {
-      Spine: { pitch: -0.02, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.40, yaw: 0, roll: 0.12 },
-      RightArm: { pitch: 1.40, yaw: 0, roll: 0.12 },
-      LeftForeArm: { pitch: 1.50, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 1.50, yaw: 0, roll: 0 },
-      LeftHand: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightHand: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.06 },
-      LeftFoot: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0.05, yaw: 0, roll: 0 },
+      Spine: { pitch: -0.03, yaw: 0, roll: 0 },   // Subtle isometric breathing micro-movement
+      Spine1: { pitch: 0.04, yaw: 0, roll: 0 },
+      Head: { pitch: -0.15, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.57, yaw: 0, roll: 0.10 },
+      RightArm: { pitch: 1.57, yaw: 0, roll: 0.10 },
+      LeftForeArm: { pitch: -1.57, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: -1.57, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.0, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftLeg: { pitch: 0, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.45, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.45, yaw: 0, roll: 0 },
     },
   },
   {
     time: 1.0,
-    hipsOffset: [0, -0.05, 0],
-    proneAngle: 1.48,
-    groundOffsetZ: 0.25,
+    hipsOffset: [0, -0.02, 0],
+    proneAngle: 1.57,
+    groundOffsetY: -0.16,
+    groundOffsetZ: 0.18,
     bones: {
-      Spine: { pitch: -0.03, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.40, yaw: 0, roll: 0.12 },
-      RightArm: { pitch: 1.40, yaw: 0, roll: 0.12 },
-      LeftForeArm: { pitch: 1.50, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 1.50, yaw: 0, roll: 0 },
-      LeftHand: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightHand: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.06 },
-      LeftFoot: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0.05, yaw: 0, roll: 0 },
+      Spine: { pitch: -0.04, yaw: 0, roll: 0 },
+      Spine1: { pitch: 0.04, yaw: 0, roll: 0 },
+      Head: { pitch: -0.15, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.57, yaw: 0, roll: 0.10 },
+      RightArm: { pitch: 1.57, yaw: 0, roll: 0.10 },
+      LeftForeArm: { pitch: -1.57, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: -1.57, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.0, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftLeg: { pitch: 0, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.45, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.45, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
+// 5B. DIPS: Parallel Bar Dips / Triceps Dips (authentic vertical push mechanics, knees bent behind, elbows 90 deg)
+const DIPS_CLIP = new HumanoidMotionClip('dips', 'Dips (Barres Parallèles)', 2.6, [
+  // 0.00: Top Lockout - Torso upright, arms extended supporting body, knees bent behind
+  {
+    time: 0.0,
+    hipsOffset: [0, 0.14, 0],
+    proneAngle: 0,
+    bones: {
+      Spine: { pitch: 0.12, yaw: 0, roll: 0 },        // Slight athletic forward torso lean (~10°)
+      Head: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.10, yaw: 0, roll: 0.14 },   // Arms at sides gripping bars
+      RightArm: { pitch: -0.10, yaw: 0, roll: 0.14 },
+      LeftForeArm: { pitch: 0.12, yaw: 0, roll: 0 },   // Arms locked out in extension
+      RightForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.20, yaw: 0, roll: 0 },      // Firm grip on parallel bars
+      RightHand: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.25, yaw: 0, roll: 0.04 },  // Thighs angled slightly back
+      RightUpLeg: { pitch: 0.25, yaw: 0, roll: -0.04 },
+      LeftLeg: { pitch: 1.45, yaw: 0, roll: 0 },       // Knees flexed ~90° with feet tucked behind
+      RightLeg: { pitch: 1.45, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.20, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.45: Controlled eccentric descent - Elbows flex backwards to 90°, chest dips forward
+  {
+    time: 0.45,
+    hipsOffset: [0, -0.22, 0],
+    proneAngle: 0,
+    bones: {
+      Spine: { pitch: 0.24, yaw: 0, roll: 0 },        // Torso leans forward ~15-20° for chest/triceps load
+      Head: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.55, yaw: 0, roll: 0.18 },   // Upper arms drive straight back
+      RightArm: { pitch: -0.55, yaw: 0, roll: 0.18 },
+      LeftForeArm: { pitch: 1.55, yaw: 0, roll: 0 },   // Strict 90° elbow flexion
+      RightForeArm: { pitch: 1.55, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.30, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0.30, yaw: 0, roll: -0.04 },
+      LeftLeg: { pitch: 1.55, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 1.55, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.20, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.60: Peak tension pause at 90° depth
+  {
+    time: 0.60,
+    hipsOffset: [0, -0.22, 0],
+    proneAngle: 0,
+    bones: {
+      Spine: { pitch: 0.24, yaw: 0, roll: 0 },
+      Head: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.55, yaw: 0, roll: 0.18 },
+      RightArm: { pitch: -0.55, yaw: 0, roll: 0.18 },
+      LeftForeArm: { pitch: 1.55, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.55, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.30, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0.30, yaw: 0, roll: -0.04 },
+      LeftLeg: { pitch: 1.55, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 1.55, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.20, yaw: 0, roll: 0 },
+    },
+  },
+  // 1.00: Concentric drive back to full lockout
+  {
+    time: 1.0,
+    hipsOffset: [0, 0.14, 0],
+    proneAngle: 0,
+    bones: {
+      Spine: { pitch: 0.12, yaw: 0, roll: 0 },
+      Head: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftArm: { pitch: -0.10, yaw: 0, roll: 0.14 },
+      RightArm: { pitch: -0.10, yaw: 0, roll: 0.14 },
+      LeftForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.20, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.25, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0.25, yaw: 0, roll: -0.04 },
+      LeftLeg: { pitch: 1.45, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 1.45, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.20, yaw: 0, roll: 0 },
     },
   },
 ]);
@@ -1434,6 +1542,10 @@ export const CLIPS_REGISTRY: Record<string, HumanoidMotionClip> = {
   plank: PLANK_CLIP,
   gainage: PLANK_CLIP,
   planche: PLANK_CLIP,
+  dips: DIPS_CLIP,
+  dip: DIPS_CLIP,
+  parallel_bar_dips: DIPS_CLIP,
+  fondos: DIPS_CLIP,
   martial_mabu: MARTIAL_MABU_CLIP,
   martial_punch: MARTIAL_PUNCH_CLIP,
   martial_kick: MARTIAL_KICK_CLIP,

@@ -241,7 +241,7 @@ export class HunyuanSkeletalRetargeter {
     // Apply root/hips translation
     if (this.hipsBone && calibratedHips) {
       const offsetX = (pose.hipsOffset[0] || 0) * this.worldToLocalScale;
-      const offsetY = (pose.hipsOffset[1] || 0) * this.worldToLocalScale;
+      const offsetY = ((pose.hipsOffset[1] || 0) + (pose.groundOffsetY || 0)) * this.worldToLocalScale;
       const offsetZ = ((pose.hipsOffset[2] || 0) + (pose.groundOffsetZ || 0)) * this.worldToLocalScale;
 
       this.hipsBone.position.x = calibratedHips.restLocalPos.x + offsetX;

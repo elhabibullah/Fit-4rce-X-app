@@ -207,7 +207,7 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     keywords: [
       'pushup', 'pushups', 'push-up', 'push-ups', 'pompe', 'pompes', 'pompage', 'pompages',
       'press-up', 'press up', 'appui tendu', 'développé couché', 'bench press',
-      'chest press', 'pectoral', 'pectoraux', 'dips', 'отжимания',
+      'chest press', 'pectoral', 'pectoraux', 'отжимания',
       'flexion', 'flexiones', 'lagartijas',
       'liegestütz', 'liegestütze', 'liegestuetz', 'liegestuetze',
       'piegamenti', 'flessioni',
@@ -215,6 +215,32 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
       '腕立て伏せ', 'ウデタテフセ', 'プッシュアップ',
       '俯卧撑', '标准俯卧撑',
       'تمارين الضغط', 'ضغط'
+    ],
+  },
+
+  // 3B. DIPS (Dips aux barres parallèles / Dips triceps)
+  dips: {
+    id: 'dips',
+    name: 'Dips aux barres parallèles (Dips)',
+    category: 'pushup',
+    clipId: 'dips',
+    startingPosture: 'standing',
+    cycleDuration: 2.6,
+    contacts: {
+      leftFootGround: false,
+      rightFootGround: false,
+      leftHandGround: false,
+      rightHandGround: false,
+      feetSpacing: 0.24,
+      handOrientation: 'fist_ribs',
+      preventFloorPenetration: true,
+      minKneeFloorClearance: 0.25,
+    },
+    keywords: [
+      'dips', 'dip', 'parallel bar dips', 'parallel bar dip',
+      'dips aux barres paralleles', 'dips aux barres parallèles',
+      'fondos', 'fondos en paralelas', 'mergulho', 'mergulhos',
+      'tricep dips', 'triceps dips', 'bar dips', 'дипсы', 'отжимания на брусьях'
     ],
   },
 
@@ -563,6 +589,9 @@ export function resolveExerciseDefinition(query?: string | null): ExerciseDefini
   }
 
   // 1b. Match common exercises from GitHub exercices-json & specific aliases
+  if (clean.includes('dip') || clean.includes('fondos') || clean.includes('mergulho')) {
+    return EXERCISE_DEFINITIONS.dips;
+  }
   if (clean === 'push_up' || clean === 'jump_push_up' || clean.includes('pompe') || clean.includes('pompage')) {
     return EXERCISE_DEFINITIONS.pushup;
   }

@@ -56,11 +56,20 @@ export function getCanonicalIdForExercise(name: string, category?: string): stri
     return 'plank';
   }
 
-  // 5. Push-ups & Dips
+  // 5. Dips (Parallel Bar Dips / Triceps)
+  if (
+    clean.includes('dips') || clean.includes('dip') || clean.includes('fondos') ||
+    clean.includes('mergulho') || clean.includes('дипсы') || clean.includes('брусьях') ||
+    clean.includes('ディップス') || clean.includes('臂屈伸')
+  ) {
+    return 'dips';
+  }
+
+  // 5b. Push-ups
   if (
     clean.includes('push_up') || clean.includes('pushup') || clean.includes('push-up') ||
     clean.includes('pompe') || clean.includes('pompage') || clean.includes('press-up') ||
-    clean.includes('dips') || clean.includes('flexion') || clean.includes('liegestutz') ||
+    clean.includes('flexion') || clean.includes('liegestutz') ||
     clean.includes('отжимания') || clean.includes('piegamenti') || clean.includes('flexiones')
   ) {
     return 'push_up';
@@ -162,7 +171,7 @@ export const MASTER_EXERCISE_CATALOG: ExerciseItem[] = [
     },
   },
   {
-    canonicalId: 'push_up',
+    canonicalId: 'dips',
     category: 'push',
     equipment: 'dip_bars',
     names: {

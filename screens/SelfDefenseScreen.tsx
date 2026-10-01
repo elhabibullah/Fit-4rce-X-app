@@ -5,7 +5,7 @@ import { useApp } from '../hooks/useApp.ts';
 import { 
     ChevronLeft, ChevronRight, Play, Pause, Award, 
     Shield, Wind, Zap, RotateCcw, RotateCw, Maximize2, Minimize2, Sun, Moon,
-    CheckCircle2, Sparkles
+    CheckCircle2
 } from 'lucide-react';
 import Button from '../components/common/Button.tsx';
 import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
@@ -86,11 +86,11 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
     };
 
     const phaseDescription = useMemo(() => {
-        if (scrubberProgress < 0.22) return "Phase 1 : Enracinement & Garde";
-        if (scrubberProgress < 0.55) return "Phase 2 : Déploiement de Puissance";
-        if (scrubberProgress < 0.80) return "Phase 3 : Point d'Impact & Alignement";
-        return "Phase 4 : Rapatriement & Équilibre";
-    }, [scrubberProgress]);
+        if (scrubberProgress < 0.22) return translate('defense.phase1');
+        if (scrubberProgress < 0.55) return translate('defense.phase2');
+        if (scrubberProgress < 0.80) return translate('defense.phase3');
+        return translate('defense.phase4');
+    }, [scrubberProgress, translate]);
 
     const effectiveModelUrl = technique.modelUrl || SIFU_MODEL_URL;
 
@@ -104,14 +104,14 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                 <button 
                     onClick={onBack} 
                     className="p-2 text-gray-400 hover:text-white shrink-0 rounded-full hover:bg-white/10 transition-colors"
-                    title="Retour"
+                    title={translate('back')}
                 >
                     <ChevronLeft size={24} />
                 </button>
                 
                 <div className="flex-1 text-center min-w-0 px-2">
                     <span className="text-[9px] font-black text-[#DAA520] tracking-[0.25em] uppercase block truncate">
-                        SIFU ABDELWAHID • ARTS MARTIAUX 3D
+                        {translate('defense.sifu_title')}
                     </span>
                     <h2 className="font-black uppercase tracking-wider text-xs sm:text-sm text-white leading-tight truncate">
                         {technique.name}
@@ -123,7 +123,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                     <button
                         onClick={() => setIsFullscreen(!isFullscreen)}
                         className="p-2 text-gray-400 hover:text-[#DAA520] rounded-full hover:bg-white/10 transition-colors"
-                        title={isFullscreen ? "Quitter Plein Écran" : "Plein Écran"}
+                        title={isFullscreen ? translate('defense.exit_fullscreen') : translate('defense.fullscreen')}
                     >
                         {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
                     </button>
@@ -138,7 +138,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                     className={`w-full relative transition-all duration-300 ${
                     isFullscreen 
                         ? 'flex-1 h-full rounded-none border-none' 
-                        : 'h-[50vh] min-h-[360px] sm:h-[60vh] sm:min-h-[460px] rounded-3xl border shadow-2xl overflow-hidden shrink-0'
+                        : 'h-[66vh] min-h-[480px] sm:h-[75vh] sm:min-h-[540px] rounded-3xl border shadow-2xl overflow-hidden shrink-0'
                 } ${studioTheme === 'white' ? 'bg-white border-neutral-300/80 shadow-[0_10px_40px_rgba(0,0,0,0.08)]' : 'bg-black border-[#DAA520]/40 shadow-[0_0_50px_rgba(218,165,32,0.15)]'}`}>
                     
                     {/* 3D Model of Sifu with full viewport space */}
@@ -158,32 +158,32 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                         hideARButton={true}
                     />
 
-                    {/* TOP PLAYER HUD: Camera Angles & Studio Mode */}
-                    <div className="absolute top-2.5 left-2.5 right-2.5 z-30 flex items-center justify-between pointer-events-none">
+                    {/* TOP PLAYER HUD: Camera Angles & Studio Mode - CLEAN, NEVER OVERLAPPING */}
+                    <div className="absolute top-2.5 left-2.5 right-2.5 z-30 flex items-center justify-between gap-1 pointer-events-none">
                         {/* Camera Angle Selector */}
-                        <div className={`flex items-center gap-1 p-0.5 rounded-full border pointer-events-auto shadow-lg backdrop-blur-md ${
+                        <div className={`flex items-center gap-0.5 p-0.5 rounded-full border pointer-events-auto shadow-lg backdrop-blur-md shrink-0 ${
                             studioTheme === 'white' ? 'bg-white/90 border-neutral-200' : 'bg-black/75 border-white/10'
                         }`}>
                             {(['face', 'profile', 'free'] as const).map(preset => (
                                 <button
                                     key={preset}
                                     onClick={() => setCameraPreset(preset)}
-                                    className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-wider transition-all ${
+                                    className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[8px] font-black uppercase tracking-wider transition-all ${
                                         cameraPreset === preset 
                                             ? (studioTheme === 'white' ? 'bg-neutral-900 text-white shadow-sm' : 'bg-[#DAA520] text-black shadow-md') 
                                             : (studioTheme === 'white' ? 'text-neutral-500 hover:text-neutral-900' : 'text-gray-400 hover:text-white')
                                     }`}
                                 >
-                                    {preset === 'face' ? 'Face' : preset === 'profile' ? 'Profil' : '360°'}
+                                    {preset === 'face' ? translate('defense.camera_face') : preset === 'profile' ? translate('defense.camera_profile') : translate('defense.camera_360')}
                                 </button>
                             ))}
                         </div>
 
-                        <div className="flex items-center gap-1.5 pointer-events-auto">
+                        <div className="flex items-center gap-1 sm:gap-1.5 pointer-events-auto shrink-0">
                             {/* Vue Holographique Button */}
                             <button
                                 onClick={() => setIsAROpen(true)}
-                                className="px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-wider flex items-center justify-center shadow-lg backdrop-blur-md transition-all bg-gradient-to-r from-amber-600 to-yellow-600 text-white border-amber-400/50 hover:from-amber-500 hover:to-yellow-500 active:scale-95 shadow-amber-900/40"
+                                className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full border text-[8px] font-black uppercase tracking-wider flex items-center justify-center shadow-lg backdrop-blur-md transition-all bg-gradient-to-r from-amber-600 to-yellow-600 text-white border-amber-400/50 hover:from-amber-500 hover:to-yellow-500 active:scale-95 shadow-amber-900/40"
                                 title={translate('ar.hologram')}
                             >
                                 <span>{translate('ar.hologram')}</span>
@@ -192,14 +192,14 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                             {/* Theme Toggle Button */}
                             <button
                                 onClick={() => setStudioTheme(prev => prev === 'dark' ? 'white' : 'dark')}
-                                className={`px-2.5 py-1 rounded-full border text-[8px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all ${
+                                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-lg backdrop-blur-md transition-all ${
                                     studioTheme === 'white'
-                                        ? 'bg-white/90 border-neutral-200 text-neutral-800 hover:bg-neutral-100 hover:text-purple-700'
+                                        ? 'bg-white/90 border-neutral-200 text-neutral-800 hover:bg-neutral-100'
                                         : 'bg-black/75 border-white/10 text-white hover:text-[#DAA520]'
                                 }`}
                             >
                                 {studioTheme === 'white' ? <Moon size={11} className="text-purple-600" /> : <Sun size={11} className="text-[#DAA520]" />}
-                                <span>{studioTheme === 'white' ? 'Dojo Noir' : 'Studio Blanc'}</span>
+                                <span className="hidden sm:inline">{studioTheme === 'white' ? translate('defense.dojo_dark') : translate('defense.dojo_white')}</span>
                             </button>
                         </div>
                     </div>
@@ -209,11 +209,11 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                         <div className={`absolute inset-0 z-[210] flex flex-col items-center justify-center animate-fadeIn pointer-events-none backdrop-blur-md ${
                             studioTheme === 'white' ? 'bg-white/80' : 'bg-black/80'
                         }`}>
-                            <h4 className="text-[10px] font-black text-[#DAA520] uppercase tracking-[0.4em] mb-2">SÉQUENCE DE COMBAT</h4>
+                            <h4 className="text-[10px] font-black text-[#DAA520] uppercase tracking-[0.4em] mb-2">{translate('defense.combat_sequence')}</h4>
                             <div className={`text-[7rem] sm:text-[9rem] font-black leading-none drop-shadow-[0_0_35px_#DAA520] ${
                                 studioTheme === 'white' ? 'text-neutral-900' : 'text-white'
                             }`}>{countdown}</div>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-2">Placez-vous en posture</p>
+                            <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-2">{translate('defense.get_ready')}</p>
                         </div>
                     )}
 
@@ -258,7 +258,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                                     style={{
                                         background: `linear-gradient(to right, #DAA520 0%, #DAA520 ${scrubberProgress * 100}%, ${studioTheme === 'white' ? '#e2e8f0' : '#333333'} ${scrubberProgress * 100}%, ${studioTheme === 'white' ? '#e2e8f0' : '#333333'} 100%)`
                                     }}
-                                    title="Scrubber : glissez pour analyser le mouvement"
+                                    title="Scrubber"
                                 />
                             </div>
                         </div>
@@ -276,7 +276,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                                             ? 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border-neutral-200' 
                                             : 'bg-gray-900/90 text-gray-300 hover:text-white hover:bg-gray-800 border-gray-800'
                                     }`}
-                                    title="Reculer d'une frame (-0.2s)"
+                                    title={translate('defense.step_back')}
                                 >
                                     <RotateCcw size={12} />
                                     <span className="hidden sm:inline">-0.2s</span>
@@ -288,7 +288,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                                             ? 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border-neutral-200' 
                                             : 'bg-gray-900/90 text-gray-300 hover:text-white hover:bg-gray-800 border-gray-800'
                                     }`}
-                                    title="Avancer d'une frame (+0.2s)"
+                                    title={translate('defense.step_forward')}
                                 >
                                     <RotateCw size={12} />
                                     <span className="hidden sm:inline">+0.2s</span>
@@ -302,17 +302,17 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                                     setIsScrubbing(false);
                                 }}
                                 className="px-4 py-1.5 rounded-full bg-[#DAA520] hover:bg-[#c5961d] text-black font-black uppercase text-[11px] tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(218,165,32,0.4)] active:scale-95 transition-all"
-                                title={isPaused ? "Lecture" : "Pause"}
+                                title={isPaused ? translate('defense.play') : translate('defense.pause')}
                             >
                                 {isPaused ? (
                                     <>
                                         <Play size={13} fill="black" />
-                                        <span>Lecture</span>
+                                        <span>{translate('defense.play')}</span>
                                     </>
                                 ) : (
                                     <>
                                         <Pause size={13} fill="black" />
-                                        <span>Pause</span>
+                                        <span>{translate('defense.pause')}</span>
                                     </>
                                 )}
                             </button>
@@ -330,7 +330,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                                                 ? (studioTheme === 'white' ? 'bg-neutral-900 text-white shadow-sm' : 'bg-[#DAA520] text-black font-bold shadow-sm')
                                                 : (studioTheme === 'white' ? 'text-neutral-500 hover:text-neutral-900' : 'text-gray-400 hover:text-white')
                                         }`}
-                                        title={`Vitesse ${s}x`}
+                                        title={`Speed ${s}x`}
                                     >
                                         {s}x
                                     </button>
@@ -347,23 +347,23 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                         {allTechniques.length > 1 && (
                             <div className="space-y-1">
                                 <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block px-1">
-                                    MOUVEMENTS DE CE NIVEAU ({allTechniques.length})
+                                    {translate('defense.level_movements')} ({allTechniques.length})
                                 </span>
-                                <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
+                                <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-1">
                                     {allTechniques.map((tech, idx) => {
                                         const isCurrent = tech.id === technique.id;
                                         return (
                                             <button
                                                 key={tech.id}
                                                 onClick={() => onSelectTechnique?.(tech)}
-                                                className={`whitespace-nowrap px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider border transition-all flex items-center gap-1.5 shrink-0 ${
+                                                className={`whitespace-nowrap px-2.5 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-wider border transition-all flex items-center gap-1.5 shrink-0 ${
                                                     isCurrent
                                                         ? 'bg-[#DAA520] text-black border-[#DAA520] shadow-[0_0_12px_rgba(218,165,32,0.4)]'
                                                         : 'bg-zinc-900/70 text-gray-400 border-gray-800 hover:text-white hover:border-gray-700'
                                                 }`}
                                             >
-                                                <span className="font-mono text-[9px] opacity-75">{idx + 1}.</span>
-                                                <span className="truncate max-w-[150px]">{tech.name}</span>
+                                                <span className="font-mono text-[8px] opacity-75">{idx + 1}.</span>
+                                                <span className="truncate max-w-[140px]">{tech.name}</span>
                                             </button>
                                         );
                                     })}
@@ -379,7 +379,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                                     mode === 'learn' ? 'bg-[#DAA520] text-black shadow-md' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                             >
-                                ANALYSE BIOMÉCANIQUE
+                                {translate('defense.biomechanical_analysis')}
                             </button>
                             <button 
                                 onClick={() => { setMode('train'); setIsPrep(true); }} 
@@ -387,22 +387,24 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                                     mode === 'train' ? 'bg-[#DAA520] text-black shadow-md' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                             >
-                                DÉMARRER ENTRAÎNEMENT
+                                {translate('defense.start_training')}
                             </button>
                         </div>
 
                         {/* Compact Technical Guidance Card */}
-                        <div className="bg-zinc-950/80 border border-[#DAA520]/20 rounded-xl p-3.5 space-y-2">
+                        <div className="bg-zinc-950/80 border border-[#DAA520]/20 rounded-xl p-3 space-y-1.5">
                             <div className="flex items-center gap-1.5">
                                 <Shield size={13} className="text-[#DAA520]" />
-                                <h3 className="text-[9px] font-black text-[#DAA520] uppercase tracking-widest">Guide Posture Sifu</h3>
+                                <h3 className="text-[9px] font-black text-[#DAA520] uppercase tracking-widest">{translate('defense.posture_guide')}</h3>
                             </div>
                             <p className="text-xs text-gray-300 leading-relaxed font-normal">{technique.description}</p>
                             
-                            <div className="pt-2 border-t border-gray-900 flex items-start gap-1.5">
-                                <Zap size={12} className="text-amber-400 shrink-0 mt-0.5" />
-                                <p className="text-[10px] text-amber-300 font-bold uppercase tracking-wider">{technique.application}</p>
-                            </div>
+                            {technique.application && (
+                                <div className="pt-1.5 border-t border-gray-900 flex items-start gap-1.5">
+                                    <span className="text-[9px] text-[#DAA520] font-black uppercase tracking-wider shrink-0 mt-0.5">Focus:</span>
+                                    <p className="text-[10px] text-amber-300 font-bold uppercase tracking-wider">{technique.application}</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Start Training Button */}
@@ -412,9 +414,9 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
                                     setIsPrep(true);
                                     setCountdown(10);
                                 }} 
-                                className="w-full py-3.5 bg-[#DAA520] hover:bg-[#c5961d] border-[#DAA520] text-black font-black uppercase text-xs tracking-[0.15em] shadow-[0_0_20px_rgba(218,165,32,0.3)] active:scale-95 transition-all"
+                                className="w-full py-3 bg-[#DAA520] hover:bg-[#c5961d] border-[#DAA520] text-black font-black uppercase text-xs tracking-[0.15em] shadow-[0_0_20px_rgba(218,165,32,0.3)] active:scale-95 transition-all"
                             >
-                                LANCER LE DRILL SIFU (10s D'INSTALLATION)
+                                {translate('defense.launch_drill')}
                             </Button>
                         </div>
                     </div>
@@ -490,8 +492,8 @@ export const SelfDefenseScreen: React.FC = () => {
             )}
             
             {/* Header: Back button + Title + EMS trigger */}
-            <header className="flex items-center justify-between mb-6">
-                <button onClick={() => setScreen(Screen.Home)} className="p-2 -ml-2 text-gray-500 hover:text-white transition-colors">
+            <header className="flex items-center justify-between mb-5">
+                <button onClick={() => setScreen(Screen.Home)} className="p-2 -ml-2 text-gray-500 hover:text-white transition-colors" title={translate('back')}>
                     <ChevronLeft size={28} />
                 </button>
                 <div className="text-center">
@@ -502,65 +504,65 @@ export const SelfDefenseScreen: React.FC = () => {
             </header>
 
             {/* HERO SIFU STUDIO BANNER */}
-            <div className="relative rounded-3xl overflow-hidden border border-[#DAA520]/30 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black p-5 mb-6 shadow-[0_0_40px_rgba(218,165,32,0.12)]">
+            <div className="relative rounded-3xl overflow-hidden border border-[#DAA520]/30 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black p-4 sm:p-5 mb-5 shadow-[0_0_40px_rgba(218,165,32,0.12)]">
                 <div className="flex items-center justify-between">
-                    <div className="max-w-[70%]">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#DAA520]/20 text-[#DAA520] border border-[#DAA520]/40 text-[8px] font-black uppercase tracking-widest mb-2">
-                            <Sparkles size={10} /> STUDIO 3D HOLOGRAPHIQUE
+                    <div className="max-w-[72%]">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#DAA520]/20 text-[#DAA520] border border-[#DAA520]/40 text-[8px] font-black uppercase tracking-widest mb-1.5">
+                            <Shield size={10} /> {translate('defense.view_studio_3d')}
                         </span>
-                        <h2 className="text-base sm:text-lg font-black uppercase tracking-tight text-white leading-tight">
-                            Maîtrise Martiale en Direct
+                        <h2 className="text-sm sm:text-base font-black uppercase tracking-tight text-white leading-tight">
+                            {translate('defense.studio_banner_title')}
                         </h2>
                         <p className="text-[10px] text-zinc-400 mt-1 leading-relaxed">
-                            Visualisez chaque mouvement avec Sifu Abdelwahid à 360°, ralenti biomécanique et repères de frappe.
+                            {translate('defense.studio_banner_desc')}
                         </p>
                     </div>
 
                     {currentLevel?.techniques?.[0] && (
                         <button
                             onClick={() => setSelectedTech(currentLevel.techniques[0])}
-                            className="p-3.5 rounded-2xl bg-[#DAA520] text-black hover:bg-[#c5961d] shadow-[0_0_20px_rgba(218,165,32,0.4)] active:scale-95 transition-all flex flex-col items-center justify-center shrink-0"
-                            title="Lancer le studio 3D"
+                            className="p-3 rounded-2xl bg-[#DAA520] text-black hover:bg-[#c5961d] shadow-[0_0_20px_rgba(218,165,32,0.4)] active:scale-95 transition-all flex flex-col items-center justify-center shrink-0"
+                            title={translate('defense.launch_studio')}
                         >
-                            <Play size={20} fill="black" />
-                            <span className="text-[8px] font-black uppercase tracking-wider mt-1">Dojo 3D</span>
+                            <Play size={18} fill="black" />
+                            <span className="text-[8px] font-black uppercase tracking-wider mt-1">{translate('defense.launch_studio')}</span>
                         </button>
                     )}
                 </div>
             </div>
 
             {/* Discipline Selector Tabs */}
-            <div className="flex bg-gray-950 p-1 rounded-2xl border border-gray-900 mb-6">
+            <div className="flex bg-gray-950 p-1 rounded-2xl border border-gray-900 mb-5">
                 {[
-                    { id: 'kung-fu', icon: Shield, label: 'KUNG-FU TRADITIONNEL' },
-                    { id: 'tai-chi', icon: Wind, label: 'NEO TAI-CHI CHUAN' }
+                    { id: 'kung-fu', icon: Shield, label: translate('defense.kung_fu_tab') },
+                    { id: 'tai-chi', icon: Wind, label: translate('defense.tai_chi_tab') }
                 ].map((d) => (
                     <button
                         key={d.id}
                         onClick={() => setSelectedProgram(d.id as Discipline)}
-                        className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 ${
+                        className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 ${
                             selectedProgram === d.id 
                                 ? 'bg-[#DAA520] text-black font-black shadow-lg' 
                                 : 'text-gray-500 hover:text-gray-300'
                         }`}
                     >
-                        <d.icon size={16} />
+                        <d.icon size={15} />
                         <span className="text-[9px] font-black uppercase tracking-widest">{d.label}</span>
                     </button>
                 ))}
             </div>
 
-            <div className="mb-3">
-                 <h2 className="font-black uppercase tracking-[0.1em] text-lg text-white">{programData.name}</h2>
+            <div className="mb-2">
+                 <h2 className="font-black uppercase tracking-[0.1em] text-base sm:text-lg text-white">{programData.name}</h2>
             </div>
 
             {/* Level Selector */}
-            <div className="flex gap-2 mb-6 overflow-x-auto custom-scrollbar pb-1">
+            <div className="flex gap-1.5 mb-4 overflow-x-auto custom-scrollbar pb-1">
                 {programData.levels.map((lvl, idx) => (
                     <button 
                         key={idx}
                         onClick={() => setSelectedLevelIdx(idx)}
-                        className={`whitespace-nowrap px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
+                        className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
                             selectedLevelIdx === idx 
                                 ? 'bg-[#DAA520] text-black border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]' 
                                 : 'bg-zinc-950 text-gray-500 border-zinc-900 hover:border-gray-700'
@@ -571,39 +573,39 @@ export const SelfDefenseScreen: React.FC = () => {
                 ))}
             </div>
 
-            <section className="mb-8">
-                <div className="bg-[#DAA520]/5 border border-[#DAA520]/20 p-4 rounded-2xl mb-5">
+            <section className="mb-6">
+                <div className="bg-[#DAA520]/5 border border-[#DAA520]/20 p-3.5 rounded-2xl mb-4">
                     <p className="text-gray-300 text-xs leading-relaxed italic">{currentLevel?.description}</p>
                 </div>
 
                 {/* SLEEK, COMPACT TECHNIQUE CARDS (REPLACING OVERSIZED CLUNKY BUTTONS) */}
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                     {currentLevel?.techniques.map((tech, idx) => (
                         <button
                             key={tech.id}
                             onClick={() => setSelectedTech(tech)}
-                            className="w-full bg-zinc-950/90 border border-zinc-900 hover:border-[#DAA520]/50 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between group transition-all duration-200 active:scale-[0.98] hover:bg-zinc-900/60 shadow-sm text-left"
+                            className="w-full bg-zinc-950/90 border border-zinc-900 hover:border-[#DAA520]/50 rounded-xl px-3 py-2.5 sm:px-3.5 sm:py-3 flex items-center justify-between group transition-all duration-200 active:scale-[0.98] hover:bg-zinc-900/60 shadow-sm text-left"
                         >
-                            <div className="flex items-center gap-3 min-w-0 pr-2">
-                                <div className="w-8 h-8 rounded-xl bg-[#DAA520]/10 border border-[#DAA520]/30 flex items-center justify-center text-[#DAA520] font-mono font-bold text-xs shrink-0 group-hover:bg-[#DAA520] group-hover:text-black transition-colors">
+                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                <div className="w-7 h-7 rounded-lg bg-[#DAA520]/10 border border-[#DAA520]/30 flex items-center justify-center text-[#DAA520] font-mono font-bold text-xs shrink-0 group-hover:bg-[#DAA520] group-hover:text-black transition-colors">
                                     {idx + 1}
                                 </div>
                                 <div className="min-w-0">
-                                    <h3 className="text-white font-black uppercase tracking-wider text-xs sm:text-sm truncate group-hover:text-[#DAA520] transition-colors">
+                                    <h3 className="text-white font-black uppercase tracking-wider text-xs truncate group-hover:text-[#DAA520] transition-colors">
                                         {tech.name}
                                     </h3>
-                                    <p className="text-[9px] text-zinc-500 font-bold uppercase mt-0.5 tracking-wider truncate">
+                                    <p className="text-[8px] sm:text-[9px] text-zinc-500 font-bold uppercase mt-0.5 tracking-wider truncate">
                                         {tech.application}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0">
                                 <span className="text-[8px] font-bold text-[#DAA520] uppercase tracking-widest hidden sm:inline opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Voir Studio 3D
+                                    {translate('defense.view_studio_3d')}
                                 </span>
-                                <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-zinc-400 group-hover:text-white group-hover:border-[#DAA520]/60 transition-colors">
-                                    <ChevronRight size={16} />
+                                <div className="w-7 h-7 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-zinc-400 group-hover:text-white group-hover:border-[#DAA520]/60 transition-colors">
+                                    <ChevronRight size={14} />
                                 </div>
                             </div>
                         </button>
@@ -611,15 +613,15 @@ export const SelfDefenseScreen: React.FC = () => {
                 </div>
             </section>
 
-            <section className="pt-4 border-t border-gray-900">
-                <div className="flex items-center gap-3 bg-zinc-950/60 p-4 rounded-2xl border border-zinc-900">
-                    <div className="w-10 h-10 rounded-full bg-[#DAA520]/10 flex items-center justify-center border border-[#DAA520]/30 shrink-0">
+            <section className="pt-3 border-t border-gray-900">
+                <div className="flex items-center gap-3 bg-zinc-950/60 p-3.5 rounded-2xl border border-zinc-900">
+                    <div className="w-9 h-9 rounded-full bg-[#DAA520]/10 flex items-center justify-center border border-[#DAA520]/30 shrink-0">
                         <Award className="text-[#DAA520] w-5 h-5" />
                     </div>
                     <div>
-                        <h4 className="text-xs font-black text-white uppercase tracking-wider">Progression Martiale</h4>
+                        <h4 className="text-xs font-black text-white uppercase tracking-wider">{translate('defense.martial_progression')}</h4>
                         <p className="text-[9px] text-gray-500 uppercase font-bold mt-0.5">
-                            Niveau {selectedLevelIdx + 1} // Sifu Abdelwahid Dojo // EMS Synchronisé
+                            {translate('level.beginner')} {selectedLevelIdx + 1} • {translate('defense.master_dojo')}
                         </p>
                     </div>
                 </div>

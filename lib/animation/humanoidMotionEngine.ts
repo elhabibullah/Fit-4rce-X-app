@@ -30,6 +30,7 @@ export class HumanoidMotionEngine {
   public currentGroundOffsetZ: number = 0;
   public lastSolveResult: SolvedGroundContact | null = null;
   public podiumSurfaceY: number = -0.889;
+  public disableGroundSolver: boolean = false;
 
   constructor(scene: THREE.Object3D, modelScale?: number, podiumSurfaceY: number = -0.889) {
     this.podiumSurfaceY = podiumSurfaceY;
@@ -194,23 +195,26 @@ export class HumanoidMotionEngine {
 
     // 2. Execute Ground & Contact Solver
     // Enforces ground contact, flat palms for pushups, clearance for lunges, and zero floor intersection
-    const solveResult = this.contactSolver.solveContacts(
-      this.retargeter,
-      this.currentExerciseDef.startingPosture,
-      this.currentExerciseDef.contacts,
-      this.currentProneAngle,
-      this.podiumSurfaceY,
-      finalPose.hipsOffset[1]
-    );
-    this.lastSolveResult = solveResult;
+    // Skipped if disableGroundSolver is set (e.g. rotated pyramid 360 facets)
+    if (!this.disableGroundSolver) {
+      const solveResult = this.contactSolver.solveContacts(
+        this.retargeter,
+        this.currentExerciseDef.startingPosture,
+        this.currentExerciseDef.contacts,
+        this.currentProneAngle,
+        this.podiumSurfaceY,
+        finalPose.hipsOffset[1]
+      );
+      this.lastSolveResult = solveResult;
 
-    // 3. Keep hips solidly anchored to calibrated pose height
-    // Apply exact world elevation compensation so feet/hands stay planted on the podium
-    if (solveResult.hipsElevationAdjust !== 0) {
-      const currentHips = this.retargeter.hipsBone;
-      if (currentHips) {
-        currentHips.position.y += solveResult.hipsElevationAdjust * this.retargeter.worldToLocalScale;
-        currentHips.updateMatrixWorld(true);
+      // 3. Keep hips solidly anchored to calibrated pose height
+      // Apply exact world elevation compensation so feet/hands stay planted on the podium
+      if (solveResult.hipsElevationAdjust !== 0) {
+        const currentHips = this.retargeter.hipsBone;
+        if (currentHips) {
+          currentHips.position.y += solveResult.hipsElevationAdjust * this.retargeter.worldToLocalScale;
+          currentHips.updateMatrixWorld(true);
+        }
       }
     }
   }

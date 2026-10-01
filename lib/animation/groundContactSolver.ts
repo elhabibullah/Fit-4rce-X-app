@@ -63,7 +63,7 @@ export class GroundContactSolver {
       const handThickness = 0.035; // Palm clearance from wrist to solid floor
       const toeClearance = 0.025;  // Ball of foot / toe clearance to solid floor
 
-      // 1A. Evaluate current front contact (hands) and rear contact (toes)
+      // 1A. Evaluate current front contact (hands and elbows for forearm plank) and rear contact (toes)
       let handY = 0;
       let handCount = 0;
       if (leftHand) {
@@ -78,6 +78,25 @@ export class GroundContactSolver {
       }
       if (handCount > 0) {
         handY = handY / handCount - handThickness;
+      }
+
+      // Check elbows (Forearm Plank support)
+      const leftElbow = retargeter.bones.get('LeftForeArm');
+      const rightElbow = retargeter.bones.get('RightForeArm');
+      let elbowY = 0;
+      let elbowCount = 0;
+      if (leftElbow) {
+        leftElbow.bone.getWorldPosition(this.tmpVecHandL);
+        elbowY += this.tmpVecHandL.y;
+        elbowCount++;
+      }
+      if (rightElbow) {
+        rightElbow.bone.getWorldPosition(this.tmpVecHandR);
+        elbowY += this.tmpVecHandR.y;
+        elbowCount++;
+      }
+      if (elbowCount > 0) {
+        elbowY = elbowY / elbowCount - 0.035; // Elbow ground pad contact clearance
       }
 
       let toeY = 0;
@@ -95,10 +114,14 @@ export class GroundContactSolver {
       }
 
       // 1B. Re-evaluate lowest contact surface and snap exactly to podium surface
-      // Guarantees zero penetration: neither fingertips nor toes ever penetrate below podium
+      // Guarantees zero penetration: neither forearms, hands nor toes ever penetrate below podium
+      let lowestFrontY = Infinity;
+      if (handCount > 0) lowestFrontY = Math.min(lowestFrontY, handY);
+      if (elbowCount > 0) lowestFrontY = Math.min(lowestFrontY, elbowY);
+
       let lowestContactY = Infinity;
-      if (handCount > 0) {
-        lowestContactY = Math.min(lowestContactY, handY);
+      if (Number.isFinite(lowestFrontY)) {
+        lowestContactY = Math.min(lowestContactY, lowestFrontY);
       }
       if (toeCount > 0) {
         lowestContactY = Math.min(lowestContactY, toeY);

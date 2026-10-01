@@ -263,14 +263,17 @@ const ARModelRig: React.FC<{
         groupRef.current.updateMatrixWorld(true);
       }
       engineRef.current = new HumanoidMotionEngine(scene, baseScale, floorY);
+      engineRef.current.disableGroundSolver = !showFloorReticle;
       engineRef.current.setExercise(query, 0.0, true);
     } else {
+      engineRef.current.disableGroundSolver = !showFloorReticle;
       engineRef.current.setExercise(query, 0.25, false);
     }
-  }, [scene, exerciseId, exerciseName, baseScale, offsetPos, floorY]);
+  }, [scene, exerciseId, exerciseName, baseScale, offsetPos, floorY, showFloorReticle]);
 
   useFrame((_, delta) => {
     if (!scene || !engineRef.current) return;
+    engineRef.current.disableGroundSolver = !showFloorReticle;
     const effectiveDelta = isPaused ? 0 : Math.min(delta, 0.05);
     engineRef.current.update(effectiveDelta, speed, undefined, false);
   });
@@ -295,6 +298,7 @@ const ARModelRig: React.FC<{
 
 // Unified 4-Faced 360° Holographic Pyramid (Pepper's Ghost) running in ONE single Canvas
 // Calibrated with heads pointing OUTWARD towards the 4 edges and feet towards center apex
+// Fully responsive across all mobile screens in portrait or landscape (never cropped or invisible)
 const UnifiedPyramid360Scene: React.FC<{
   url?: string;
   exerciseName?: string;
@@ -305,6 +309,19 @@ const UnifiedPyramid360Scene: React.FC<{
   facetScale?: number;
   showGuides?: boolean;
 }> = ({ url = COACH_MODEL_URL, exerciseName, exerciseId, isPaused, speed, pyramidOffset = 1.35, facetScale = 0.38, showGuides = true }) => {
+  const { viewport } = useThree();
+  const minDim = Math.min(viewport.width, viewport.height);
+
+  // Responsive pyramid geometry guaranteed to fit within portrait/landscape screen bounds
+  const offsetRatio = (pyramidOffset / 1.35);
+  const effectiveOffset = Math.max(0.24, Math.min(minDim * 0.28 * offsetRatio, minDim * 0.38));
+  const scaleRatio = (facetScale / 0.38);
+  const effectiveScale = Math.max(0.16, Math.min(scaleRatio * ((minDim * 0.30) / 1.68), (minDim * 0.34) / 1.68));
+
+  const apexTargetSize = Math.max(0.06, minDim * 0.06);
+  const apexGuideSquare = Math.max(0.14, minDim * 0.14);
+  const apexOuterCircle = Math.max(0.22, minDim * 0.22);
+
   return (
     <group position={[0, 0, 0]}>
       {/* Central Alignment Apex Crosshair and Physical Prism Base Footprint */}
@@ -312,35 +329,35 @@ const UnifiedPyramid360Scene: React.FC<{
         <group position={[0, 0, 0]}>
           {/* Central Apex Target for physical transparent pyramid tip */}
           <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
-            <ringGeometry args={[0.22, 0.25, 4]} />
+            <ringGeometry args={[apexTargetSize * 0.85, apexTargetSize, 4]} />
             <meshBasicMaterial color="#06b6d4" transparent opacity={0.85} side={THREE.DoubleSide} />
           </mesh>
           <mesh position={[0, 0, 0]}>
-            <circleGeometry args={[0.04, 24]} />
+            <circleGeometry args={[apexTargetSize * 0.2, 24]} />
             <meshBasicMaterial color="#c084fc" transparent opacity={0.95} side={THREE.DoubleSide} />
           </mesh>
           {/* Diagonal 45-degree ray lines showing prism facet edges */}
           <mesh position={[0, 0, -0.01]} rotation={[0, 0, Math.PI / 4]}>
-            <ringGeometry args={[0.55, 0.57, 4]} />
+            <ringGeometry args={[apexGuideSquare * 0.95, apexGuideSquare, 4]} />
             <meshBasicMaterial color="#a855f7" transparent opacity={0.5} side={THREE.DoubleSide} />
           </mesh>
           {/* Outer clearance circle */}
           <mesh position={[0, 0, -0.02]}>
-            <ringGeometry args={[0.75, 0.77, 48]} />
+            <ringGeometry args={[apexOuterCircle * 0.96, apexOuterCircle, 48]} />
             <meshBasicMaterial color="#06b6d4" transparent opacity={0.3} side={THREE.DoubleSide} />
           </mesh>
         </group>
       )}
 
       {/* 1. SOUTH FACET (Bottom face): Front view. Head points DOWN (away from apex), feet point UP towards apex */}
-      <group position={[0, -pyramidOffset, 0]} rotation={[0, 0, Math.PI]}>
+      <group position={[0, -effectiveOffset, 0]} rotation={[0, 0, Math.PI]}>
         <ARModelRig
           url={url}
           exerciseName={exerciseName}
           exerciseId={exerciseId}
           isPaused={isPaused}
           speed={speed}
-          scaleMultiplier={facetScale}
+          scaleMultiplier={effectiveScale}
           rotationY={0}
           heightOffset={0}
           showFloorReticle={false}
@@ -348,14 +365,14 @@ const UnifiedPyramid360Scene: React.FC<{
       </group>
 
       {/* 2. NORTH FACET (Top face): Back view. Head points UP (away from apex), feet point DOWN towards apex */}
-      <group position={[0, pyramidOffset, 0]} rotation={[0, 0, 0]}>
+      <group position={[0, effectiveOffset, 0]} rotation={[0, 0, 0]}>
         <ARModelRig
           url={url}
           exerciseName={exerciseName}
           exerciseId={exerciseId}
           isPaused={isPaused}
           speed={speed}
-          scaleMultiplier={facetScale}
+          scaleMultiplier={effectiveScale}
           rotationY={Math.PI}
           heightOffset={0}
           showFloorReticle={false}
@@ -363,14 +380,14 @@ const UnifiedPyramid360Scene: React.FC<{
       </group>
 
       {/* 3. WEST FACET (Left face): Right profile view. Head points LEFT (away from apex), feet point RIGHT towards apex */}
-      <group position={[-pyramidOffset, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <group position={[-effectiveOffset, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
         <ARModelRig
           url={url}
           exerciseName={exerciseName}
           exerciseId={exerciseId}
           isPaused={isPaused}
           speed={speed}
-          scaleMultiplier={facetScale}
+          scaleMultiplier={effectiveScale}
           rotationY={-Math.PI / 2}
           heightOffset={0}
           showFloorReticle={false}
@@ -378,14 +395,14 @@ const UnifiedPyramid360Scene: React.FC<{
       </group>
 
       {/* 4. EAST FACET (Right face): Left profile view. Head points RIGHT (away from apex), feet point LEFT towards apex */}
-      <group position={[pyramidOffset, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+      <group position={[effectiveOffset, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
         <ARModelRig
           url={url}
           exerciseName={exerciseName}
           exerciseId={exerciseId}
           isPaused={isPaused}
           speed={speed}
-          scaleMultiplier={facetScale}
+          scaleMultiplier={effectiveScale}
           rotationY={Math.PI / 2}
           heightOffset={0}
           showFloorReticle={false}
@@ -556,17 +573,25 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
     }
   };
 
-  // Screen Cast / Share Presentation Helper
-  const handleShareCast = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `Fit-4rce X Hologram · ${exerciseName}`,
-        text: `Watch 3D Holographic Coach ${exerciseName} in full screen!`,
-        url: window.location.href,
-      }).catch(console.warn);
-    } else {
-      toggleFullscreen();
+  const [selectedTvBrand, setSelectedTvBrand] = useState<'lg' | 'samsung' | 'chromecast' | 'apple' | 'projector'>('lg');
+
+  // Wireless TV & Presentation Cast Handler
+  const handleStartTVCast = async () => {
+    // 1. Try modern Web Presentation API (opens native Cast/TV picker in Chromium)
+    if ((window as any).PresentationRequest) {
+      try {
+        const presentationRequest = new (window as any).PresentationRequest(['/']);
+        await presentationRequest.start();
+        return;
+      } catch (err: any) {
+        console.log('Presentation API prompt dismissed:', err?.message);
+      }
     }
+
+    // 2. Put in pure cinema black screen mode and enter fullscreen for phone-to-TV screen mirroring
+    setWallProjectionStyle('pure_cinema');
+    toggleFullscreen();
+    setShowProjectionConnectModal(false);
   };
 
   // Zoom helpers
@@ -672,7 +697,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
                     </>
                   ) : (
                     <>
-                      <Zap size={16} />
+                      <Camera size={16} />
                       <span>{translate('ar.allow_camera')}</span>
                     </>
                   )}
@@ -765,12 +790,12 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
           {/* 2D Guide Frame at center of screen for physical transparent prism base */}
           {showPyramidGuides && (
             <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
-              <div className="w-28 h-28 sm:w-36 sm:h-36 border-2 border-dashed border-cyan-400/80 rounded-2xl flex flex-col items-center justify-center bg-cyan-950/20 backdrop-blur-[2px] shadow-[0_0_24px_rgba(6,182,212,0.4)]">
-                <div className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc] mb-1 animate-ping" />
-                <span className="text-[9px] font-black uppercase tracking-wider text-cyan-300 text-center leading-tight">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 border-2 border-dashed border-cyan-400/80 rounded-2xl flex flex-col items-center justify-center bg-cyan-950/20 backdrop-blur-[2px] shadow-[0_0_24px_rgba(6,182,212,0.4)]">
+                <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc] mb-0.5 animate-ping" />
+                <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-cyan-300 text-center leading-tight">
                   {translate('ar.place_prism_here')}
                 </span>
-                <span className="text-[8px] font-mono text-gray-400 text-center mt-0.5">
+                <span className="text-[7px] sm:text-[8px] font-mono text-gray-400 text-center mt-0.5">
                   {translate('ar.square_base_center')}
                 </span>
               </div>
@@ -1091,8 +1116,11 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
             </div>
 
             <button
-              onClick={handleShareCast}
-              className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-bold flex items-center gap-1 transition-all shrink-0"
+              onClick={() => {
+                setProjectionConnectTab('wireless');
+                setShowProjectionConnectModal(true);
+              }}
+              className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 text-[10px] font-bold flex items-center gap-1 transition-all shrink-0"
               title={translate('ar.start_broadcast')}
             >
               <Cast size={12} />
@@ -1440,15 +1468,15 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
                 <div className="space-y-2 text-[10px]">
                   <div className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
-                    <p>Reliez le câble HDMI à votre écran (TV LG, Samsung, vidéoprojecteur ou moniteur PC).</p>
+                    <p>{translate('ar.step_hdmi_1')}</p>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
-                    <p>Sélectionnez la source HDMI correspondante avec votre télécommande.</p>
+                    <p>{translate('ar.step_hdmi_2')}</p>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
-                    <p>Basculez sur « {translate('ar.black_screen')} » pour projeter l'androïde coach en taille réelle (1m80) sur votre mur.</p>
+                    <p>{translate('ar.step_hdmi_3')}</p>
                   </div>
                 </div>
 
@@ -1459,46 +1487,148 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
                   }}
                   className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black uppercase text-xs tracking-wider shadow-lg transition-all"
                 >
-                  Activer le {translate('ar.black_screen')}
+                  {translate('ar.activate_black_screen')}
                 </button>
               </div>
             )}
 
-            {/* TAB 2: SANS CÂBLE (WI-FI / CAST) */}
+            {/* TAB 2: SANS CÂBLE (WI-FI / SMART VIEW / CAST) */}
             {projectionConnectTab === 'wireless' && (
               <div className="space-y-3 animate-fadeIn text-[11px] text-gray-300">
-                <div className="p-3 rounded-xl bg-black/60 border border-amber-500/30 space-y-1.5">
-                  <span className="font-black text-amber-400 uppercase text-[10px] tracking-wide block">
-                    {translate('ar.projection_wireless_title')}
-                  </span>
-                  <p className="leading-relaxed">
-                    {translate('ar.projection_wireless_desc')}
-                  </p>
+                {/* Direct Clarification Notice */}
+                <div className="p-3 rounded-2xl bg-amber-950/30 border border-amber-500/40 text-[10px] text-amber-200/90 leading-relaxed flex items-start gap-2.5">
+                  <span className="text-base shrink-0">💡</span>
+                  <div>
+                    <strong className="text-amber-300 block text-[11px] mb-0.5">{translate('ar.tv_notice_laptop_title')}</strong>
+                    <span className="leading-snug">{translate('ar.tv_notice_laptop')}</span>
+                  </div>
                 </div>
 
-                <div className="space-y-2 text-[10px]">
-                  <div className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
-                    <p>Vérifiez que votre Smart TV (LG webOS, Samsung Tizen, Android TV, Apple TV) est sur le même réseau Wi-Fi.</p>
+                {/* TV Brand Selector Pills */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-300 block">
+                    {translate('ar.tv_select_brand')}
+                  </span>
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                    {[
+                      { id: 'lg', label: 'TV LG (webOS)', icon: Tv },
+                      { id: 'samsung', label: 'TV Samsung', icon: Tv },
+                      { id: 'chromecast', label: 'Chromecast', icon: Cast },
+                      { id: 'apple', label: 'Apple TV', icon: Monitor },
+                      { id: 'projector', label: 'Projecteur', icon: Wifi },
+                    ].map((b) => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setSelectedTvBrand(b.id as any)}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1.5 shrink-0 transition-all ${
+                          selectedTvBrand === b.id
+                            ? 'bg-amber-500 text-black shadow-md'
+                            : 'bg-black/60 text-gray-300 hover:text-white border border-white/10'
+                        }`}
+                      >
+                        <b.icon size={12} />
+                        <span>{b.label}</span>
+                      </button>
+                    ))}
                   </div>
-                  <div className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
-                    <p>Cliquez sur le bouton ci-dessous pour ouvrir le panneau de diffusion du système.</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
-                    <p>Sélectionnez votre téléviseur pour dupliquer l'écran sans aucun fil.</p>
-                  </div>
+                </div>
+
+                {/* Brand-Specific Instructions */}
+                <div className="p-3 rounded-2xl bg-black/60 border border-amber-500/30 space-y-2 text-[10px]">
+                  {selectedTvBrand === 'lg' && (
+                    <>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
+                        <p>{translate('ar.step_wifi_lg_1')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
+                        <p>{translate('ar.step_wifi_lg_2')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
+                        <p>{translate('ar.step_wifi_lg_3')}</p>
+                      </div>
+                    </>
+                  )}
+
+                  {selectedTvBrand === 'samsung' && (
+                    <>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
+                        <p>{translate('ar.step_wifi_samsung_1')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
+                        <p>{translate('ar.step_wifi_samsung_2')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
+                        <p>{translate('ar.step_wifi_samsung_3')}</p>
+                      </div>
+                    </>
+                  )}
+
+                  {selectedTvBrand === 'chromecast' && (
+                    <>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
+                        <p>{translate('ar.step_wifi_chromecast_1')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
+                        <p>{translate('ar.step_wifi_chromecast_2')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
+                        <p>{translate('ar.step_wifi_chromecast_3')}</p>
+                      </div>
+                    </>
+                  )}
+
+                  {selectedTvBrand === 'apple' && (
+                    <>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
+                        <p>{translate('ar.step_wifi_apple_1')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
+                        <p>{translate('ar.step_wifi_apple_2')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
+                        <p>{translate('ar.step_wifi_apple_3')}</p>
+                      </div>
+                    </>
+                  )}
+
+                  {selectedTvBrand === 'projector' && (
+                    <>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
+                        <p>{translate('ar.step_wifi_projector_1')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
+                        <p>{translate('ar.step_wifi_projector_2')}</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
+                        <p>{translate('ar.step_wifi_projector_3')}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <button
-                  onClick={() => {
-                    handleShareCast();
-                  }}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black uppercase text-xs tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all"
+                  type="button"
+                  onClick={handleStartTVCast}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black uppercase text-xs tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
                   <Cast size={15} />
-                  <span>{translate('ar.start_broadcast')}</span>
+                  <span>{translate('ar.launch_tv_cast')}</span>
                 </button>
               </div>
             )}

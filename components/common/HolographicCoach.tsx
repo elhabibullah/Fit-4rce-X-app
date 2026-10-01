@@ -15,6 +15,7 @@ export type ExerciseCategory =
   | 'squat'
   | 'glute_bridge'
   | 'pushup'
+  | 'dips'
   | 'inverted_row'
   | 'jack'
   | 'burpee'
@@ -41,6 +42,7 @@ export const getExerciseType = (name?: string, id?: string): ExerciseCategory =>
     .trim();
 
   // Direct canonical IDs
+  if (ex === 'dips' || ex === 'dip' || ex === 'parallel_bar_dips' || ex.includes('dip') || ex.includes('fondos') || ex.includes('mergulho')) return 'dips';
   if (ex === 'glute_bridge' || ex === 'glutes' || ex === 'glute' || ex.includes('gluten') || ex.includes('fessier') || ex.includes('bridge') || ex.includes('hip thrust')) return 'glute_bridge';
   if (ex === 'crunch' || ex === 'crunches' || ex.includes('abdo') || ex.includes('sit-up') || ex.includes('situp')) return 'crunch';
   if (ex === 'push_up' || ex === 'pushup' || ex === 'jump_push_up') return 'pushup';
@@ -518,14 +520,14 @@ const CoachCanvas: React.FC<{
   const controlsRef = useRef<any>(null);
 
   const initialCameraPos = useMemo<[number, number, number]>(() => {
-    if (cameraPreset === 'profile') return [2.4, 0.05, 0];
-    return [0, 0.05, 2.35];
+    if (cameraPreset === 'profile') return [2.2, 0.02, 0];
+    return [0, 0.02, 2.15];
   }, [cameraPreset]);
 
   return (
     <Canvas
       gl={{ antialias: true, alpha: isTransparent, powerPreference: 'high-performance' }}
-      camera={{ position: initialCameraPos, fov: 38 }}
+      camera={{ position: initialCameraPos, fov: 36 }}
       dpr={[1, 2]}
     >
       <CameraPresetHandler preset={cameraPreset} controlsRef={controlsRef} />
@@ -655,6 +657,7 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
     squat: 'Squats',
     glute_bridge: 'Pont Fessier (Glutes)',
     pushup: 'Pompes',
+    dips: 'Dips (Barres Parallèles)',
     inverted_row: 'Tirage Horizontal (Row)',
     jack: 'Jumping Jacks',
     burpee: 'Burpees',
