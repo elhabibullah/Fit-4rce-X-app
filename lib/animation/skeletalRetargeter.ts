@@ -281,8 +281,11 @@ export class HunyuanSkeletalRetargeter {
 
       // Compute anatomical delta rotation in Character Space
       const isRight = boneName.startsWith('Right');
-      const coronal = isRight ? -roll : roll;       // Lateral abduction away from body
-      const transverse = isRight ? -yaw : yaw;     // Transverse rotation
+      const isLeg = boneName.includes('Leg');
+      // For legs, positive roll & yaw represent outward abduction away from midline (varus tracking over toes).
+      // Left leg is at +X and Right leg is at -X. Thus Left needs -roll and Right needs +roll to track outward!
+      const coronal = isLeg ? (isRight ? roll : -roll) : (isRight ? -roll : roll);
+      const transverse = isLeg ? (isRight ? yaw : -yaw) : (isRight ? -yaw : yaw);
       const pitchSign = getBoneWorldPitchSign(boneName);
 
       const qPitch = new THREE.Quaternion().setFromAxisAngle(this.tmpVecX, pitch * pitchSign);
@@ -341,8 +344,9 @@ export class HunyuanSkeletalRetargeter {
     }
 
     const isRight = boneName.startsWith('Right');
-    const coronal = isRight ? -clampedRoll : clampedRoll;
-    const transverse = isRight ? -clampedYaw : clampedYaw;
+    const isLeg = boneName.includes('Leg');
+    const coronal = isLeg ? (isRight ? clampedRoll : -clampedRoll) : (isRight ? -clampedRoll : clampedRoll);
+    const transverse = isLeg ? (isRight ? clampedYaw : -clampedYaw) : (isRight ? -clampedYaw : clampedYaw);
     const pitchSign = getBoneWorldPitchSign(boneName);
 
     const qPitch = new THREE.Quaternion().setFromAxisAngle(this.tmpVecX, clampedPitch * pitchSign);

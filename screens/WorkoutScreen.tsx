@@ -11,6 +11,7 @@ import Button from '../components/common/Button.tsx';
 import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
 import { HolographicARModal } from '../components/common/HolographicARModal.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
+import CastButton from '../components/common/CastButton.tsx';
 
 type WorkoutView = 'setup' | 'loading' | 'active' | 'finished';
 type WorkoutPhase = 'prep' | 'work' | 'rest';
@@ -86,6 +87,7 @@ const WorkoutScreen: React.FC = () => {
 
     const [customRequirements, setCustomRequirements] = useState('');
     const [isARModalOpen, setIsARModalOpen] = useState(false);
+    const [isTVMode, setIsTVMode] = useState(false);
     const [studioTheme, setStudioTheme] = useState<'white' | 'dark'>(() => {
         return (localStorage.getItem('f4x_studio_theme') as 'white' | 'dark') || 'white';
     });
@@ -403,6 +405,9 @@ const WorkoutScreen: React.FC = () => {
 
                             {/* EMS BAND TRIGGER */}
                             <DeviceStatusTrigger showLabel={false} />
+
+                            {/* TV CAST & LIVING ROOM SCREEN BUTTON */}
+                            <CastButton isTVMode={isTVMode} onToggleTVMode={() => setIsTVMode(!isTVMode)} />
 
                             {/* STUDIO NIGHT / DAY MODE TOGGLE */}
                             <button

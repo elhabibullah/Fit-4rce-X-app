@@ -113,25 +113,37 @@ export class GroundContactSolver {
         toeY = toeY / toeCount - toeClearance;
       }
 
-      // 1B. Re-evaluate lowest contact surface and snap exactly to podium surface
-      // Guarantees zero penetration: neither forearms, hands nor toes ever penetrate below podium
-      let lowestFrontY = Infinity;
-      if (handCount > 0) lowestFrontY = Math.min(lowestFrontY, handY);
-      if (elbowCount > 0) lowestFrontY = Math.min(lowestFrontY, elbowY);
-
-      let lowestContactY = Infinity;
-      if (Number.isFinite(lowestFrontY)) {
-        lowestContactY = Math.min(lowestContactY, lowestFrontY);
-      }
-      if (toeCount > 0) {
-        lowestContactY = Math.min(lowestContactY, toeY);
+      // 1B. Re-evaluate contact surface and snap to podium surface
+      // Allows full pushup descent (chest descending to 3cm above podium) while anchoring toes and hands
+      const spine = retargeter.bones.get('Spine1') || retargeter.bones.get('Spine');
+      let chestY = Infinity;
+      if (spine) {
+        spine.bone.getWorldPosition(this.tmpVecHandL);
+        chestY = this.tmpVecHandL.y - 0.05; // Chest clearance
       }
 
-      if (Number.isFinite(lowestContactY)) {
-        const deltaWorldY = podiumSurfaceY - lowestContactY;
-        if (Math.abs(deltaWorldY) > 0.001) {
-          result.hipsElevationAdjust = deltaWorldY;
-        }
+      // Check if toes penetrate below floor
+      let deltaWorldY = 0;
+      if (toeCount > 0 && toeY < podiumSurfaceY) {
+        deltaWorldY = Math.max(deltaWorldY, podiumSurfaceY - toeY);
+      }
+      // Check if chest penetrates below floor
+      if (Number.isFinite(chestY) && chestY < podiumSurfaceY) {
+        deltaWorldY = Math.max(deltaWorldY, podiumSurfaceY - chestY);
+      }
+
+      // Ensure front contact (hands planted on floor for pushup, elbows for plank) is firmly grounded:
+      // If hands are floating above podium surface, lower body so hands plant flat on the floor!
+      if (handCount > 0 && handY > podiumSurfaceY + 0.005) {
+        const handDrop = podiumSurfaceY - handY;
+        deltaWorldY = Math.min(deltaWorldY, handDrop);
+      } else if (elbowCount > 0 && elbowY > podiumSurfaceY + 0.02 && handCount === 0) {
+        const frontDrop = podiumSurfaceY - elbowY;
+        deltaWorldY = Math.min(deltaWorldY, frontDrop);
+      }
+
+      if (Math.abs(deltaWorldY) > 0.001) {
+        result.hipsElevationAdjust = deltaWorldY;
       }
 
       result.leftFootGrounded = true;

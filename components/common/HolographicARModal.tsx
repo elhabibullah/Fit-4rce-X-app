@@ -233,13 +233,17 @@ const ARModelRig: React.FC<{
     const center = box.getCenter(new THREE.Vector3());
     const rawH = size.y > 0.5 ? size.y : 5.7;
 
-    // Master unified human height in meters: 1.68m provides commanding presence
-    const targetHeight = 1.68;
+    // Adaptive unified height in meters:
+    // For spinning coach: 1.05m so the entire bike and rider fit comfortably without being cut off
+    // For humanoid coaches: 1.35m provides generous full-body framing with ample headspace
+    const isSpinning = (url && url.toLowerCase().includes('spin')) ||
+                       (exerciseId && exerciseId.toLowerCase().includes('spin')) ||
+                       (exerciseName && exerciseName.toLowerCase().includes('spin'));
+    const targetHeight = isSpinning ? 1.05 : 1.35;
     const scale = targetHeight / rawH;
 
     // Symmetric vertical centering:
-    // Character height is 1.68m. Floor at -0.84m puts soles at -0.84m and head at +0.84m.
-    const floorY = -0.84;
+    const floorY = -targetHeight * 0.5;
 
     const posX = -center.x * scale;
     const posY = floorY - (box.min.y * scale);
@@ -580,7 +584,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
     // 1. Try modern Web Presentation API (opens native Cast/TV picker in Chromium)
     if ((window as any).PresentationRequest) {
       try {
-        const presentationRequest = new (window as any).PresentationRequest(['/']);
+        const presentationRequest = new (window as any).PresentationRequest([window.location.href]);
         await presentationRequest.start();
         return;
       } catch (err: any) {
@@ -588,10 +592,15 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
       }
     }
 
-    // 2. Put in pure cinema black screen mode and enter fullscreen for phone-to-TV screen mirroring
-    setWallProjectionStyle('pure_cinema');
-    toggleFullscreen();
-    setShowProjectionConnectModal(false);
+    // 2. Try Display Media (browser native screen sharing picker for TVs/Monitors)
+    if (navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices) {
+      try {
+        await (navigator.mediaDevices as any).getDisplayMedia({ video: true });
+        return;
+      } catch (dispErr: any) {
+        console.log('Display media canceled:', dispErr?.message);
+      }
+    }
   };
 
   // Zoom helpers
@@ -716,7 +725,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
           <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-auto">
             <Canvas
               gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-              camera={{ position: [0, 0, 2.7], fov: 38 }}
+              camera={{ position: [0, 0, 3.1], fov: 40 }}
               dpr={[1, 2]}
             >
               <ambientLight intensity={1.6} color="#ffffff" />
@@ -765,7 +774,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
         <div className="absolute inset-0 z-10 bg-black flex items-center justify-center overflow-hidden">
           <Canvas
             gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-            camera={{ position: [0, 0, 3.8], fov: 44 }}
+            camera={{ position: [0, 0, 4.2], fov: 40 }}
             dpr={[1, 2]}
           >
             <color attach="background" args={['#000000']} />
@@ -781,7 +790,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
                 isPaused={isPaused}
                 speed={speed}
                 pyramidOffset={pyramidDistance}
-                facetScale={0.44 * scaleMultiplier}
+                facetScale={0.36 * scaleMultiplier}
                 showGuides={showPyramidGuides}
               />
             </Suspense>
@@ -817,7 +826,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
         <div className="absolute inset-0 z-10 bg-black flex items-center justify-center overflow-hidden">
           <Canvas
             gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-            camera={{ position: [0, 0, 2.7], fov: 38 }}
+            camera={{ position: [0, 0, 3.4], fov: 38 }}
             dpr={[1, 2]}
           >
             <color attach="background" args={['#000000']} />
@@ -868,7 +877,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
         <div className="absolute inset-0 z-10 bg-[#08080c] flex items-center justify-center overflow-hidden">
           <Canvas
             gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-            camera={{ position: [0, 0.05, 2.35], fov: 38 }}
+            camera={{ position: [0, 0.08, 3.3], fov: 38 }}
             dpr={[1, 2]}
           >
             <color attach="background" args={['#08080c']} />

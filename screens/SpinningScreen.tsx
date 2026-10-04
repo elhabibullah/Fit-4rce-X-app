@@ -7,6 +7,7 @@ import { SPINNING_COACH_MODEL_URL } from '../lib/constants.ts';
 import CastButton from '../components/common/CastButton.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
 import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
+import { HolographicARModal } from '../components/common/HolographicARModal.tsx';
 import Button from '../components/common/Button.tsx';
 
 type SpinningView = 'mode_select' | 'setup' | 'active';
@@ -25,6 +26,7 @@ export const SpinningScreen: React.FC = () => {
   const [level, setLevel] = useState<string>('intermediate');
   const [duration, setDuration] = useState<string>('50');
   const [isTVMode, setIsTVMode] = useState(false);
+  const [isARModalOpen, setIsARModalOpen] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -213,7 +215,26 @@ export const SpinningScreen: React.FC = () => {
           />
           
           <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
-              <HolographicCoach isPaused={!isActive || isPrepPhase} modelUrl={SPINNING_COACH_MODEL_URL} background="transparent" />
+              <HolographicCoach 
+                isPaused={!isActive || isPrepPhase} 
+                modelUrl={SPINNING_COACH_MODEL_URL} 
+                exerciseId="spinning"
+                exerciseName="Spinning Studio"
+                background="transparent" 
+              />
+          </div>
+
+          {/* FLOATING HOLOGRAPHIC AR BUTTON AT STAGE BOTTOM */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] pointer-events-auto">
+              <button
+                  onClick={() => setIsARModalOpen(true)}
+                  className="px-4 py-1.5 sm:px-5 sm:py-2 rounded-full shadow-2xl active:scale-95 transition-transform border bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white border-purple-400/60 hover:from-purple-500 hover:to-indigo-500 flex items-center justify-center shadow-purple-900/40 backdrop-blur-md"
+                  title={translate('ar.hologram')}
+              >
+                  <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap">
+                      {translate('ar.hologram')}
+                  </span>
+              </button>
           </div>
 
           {isPrepPhase && (
@@ -253,6 +274,17 @@ export const SpinningScreen: React.FC = () => {
                 </button>
           </div>
       </div>
+
+      {/* HOLOGRAPHIC AR MODAL (PYRAMID 360, TV CAST, WALL CINEMA, AR CAMERA) */}
+      <HolographicARModal
+        isOpen={isARModalOpen}
+        onClose={() => setIsARModalOpen(false)}
+        modelUrl={SPINNING_COACH_MODEL_URL}
+        exerciseName={translate('spinning.menu.title') || 'Spinning Studio'}
+        exerciseId="spinning"
+        isPaused={!isActive || isPrepPhase}
+        timer={elapsedTime}
+      />
     </div>
   );
 };

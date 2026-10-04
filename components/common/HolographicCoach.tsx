@@ -306,8 +306,13 @@ const HunyuanRiggedCoach: React.FC<{
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
 
-    // Master unified human height in meters: 1.68m gives commanding martial presence
-    const targetHeight = 1.68;
+    // Adaptive unified human height:
+    // For spinning coach on bike: targetHeight = 1.05m so entire bike, wheels, and rider fit comfortably with generous headroom
+    // For android cyborg & martial arts: targetHeight = 1.35m (calibrated with ample headspace and full body visible)
+    const isSpinning = (exerciseId && exerciseId.toLowerCase().includes('spin')) ||
+                       (exerciseName && exerciseName.toLowerCase().includes('spin')) ||
+                       scene.name.toLowerCase().includes('spin');
+    const targetHeight = isSpinning ? 1.05 : 1.35;
     const rawH = size.y > 0.5 ? size.y : 5.7;
     const scale = targetHeight / rawH;
 
@@ -445,15 +450,15 @@ const CameraPresetHandler: React.FC<{
 
     if (prevPresetRef.current !== preset) {
       if (preset === 'face') {
-        camera.position.set(0, 0.05, 2.35);
+        camera.position.set(0, 0.08, 3.4);
         if (controlsRef.current) {
-          controlsRef.current.target.set(0, -0.05, 0);
+          controlsRef.current.target.set(0, -0.08, 0);
           controlsRef.current.update();
         }
       } else if (preset === 'profile') {
-        camera.position.set(2.4, 0.05, 0);
+        camera.position.set(3.4, 0.08, 0);
         if (controlsRef.current) {
-          controlsRef.current.target.set(0, -0.05, 0);
+          controlsRef.current.target.set(0, -0.08, 0);
           controlsRef.current.update();
         }
       }
@@ -487,14 +492,14 @@ const CameraHipsTracker: React.FC<{
       hipsBoneRef.current.getWorldPosition(tempPos.current);
       if (controlsRef.current) {
         const target = controlsRef.current.target;
-        // Smoothly adapt target to follow hips vertical height while keeping lateral camera strictly centered
-        const safeTargetY = Math.max(-0.40, Math.min(0.20, tempPos.current.y));
+        // Smoothly adapt target to follow hips vertical height while keeping generous vertical headroom
+        const safeTargetY = Math.max(-0.45, Math.min(0.15, tempPos.current.y - 0.08));
         target.y = THREE.MathUtils.lerp(target.y, safeTargetY, 0.08);
         target.x = THREE.MathUtils.lerp(target.x, 0, 0.1);
         target.z = THREE.MathUtils.lerp(target.z, 0, 0.1);
         controlsRef.current.update();
       } else {
-        camera.lookAt(0, tempPos.current.y, 0);
+        camera.lookAt(0, tempPos.current.y - 0.08, 0);
       }
     }
   });
@@ -520,14 +525,16 @@ const CoachCanvas: React.FC<{
   const controlsRef = useRef<any>(null);
 
   const initialCameraPos = useMemo<[number, number, number]>(() => {
-    if (cameraPreset === 'profile') return [2.2, 0.02, 0];
-    return [0, 0.02, 2.15];
-  }, [cameraPreset]);
+    const isSpinning = finalUrl.toLowerCase().includes('spin') || (exerciseId && exerciseId.toLowerCase().includes('spin'));
+    const dist = isSpinning ? 3.5 : 3.3;
+    if (cameraPreset === 'profile') return [dist, 0.08, 0];
+    return [0, 0.08, dist];
+  }, [cameraPreset, finalUrl, exerciseId]);
 
   return (
     <Canvas
       gl={{ antialias: true, alpha: isTransparent, powerPreference: 'high-performance' }}
-      camera={{ position: initialCameraPos, fov: 36 }}
+      camera={{ position: initialCameraPos, fov: 38 }}
       dpr={[1, 2]}
     >
       <CameraPresetHandler preset={cameraPreset} controlsRef={controlsRef} />
@@ -578,9 +585,9 @@ const CoachCanvas: React.FC<{
         enableZoom={true}
         enablePan={false}
         makeDefault
-        target={[0, -0.05, 0]}
-        minDistance={1.0}
-        maxDistance={4.2}
+        target={[0, -0.12, 0]}
+        minDistance={1.2}
+        maxDistance={5.5}
         minPolarAngle={Math.PI / 4}
         maxPolarAngle={Math.PI / 1.75}
       />

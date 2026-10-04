@@ -16,82 +16,89 @@ if (typeof window !== 'undefined') {
 // MASTER BIOMECHANICAL MOTION LIBRARY
 // --------------------------------------------------------------------------
 
-// 1. SQUAT: Biomechanical human trajectory with weight solidly on heels (talons au sol)
-const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 2.8, [
+// 1. SQUAT: Biomechanically pristine full deep squat
+// Full depth (thighs parallel/below parallel), knees tracking firmly OUTWARDS over toes (varus abduction, zero valgus inward collapse),
+// heels 100% planted on the floor, upright chest with counterbalance arms
+const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 3.2, [
+  // 0.00: Standing tall, athletic shoulder-width stance, knees straight, chest high
   {
     time: 0.0,
     hipsOffset: [0, 0, 0],
     bones: {
-      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 },
       LeftArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
       RightArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      LeftUpLeg: { pitch: 0, yaw: 0.12, roll: 0.08 }, // Natural slight toe-out stance (15 deg)
+      RightUpLeg: { pitch: 0, yaw: 0.12, roll: 0.08 },
       LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
       RightFoot: { pitch: 0, yaw: 0, roll: 0 },
     },
   },
+  // 0.25: Controlled descent - hips hinging back and down, knees pushing OUTWARD over the toes
   {
     time: 0.25,
-    hipsOffset: [0, -0.20, -0.10],
+    hipsOffset: [0, -0.26, -0.12],
     bones: {
-      Spine: { pitch: 0.18, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.65, yaw: 0, roll: 0.05 },
-      RightArm: { pitch: 0.65, yaw: 0, roll: 0.05 },
-      LeftForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.52, yaw: 0.05, roll: 0.10 },
-      RightUpLeg: { pitch: 0.52, yaw: -0.05, roll: 0.10 },
-      LeftLeg: { pitch: 0.65, yaw: 0, roll: 0 },
-      RightLeg: { pitch: 0.65, yaw: 0, roll: 0 },
-      LeftFoot: { pitch: 0.15, yaw: 0, roll: 0 }, // Sole leveled: weight firmly on heels
-      RightFoot: { pitch: 0.15, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.22, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.75, yaw: 0, roll: 0.05 },
+      RightArm: { pitch: 0.75, yaw: 0, roll: 0.05 },
+      LeftForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.85, yaw: 0.16, roll: 0.20 }, // Knees pushing OUTWARDS
+      RightUpLeg: { pitch: 0.85, yaw: 0.16, roll: 0.20 }, // Symmetrical outward knee tracking
+      LeftLeg: { pitch: 0.95, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.95, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.20, yaw: 0, roll: 0 }, // Weight firmly distributed over solid heels
+      RightFoot: { pitch: 0.20, yaw: 0, roll: 0 },
     },
   },
+  // 0.50: Full deep squat (thighs horizontal/parallel, knees tracking wide outward, chest proud, zero knee caving)
   {
     time: 0.50,
-    hipsOffset: [0, -0.38, -0.16],
+    hipsOffset: [0, -0.58, -0.20],
     bones: {
-      Spine: { pitch: 0.26, yaw: 0, roll: 0 },
-      Spine1: { pitch: 0.10, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.95, yaw: 0, roll: 0.05 },
-      RightArm: { pitch: 0.95, yaw: 0, roll: 0.05 },
-      LeftForeArm: { pitch: 0.35, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.35, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.95, yaw: 0.08, roll: 0.15 },
-      RightUpLeg: { pitch: 0.95, yaw: -0.08, roll: 0.15 },
-      LeftLeg: { pitch: 1.20, yaw: 0, roll: 0 },
-      RightLeg: { pitch: 1.20, yaw: 0, roll: 0 },
-      LeftFoot: { pitch: 0.25, yaw: 0, roll: 0 }, // Complete heel contact on floor, 0% tip-toe
-      RightFoot: { pitch: 0.25, yaw: 0, roll: 0 },
-    },
-  },
-  {
-    time: 0.75,
-    hipsOffset: [0, -0.20, -0.10],
-    bones: {
-      Spine: { pitch: 0.18, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.65, yaw: 0, roll: 0.05 },
-      RightArm: { pitch: 0.65, yaw: 0, roll: 0.05 },
+      Spine: { pitch: 0.28, yaw: 0, roll: 0 },
+      Spine1: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.25, yaw: 0, roll: 0.05 }, // Counter-balance arms reaching forward
+      RightArm: { pitch: 1.25, yaw: 0, roll: 0.05 },
       LeftForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
       RightForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.52, yaw: 0.05, roll: 0.10 },
-      RightUpLeg: { pitch: 0.52, yaw: -0.05, roll: 0.10 },
-      LeftLeg: { pitch: 0.65, yaw: 0, roll: 0 },
-      RightLeg: { pitch: 0.65, yaw: 0, roll: 0 },
-      LeftFoot: { pitch: 0.15, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0.15, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 1.54, yaw: 0.22, roll: 0.32 }, // Full deep depth, knees tracking outward
+      RightUpLeg: { pitch: 1.54, yaw: 0.22, roll: 0.32 }, // Symmetrical knee abduction
+      LeftLeg: { pitch: 1.56, yaw: 0, roll: 0 },          // Deep knee flexion
+      RightLeg: { pitch: 1.56, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.35, yaw: 0, roll: 0 },         // 100% flat foot on floor, heel solid
+      RightFoot: { pitch: 0.35, yaw: 0, roll: 0 },
     },
   },
+  // 0.75: Powerful concentric ascent - driving through heels while keeping knees pushed OUTWARD
+  {
+    time: 0.75,
+    hipsOffset: [0, -0.26, -0.12],
+    bones: {
+      Spine: { pitch: 0.22, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.75, yaw: 0, roll: 0.05 },
+      RightArm: { pitch: 0.75, yaw: 0, roll: 0.05 },
+      LeftForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.85, yaw: 0.16, roll: 0.20 },
+      RightUpLeg: { pitch: 0.85, yaw: 0.16, roll: 0.20 },
+      LeftLeg: { pitch: 0.95, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.95, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.20, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0.20, yaw: 0, roll: 0 },
+    },
+  },
+  // 1.00: Return to tall standing posture with glutes locked at top
   {
     time: 1.0,
     hipsOffset: [0, 0, 0],
     bones: {
-      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 },
       LeftArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
       RightArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      LeftUpLeg: { pitch: 0, yaw: 0.12, roll: 0.08 },
+      RightUpLeg: { pitch: 0, yaw: 0.12, roll: 0.08 },
       LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
       RightFoot: { pitch: 0, yaw: 0, roll: 0 },
     },
@@ -182,106 +189,113 @@ const LUNGE_CLIP = new HumanoidMotionClip('lunge', 'Lunge', 3.6, [
   },
 ]);
 
-// 3. PUSH-UP: Full floor prone push-up with natural flat palms and balls of feet
-const PUSHUP_CLIP = new HumanoidMotionClip('pushup', 'Pushup', 2.4, [
-  // 0.00: Top lockout - prone horizontal, arms supporting upper body, hands flat on floor, toes on balls of feet
+// 3. PUSH-UP: Biomechanically authentic full-depth floor pushup (pompage complet)
+// Perfectly grounded: flat palms planted firmly on floor beneath shoulders, balls of feet anchored,
+// full chest-to-floor depth (chest hovers 3cm above ground at bottom), elbows flaring at 45 degrees, rigid spine
+const PUSHUP_CLIP = new HumanoidMotionClip('pushup', 'Pushup', 2.6, [
+  // 0.00: Top lockout - arms extended straight, palms flat on floor, rigid straight plank, toes planted
   {
     time: 0.0,
-    hipsOffset: [0, 0, 0],
-    proneAngle: 1.48,
-    groundOffsetZ: 0.25, // Longitudinal centering on circular podium
+    hipsOffset: [0, 0.04, 0],
+    proneAngle: 1.57, // Perfectly horizontal floor alignment (90 deg)
+    groundOffsetY: -0.04, // Floor calibrated
+    groundOffsetZ: 0.22,  // Longitudinal centering on podium
     bones: {
-      Spine: { pitch: -0.04, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.48, yaw: 0, roll: 0.12 },
-      RightArm: { pitch: 1.48, yaw: 0, roll: 0.12 },
-      LeftForeArm: { pitch: 0.05, yaw: 0, roll: 0 }, // Straight arm support
-      RightForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftHand: { pitch: -1.35, yaw: 0, roll: 0 },   // Palms flat on floor facing down, fingers forward
-      RightHand: { pitch: -1.35, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
-      LeftFoot: { pitch: -0.40, yaw: 0, roll: 0 },  // Balls of feet planted, toes forward on floor
-      RightFoot: { pitch: -0.40, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.57, yaw: 0.0, roll: 0.15 }, // Arms perpendicular to floor supporting torso
+      RightArm: { pitch: 1.57, yaw: 0.0, roll: 0.15 },
+      LeftForeArm: { pitch: 0.0, yaw: 0, roll: 0 },   // Fully extended lockout
+      RightForeArm: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -1.57, yaw: 0, roll: 0 },    // Palms 100% flat on the floor, fingers forward
+      RightHand: { pitch: -1.57, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftFoot: { pitch: -0.45, yaw: 0, roll: 0 },   // Balls of feet firmly on floor
+      RightFoot: { pitch: -0.45, yaw: 0, roll: 0 },
     },
   },
-  // 0.25: Controlled descent - elbows flexing at 45 degrees, chest descending towards floor
+  // 0.25: Controlled descent - elbows flexing back/out at 45 deg, chest descending towards floor
   {
     time: 0.25,
     hipsOffset: [0, -0.12, 0],
-    proneAngle: 1.48,
-    groundOffsetZ: 0.25,
+    proneAngle: 1.57,
+    groundOffsetY: -0.04,
+    groundOffsetZ: 0.22,
     bones: {
-      Spine: { pitch: -0.03, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.10, yaw: 0, roll: 0.30 },
-      RightArm: { pitch: 1.10, yaw: 0, roll: 0.30 },
-      LeftForeArm: { pitch: 0.65, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.65, yaw: 0, roll: 0 },
-      LeftHand: { pitch: -1.35, yaw: 0, roll: 0 },
-      RightHand: { pitch: -1.35, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
-      LeftFoot: { pitch: -0.40, yaw: 0, roll: 0 },
-      RightFoot: { pitch: -0.40, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.15, yaw: 0.12, roll: 0.35 },
+      RightArm: { pitch: 1.15, yaw: 0.12, roll: 0.35 },
+      LeftForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -1.57, yaw: 0, roll: 0 },    // Palms flat on floor
+      RightHand: { pitch: -1.57, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftFoot: { pitch: -0.45, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.45, yaw: 0, roll: 0 },
     },
   },
-  // 0.50: Full bottom chest hover - elbows bent 90 deg, palms flat on floor beneath shoulders
+  // 0.50: Full chest-to-ground depth (pompage complet) - chest hovers 3cm above floor, elbows deep at 95 deg
   {
     time: 0.50,
-    hipsOffset: [0, -0.20, 0],
-    proneAngle: 1.48,
-    groundOffsetZ: 0.25,
+    hipsOffset: [0, -0.38, 0],
+    proneAngle: 1.57,
+    groundOffsetY: -0.06,
+    groundOffsetZ: 0.22,
     bones: {
-      Spine: { pitch: -0.02, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.85, yaw: 0, roll: 0.38 }, // Upper arms flared back at 45 deg
-      RightArm: { pitch: 0.85, yaw: 0, roll: 0.38 },
-      LeftForeArm: { pitch: 1.15, yaw: 0, roll: 0 }, // Forearms supporting chest, palms on floor
-      RightForeArm: { pitch: 1.15, yaw: 0, roll: 0 },
-      LeftHand: { pitch: -1.35, yaw: 0, roll: 0 },
-      RightHand: { pitch: -1.35, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
-      LeftFoot: { pitch: -0.40, yaw: 0, roll: 0 },
-      RightFoot: { pitch: -0.40, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.65, yaw: 0.24, roll: 0.52 }, // Upper arms flared back at 45 deg
+      RightArm: { pitch: 0.65, yaw: 0.24, roll: 0.52 },
+      LeftForeArm: { pitch: 1.62, yaw: 0, roll: 0 },   // Deep 95-deg elbow flexion, forearms supporting chest
+      RightForeArm: { pitch: 1.62, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -1.57, yaw: 0, roll: 0 },    // Palms 100% planted on floor beneath shoulders
+      RightHand: { pitch: -1.57, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftFoot: { pitch: -0.45, yaw: 0, roll: 0 },   // Solid toe base on floor
+      RightFoot: { pitch: -0.45, yaw: 0, roll: 0 },
     },
   },
-  // 0.75: Concentric push - pressing palms against floor driving torso back up
+  // 0.75: Concentric push - pressing firmly through palms, driving chest back up
   {
     time: 0.75,
-    hipsOffset: [0, -0.10, 0],
-    proneAngle: 1.48,
-    groundOffsetZ: 0.25,
+    hipsOffset: [0, -0.12, 0],
+    proneAngle: 1.57,
+    groundOffsetY: -0.04,
+    groundOffsetZ: 0.22,
     bones: {
-      Spine: { pitch: -0.03, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.20, yaw: 0, roll: 0.22 },
-      RightArm: { pitch: 1.20, yaw: 0, roll: 0.22 },
-      LeftForeArm: { pitch: 0.50, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.50, yaw: 0, roll: 0 },
-      LeftHand: { pitch: -1.35, yaw: 0, roll: 0 },
-      RightHand: { pitch: -1.35, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
-      LeftFoot: { pitch: -0.40, yaw: 0, roll: 0 },
-      RightFoot: { pitch: -0.40, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.15, yaw: 0.12, roll: 0.35 },
+      RightArm: { pitch: 1.15, yaw: 0.12, roll: 0.35 },
+      LeftForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.85, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -1.57, yaw: 0, roll: 0 },
+      RightHand: { pitch: -1.57, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftFoot: { pitch: -0.45, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.45, yaw: 0, roll: 0 },
     },
   },
-  // 1.00: Full lockout return at top of pushup
+  // 1.00: Return to top lockout position
   {
     time: 1.0,
-    hipsOffset: [0, 0, 0],
-    proneAngle: 1.48,
-    groundOffsetZ: 0.25,
+    hipsOffset: [0, 0.04, 0],
+    proneAngle: 1.57,
+    groundOffsetY: -0.04,
+    groundOffsetZ: 0.22,
     bones: {
-      Spine: { pitch: -0.04, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 1.48, yaw: 0, roll: 0.12 },
-      RightArm: { pitch: 1.48, yaw: 0, roll: 0.12 },
-      LeftForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftHand: { pitch: -1.35, yaw: 0, roll: 0 },
-      RightHand: { pitch: -1.35, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.05 },
-      LeftFoot: { pitch: -0.40, yaw: 0, roll: 0 },
-      RightFoot: { pitch: -0.40, yaw: 0, roll: 0 },
+      Spine: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 1.57, yaw: 0.0, roll: 0.15 },
+      RightArm: { pitch: 1.57, yaw: 0.0, roll: 0.15 },
+      LeftForeArm: { pitch: 0.0, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftHand: { pitch: -1.57, yaw: 0, roll: 0 },
+      RightHand: { pitch: -1.57, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: -0.04 },
+      LeftFoot: { pitch: -0.45, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.45, yaw: 0, roll: 0 },
     },
   },
 ]);

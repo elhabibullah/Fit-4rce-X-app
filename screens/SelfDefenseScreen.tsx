@@ -12,6 +12,7 @@ import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
 import { HolographicARModal } from '../components/common/HolographicARModal.tsx';
 import { SIFU_MODEL_URL } from '../lib/constants.ts';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
+import CastButton from '../components/common/CastButton.tsx';
 
 interface TechniqueDetailViewProps {
     technique: AnyTechnique;
@@ -39,6 +40,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
     const [cameraPreset, setCameraPreset] = useState<'face' | 'profile' | 'free'>('face');
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
     const [isAROpen, setIsAROpen] = useState<boolean>(false);
+    const [isTVMode, setIsTVMode] = useState<boolean>(false);
     const [studioTheme, setStudioTheme] = useState<'dark' | 'white'>('white');
 
     // Continuous timeline progress tracking when playing
@@ -120,6 +122,7 @@ const TechniqueDetailView: React.FC<TechniqueDetailViewProps> = ({
 
                 <div className="flex items-center gap-2 shrink-0">
                     <DeviceStatusTrigger showLabel />
+                    <CastButton isTVMode={isTVMode} onToggleTVMode={() => setIsTVMode(!isTVMode)} />
                     <button
                         onClick={() => setIsFullscreen(!isFullscreen)}
                         className="p-2 text-gray-400 hover:text-[#DAA520] rounded-full hover:bg-white/10 transition-colors"
