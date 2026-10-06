@@ -800,6 +800,7 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
         exerciseId={exerciseId}
         isPaused={isPaused}
         speed={speed}
+        initialMode="camera_ar"
       />
     </div>
   );

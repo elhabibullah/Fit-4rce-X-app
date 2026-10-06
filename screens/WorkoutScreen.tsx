@@ -249,10 +249,7 @@ const WorkoutScreen: React.FC = () => {
             if (phase === 'prep') {
                 setPrepTimer((prev) => {
                     if (prev <= 1) {
-                        playSoundEffect('start');
-                        setPhase('work');
-                        setTimer(45);
-                        return 8;
+                        return 0;
                     }
                     if (prev <= 4) {
                         playSoundEffect('beep');
@@ -262,16 +259,14 @@ const WorkoutScreen: React.FC = () => {
             } else if (phase === 'work') {
                 setTimer((prev) => {
                     if (prev <= 1) {
-                        handleCompleteSet();
-                        return 45;
+                        return 0;
                     }
                     return prev - 1;
                 });
             } else if (phase === 'rest') {
                 setRestTimer((prev) => {
                     if (prev <= 1) {
-                        handleSkipRest();
-                        return restBetweenSets;
+                        return 0;
                     }
                     if (prev <= 4) {
                         playSoundEffect('beep');
@@ -282,7 +277,25 @@ const WorkoutScreen: React.FC = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [view, isPaused, phase, plan, handleCompleteSet, handleSkipRest, restBetweenSets]);
+    }, [view, isPaused, phase, plan]);
+
+    // Handle timer completions safely outside of reducer / setState callbacks
+    useEffect(() => {
+        if (view !== 'active' || isPaused || !plan) return;
+
+        if (phase === 'prep' && prepTimer === 0) {
+            playSoundEffect('start');
+            setPhase('work');
+            setTimer(45);
+            setPrepTimer(8);
+        } else if (phase === 'work' && timer === 0) {
+            setTimer(45);
+            handleCompleteSet();
+        } else if (phase === 'rest' && restTimer === 0) {
+            setRestTimer(restBetweenSets);
+            handleSkipRest();
+        }
+    }, [prepTimer, timer, restTimer, phase, view, isPaused, plan, restBetweenSets, handleCompleteSet, handleSkipRest]);
 
     // Generate workout with Gemini or high-performance fallback
     const handleGenerate = async () => {
@@ -687,6 +700,7 @@ const WorkoutScreen: React.FC = () => {
                     targetSets={targetSets}
                     targetReps={targetReps}
                     timer={phase === 'rest' ? restTimer : timer}
+                    initialMode="camera_ar"
                 />
             </div>
         );

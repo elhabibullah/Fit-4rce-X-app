@@ -670,13 +670,33 @@ app.post('/api/chatbot-response', async (req: express.Request, res: express.Resp
       try {
         let contents: any = msg;
         if (Array.isArray(history) && history.length > 0) {
-          contents = [
-            ...history.map((h: any) => ({
-              role: h.role === 'user' ? 'user' : 'model',
-              parts: [{ text: h.text }]
-            })),
-            { role: 'user', parts: [{ text: msg }] }
-          ];
+          const rawTurns = history.map((h: any) => ({
+            role: (h.role === 'user' ? 'user' : 'model') as 'user' | 'model',
+            parts: [{ text: String(h.text || '') }]
+          }));
+
+          // Multi-turn Gemini MUST begin with role 'user'
+          const firstUserIndex = rawTurns.findIndex(t => t.role === 'user');
+          const validHistory = firstUserIndex !== -1 ? rawTurns.slice(firstUserIndex) : [];
+
+          // Collapse consecutive identical roles
+          const alternating: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+          for (const turn of validHistory) {
+            if (alternating.length > 0 && alternating[alternating.length - 1].role === turn.role) {
+              alternating[alternating.length - 1].parts[0].text += '\n' + turn.parts[0].text;
+            } else {
+              alternating.push(turn);
+            }
+          }
+
+          // Append current user message
+          if (alternating.length > 0 && alternating[alternating.length - 1].role === 'user') {
+            alternating[alternating.length - 1].parts[0].text += '\n' + msg;
+          } else {
+            alternating.push({ role: 'user', parts: [{ text: msg }] });
+          }
+
+          contents = alternating;
         }
 
         const response = await ai.models.generateContent({
@@ -709,15 +729,16 @@ Never mix languages or default to English/French unless requested.`
       }
     }
 
+    const isReadyUser = /prêt|pret|lance|start|ready|go|vamos|listo|جاهز|يلا|開始|准备|готов/i.test(msg || '');
     const fallbacks: Record<string, string> = {
-      fr: "Bien reçu ! Je prépare vos exercices sur mesure.",
-      es: "¡Perfecto! Estoy preparando tus ejercicios personalizados.",
-      ar: "ممتاز! أقوم بإعداد تمارينك المخصصة الآن.",
-      pt: "Perfeito! Estou preparando seus exercícios personalizados.",
-      ja: "了解しました！あなた専用のエクササイズを準備しています。",
-      zh: "收到！正在为您准备定制训练动作。",
-      ru: "Отлично! Подготавливаю ваши индивидуальные упражнения.",
-      en: "Awesome! I'm preparing your custom exercises right now."
+      fr: isReadyUser ? "C'est parti ! Je génère votre séance avec le coach 3D. Donnez le meilleur de vous-même ! [GENERATE_WORKOUT]" : "Bien reçu ! Je prépare vos exercices sur mesure.",
+      es: isReadyUser ? "¡Vamos con todo! Preparando tu entrenamiento 3D ahora mismo. [GENERATE_WORKOUT]" : "¡Perfecto! Estoy preparando tus ejercicios personalizados.",
+      ar: isReadyUser ? "هيا بنا! أقوم بتجهيز تمارينك ثلاثية الأبعاد الآن. [GENERATE_WORKOUT]" : "ممتاز! أقوم بإعداد تمارينك المخصصة الآن.",
+      pt: isReadyUser ? "Vamos com tudo! Preparando seu treino 3D personalizado agora. [GENERATE_WORKOUT]" : "Perfeito! Estou preparando seus exercícios personalizados.",
+      ja: isReadyUser ? "始めましょう！あなた専用の3Dワークアウトを準備しています。[GENERATE_WORKOUT]" : "了解しました！あなた専用のエクササイズを準備しています。",
+      zh: isReadyUser ? "开始训练！正在为您生成定制3D动作。[GENERATE_WORKOUT]" : "收到！正在为您准备定制训练动作。",
+      ru: isReadyUser ? "Поехали! Генерирую вашу 3D-тренировку прямо сейчас. [GENERATE_WORKOUT]" : "Отлично! Подготавливаю ваши индивидуальные упражнения.",
+      en: isReadyUser ? "Awesome! Generating your custom 3D workout now. Let's crush this! [GENERATE_WORKOUT]" : "Awesome! I'm preparing your custom exercises right now."
     };
     const reply = fallbacks[targetLang] || fallbacks.en;
     res.json({ text: reply });

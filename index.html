@@ -26,6 +26,23 @@
       } catch (e) {}
     </script>
     <link rel="manifest" href="manifest.json?v=10" crossorigin="use-credentials">
+    <!-- Google Cast Web SDK & Media Router initialization for native TV casting on mobile & desktop -->
+    <script>
+      window['__onGCastApiAvailable'] = function(isAvailable) {
+        if (isAvailable && window.cast && window.cast.framework) {
+          try {
+            window.cast.framework.CastContext.getInstance().setOptions({
+              receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+              autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+            });
+            window.__gcastReady = true;
+          } catch (e) {
+            console.warn('Cast framework options init:', e);
+          }
+        }
+      };
+    </script>
+    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

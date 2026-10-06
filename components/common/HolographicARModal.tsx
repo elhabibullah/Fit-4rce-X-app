@@ -5,7 +5,7 @@ import {
   Sliders, Maximize, HelpCircle, Monitor, Box, 
   Smartphone, Share2, Eye, Cast, Tv, Wifi, Cable,
   Layers, ChevronDown, CheckCircle2,
-  Loader2
+  Loader2, RefreshCw
 } from 'lucide-react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useFBX } from '@react-three/drei';
@@ -14,8 +14,9 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { COACH_MODEL_URL } from '../../lib/constants.ts';
 import { HumanoidMotionEngine } from '../../lib/animation/humanoidMotionEngine.ts';
 import { useApp } from '../../hooks/useApp.ts';
+import { launchNativeTVMirroring } from '../../lib/castService.ts';
 
-export type ARProjectionMode = 'pyramid_360' | 'projector_cinema' | 'studio_3d' | 'camera_ar';
+export type ARProjectionMode = 'pyramid_360' | 'projector_cinema' | 'camera_ar';
 
 interface HolographicARModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ interface HolographicARModalProps {
   targetSets?: number;
   targetReps?: number;
   timer?: number;
+  initialMode?: ARProjectionMode;
 }
 
 // Glowing 3D Loader Ring while model loads in WebGL
@@ -210,7 +212,8 @@ const ARModelRig: React.FC<{
   rotationY: number;
   heightOffset: number;
   showFloorReticle?: boolean;
-}> = ({ url, exerciseName, exerciseId, isPaused, speed = 1.0, scaleMultiplier, rotationY, heightOffset, showFloorReticle = true }) => {
+  timelineProgress?: number;
+}> = ({ url, exerciseName, exerciseId, isPaused, speed = 1.0, scaleMultiplier, rotationY, heightOffset, showFloorReticle = true, timelineProgress }) => {
   const isFBX = url.toLowerCase().includes('.fbx') || url.includes('format=fbx');
   const groupRef = useRef<THREE.Group>(null);
   const engineRef = useRef<HumanoidMotionEngine | null>(null);
@@ -279,7 +282,7 @@ const ARModelRig: React.FC<{
     if (!scene || !engineRef.current) return;
     engineRef.current.disableGroundSolver = !showFloorReticle;
     const effectiveDelta = isPaused ? 0 : Math.min(delta, 0.05);
-    engineRef.current.update(effectiveDelta, speed, undefined, false);
+    engineRef.current.update(effectiveDelta, speed, timelineProgress, false);
   });
 
   return (
@@ -300,119 +303,237 @@ const ARModelRig: React.FC<{
   );
 };
 
-// Unified 4-Faced 360° Holographic Pyramid (Pepper's Ghost) running in ONE single Canvas
-// Calibrated with heads pointing OUTWARD towards the 4 edges and feet towards center apex
-// Fully responsive across all mobile screens in portrait or landscape (never cropped or invisible)
-const UnifiedPyramid360Scene: React.FC<{
-  url?: string;
-  exerciseName?: string;
-  exerciseId?: string;
-  isPaused?: boolean;
-  speed?: number;
-  pyramidOffset?: number;
-  facetScale?: number;
-  showGuides?: boolean;
-}> = ({ url = COACH_MODEL_URL, exerciseName, exerciseId, isPaused, speed, pyramidOffset = 1.35, facetScale = 0.38, showGuides = true }) => {
-  const { viewport } = useThree();
-  const minDim = Math.min(viewport.width, viewport.height);
+// Active 4-Faced 360° Holographic Pyramid Multi-Viewport Container
+// Strictly calibrated:
+// - Face Nord : Angle 0° (Normal)
+// - Face Sud : Angle 180° (Inversé tête en bas)
+// - Face Ouest : Angle -90° (Tourné vers la gauche)
+// - Face Est : Angle 90° (Tourné vers la droite)
+// Synchronized on a master 44s timer looping in real time with push-ups
+const PyramidFourFacesContainer: React.FC<{
+  modelUrl: string;
+  isPaused: boolean;
+  speed: number;
+  scaleMultiplier: number;
+  showGuides: boolean;
+}> = ({ modelUrl, isPaused, speed, scaleMultiplier, showGuides }) => {
+  const { translate } = useApp();
+  const [countdown44s, setCountdown44s] = useState<number>(44);
+  const [syncedProgress, setSyncedProgress] = useState<number>(0);
 
-  // Responsive pyramid geometry guaranteed to fit within portrait/landscape screen bounds
-  const offsetRatio = (pyramidOffset / 1.35);
-  const effectiveOffset = Math.max(0.24, Math.min(minDim * 0.28 * offsetRatio, minDim * 0.38));
-  const scaleRatio = (facetScale / 0.38);
-  const effectiveScale = Math.max(0.16, Math.min(scaleRatio * ((minDim * 0.30) / 1.68), (minDim * 0.34) / 1.68));
+  useEffect(() => {
+    let animId: number;
+    const startTime = performance.now();
+    const pushupCycle = 2.6; // Push-up rep biomechanical cycle
 
-  const apexTargetSize = Math.max(0.06, minDim * 0.06);
-  const apexGuideSquare = Math.max(0.14, minDim * 0.14);
-  const apexOuterCircle = Math.max(0.22, minDim * 0.22);
+    const loop = (now: number) => {
+      const elapsedSeconds = (now - startTime) / 1000;
+      // 44-second synchronized workout timer
+      const remaining = 44 - (elapsedSeconds % 44);
+      setCountdown44s(Math.max(1, Math.ceil(remaining)));
+
+      // Realtime push-up repetition cycle [0..1]
+      const progress = (elapsedSeconds % pushupCycle) / pushupCycle;
+      setSyncedProgress(progress);
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, []);
 
   return (
-    <group position={[0, 0, 0]}>
-      {/* Central Alignment Apex Crosshair and Physical Prism Base Footprint */}
-      {showGuides && (
-        <group position={[0, 0, 0]}>
-          {/* Central Apex Target for physical transparent pyramid tip */}
-          <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
-            <ringGeometry args={[apexTargetSize * 0.85, apexTargetSize, 4]} />
-            <meshBasicMaterial color="#06b6d4" transparent opacity={0.85} side={THREE.DoubleSide} />
-          </mesh>
-          <mesh position={[0, 0, 0]}>
-            <circleGeometry args={[apexTargetSize * 0.2, 24]} />
-            <meshBasicMaterial color="#c084fc" transparent opacity={0.95} side={THREE.DoubleSide} />
-          </mesh>
-          {/* Diagonal 45-degree ray lines showing prism facet edges */}
-          <mesh position={[0, 0, -0.01]} rotation={[0, 0, Math.PI / 4]}>
-            <ringGeometry args={[apexGuideSquare * 0.95, apexGuideSquare, 4]} />
-            <meshBasicMaterial color="#a855f7" transparent opacity={0.5} side={THREE.DoubleSide} />
-          </mesh>
-          {/* Outer clearance circle */}
-          <mesh position={[0, 0, -0.02]}>
-            <ringGeometry args={[apexOuterCircle * 0.96, apexOuterCircle, 48]} />
-            <meshBasicMaterial color="#06b6d4" transparent opacity={0.3} side={THREE.DoubleSide} />
-          </mesh>
-        </group>
-      )}
+    <div className="absolute inset-0 z-10 bg-[#000000] flex items-center justify-center overflow-hidden select-none">
+      {/* Centered Square Stage fitting within any mobile or desktop screen */}
+      <div className="relative w-[min(96vw,96vh)] h-[min(96vw,96vh)] max-w-full max-h-full flex items-center justify-center">
+        {/* 1. FACE NORD: Angle 0° (Normal) */}
+        <div 
+          className="absolute top-1 left-1/2 -translate-x-1/2 w-[39%] h-[39%] flex flex-col items-center justify-center select-none overflow-hidden"
+          style={{ transform: 'rotate(0deg)', transformOrigin: 'center center' }}
+        >
+          <div className="w-full h-full relative flex items-center justify-center">
+            <Canvas
+              gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+              camera={{ position: [0, 0.45, 2.7], fov: 38 }}
+              dpr={[1, 1.5]}
+            >
+              <color attach="background" args={['#000000']} />
+              <ambientLight intensity={1.8} color="#ffffff" />
+              <directionalLight position={[0, 3, 3]} intensity={2.2} color="#ffffff" />
+              <directionalLight position={[0, -1, 3]} intensity={1.4} color="#a855f7" />
+              <pointLight position={[0, 0.2, 1.2]} intensity={1.5} color="#06b6d4" />
 
-      {/* 1. SOUTH FACET (Bottom face): Front view. Head points DOWN (away from apex), feet point UP towards apex */}
-      <group position={[0, -effectiveOffset, 0]} rotation={[0, 0, Math.PI]}>
-        <ARModelRig
-          url={url}
-          exerciseName={exerciseName}
-          exerciseId={exerciseId}
-          isPaused={isPaused}
-          speed={speed}
-          scaleMultiplier={effectiveScale}
-          rotationY={0}
-          heightOffset={0}
-          showFloorReticle={false}
-        />
-      </group>
+              <Suspense fallback={<ARMatrixLoader isDark />}>
+                <ARModelRig
+                  url={modelUrl}
+                  exerciseName="pushup"
+                  exerciseId="pushup"
+                  isPaused={isPaused}
+                  speed={speed}
+                  scaleMultiplier={0.88 * scaleMultiplier}
+                  rotationY={0}
+                  heightOffset={-0.12}
+                  showFloorReticle={false}
+                  timelineProgress={syncedProgress}
+                />
+              </Suspense>
+            </Canvas>
+          </div>
+          {showGuides && (
+            <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-60">
+              <span className="text-[7px] font-mono font-bold tracking-widest text-cyan-400 bg-black/80 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                {translate('ar.face_north')}
+              </span>
+            </div>
+          )}
+        </div>
 
-      {/* 2. NORTH FACET (Top face): Back view. Head points UP (away from apex), feet point DOWN towards apex */}
-      <group position={[0, effectiveOffset, 0]} rotation={[0, 0, 0]}>
-        <ARModelRig
-          url={url}
-          exerciseName={exerciseName}
-          exerciseId={exerciseId}
-          isPaused={isPaused}
-          speed={speed}
-          scaleMultiplier={effectiveScale}
-          rotationY={Math.PI}
-          heightOffset={0}
-          showFloorReticle={false}
-        />
-      </group>
+        {/* 2. FACE SUD: Angle 180° (Inversé tête en bas) */}
+        <div 
+          className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[39%] h-[39%] flex flex-col items-center justify-center select-none overflow-hidden"
+          style={{ transform: 'rotate(180deg)', transformOrigin: 'center center' }}
+        >
+          <div className="w-full h-full relative flex items-center justify-center">
+            <Canvas
+              gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+              camera={{ position: [0, 0.45, 2.7], fov: 38 }}
+              dpr={[1, 1.5]}
+            >
+              <color attach="background" args={['#000000']} />
+              <ambientLight intensity={1.8} color="#ffffff" />
+              <directionalLight position={[0, 3, 3]} intensity={2.2} color="#ffffff" />
+              <directionalLight position={[0, -1, 3]} intensity={1.4} color="#a855f7" />
+              <pointLight position={[0, 0.2, 1.2]} intensity={1.5} color="#06b6d4" />
 
-      {/* 3. WEST FACET (Left face): Right profile view. Head points LEFT (away from apex), feet point RIGHT towards apex */}
-      <group position={[-effectiveOffset, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <ARModelRig
-          url={url}
-          exerciseName={exerciseName}
-          exerciseId={exerciseId}
-          isPaused={isPaused}
-          speed={speed}
-          scaleMultiplier={effectiveScale}
-          rotationY={-Math.PI / 2}
-          heightOffset={0}
-          showFloorReticle={false}
-        />
-      </group>
+              <Suspense fallback={<ARMatrixLoader isDark />}>
+                <ARModelRig
+                  url={modelUrl}
+                  exerciseName="pushup"
+                  exerciseId="pushup"
+                  isPaused={isPaused}
+                  speed={speed}
+                  scaleMultiplier={0.88 * scaleMultiplier}
+                  rotationY={0}
+                  heightOffset={-0.12}
+                  showFloorReticle={false}
+                  timelineProgress={syncedProgress}
+                />
+              </Suspense>
+            </Canvas>
+          </div>
+          {showGuides && (
+            <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-60">
+              <span className="text-[7px] font-mono font-bold tracking-widest text-cyan-400 bg-black/80 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                {translate('ar.face_south')}
+              </span>
+            </div>
+          )}
+        </div>
 
-      {/* 4. EAST FACET (Right face): Left profile view. Head points RIGHT (away from apex), feet point LEFT towards apex */}
-      <group position={[effectiveOffset, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
-        <ARModelRig
-          url={url}
-          exerciseName={exerciseName}
-          exerciseId={exerciseId}
-          isPaused={isPaused}
-          speed={speed}
-          scaleMultiplier={effectiveScale}
-          rotationY={Math.PI / 2}
-          heightOffset={0}
-          showFloorReticle={false}
-        />
-      </group>
-    </group>
+        {/* 3. FACE OUEST: Angle -90° (Tourné vers la gauche) */}
+        <div 
+          className="absolute left-1 top-1/2 -translate-y-1/2 w-[39%] h-[39%] flex flex-col items-center justify-center select-none overflow-hidden"
+          style={{ transform: 'rotate(-90deg)', transformOrigin: 'center center' }}
+        >
+          <div className="w-full h-full relative flex items-center justify-center">
+            <Canvas
+              gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+              camera={{ position: [0, 0.45, 2.7], fov: 38 }}
+              dpr={[1, 1.5]}
+            >
+              <color attach="background" args={['#000000']} />
+              <ambientLight intensity={1.8} color="#ffffff" />
+              <directionalLight position={[0, 3, 3]} intensity={2.2} color="#ffffff" />
+              <directionalLight position={[0, -1, 3]} intensity={1.4} color="#a855f7" />
+              <pointLight position={[0, 0.2, 1.2]} intensity={1.5} color="#06b6d4" />
+
+              <Suspense fallback={<ARMatrixLoader isDark />}>
+                <ARModelRig
+                  url={modelUrl}
+                  exerciseName="pushup"
+                  exerciseId="pushup"
+                  isPaused={isPaused}
+                  speed={speed}
+                  scaleMultiplier={0.88 * scaleMultiplier}
+                  rotationY={0}
+                  heightOffset={-0.12}
+                  showFloorReticle={false}
+                  timelineProgress={syncedProgress}
+                />
+              </Suspense>
+            </Canvas>
+          </div>
+          {showGuides && (
+            <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-60">
+              <span className="text-[7px] font-mono font-bold tracking-widest text-cyan-400 bg-black/80 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                {translate('ar.face_west')}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* 4. FACE EST: Angle 90° (Tourné vers la droite) */}
+        <div 
+          className="absolute right-1 top-1/2 -translate-y-1/2 w-[39%] h-[39%] flex flex-col items-center justify-center select-none overflow-hidden"
+          style={{ transform: 'rotate(90deg)', transformOrigin: 'center center' }}
+        >
+          <div className="w-full h-full relative flex items-center justify-center">
+            <Canvas
+              gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+              camera={{ position: [0, 0.45, 2.7], fov: 38 }}
+              dpr={[1, 1.5]}
+            >
+              <color attach="background" args={['#000000']} />
+              <ambientLight intensity={1.8} color="#ffffff" />
+              <directionalLight position={[0, 3, 3]} intensity={2.2} color="#ffffff" />
+              <directionalLight position={[0, -1, 3]} intensity={1.4} color="#a855f7" />
+              <pointLight position={[0, 0.2, 1.2]} intensity={1.5} color="#06b6d4" />
+
+              <Suspense fallback={<ARMatrixLoader isDark />}>
+                <ARModelRig
+                  url={modelUrl}
+                  exerciseName="pushup"
+                  exerciseId="pushup"
+                  isPaused={isPaused}
+                  speed={speed}
+                  scaleMultiplier={0.88 * scaleMultiplier}
+                  rotationY={0}
+                  heightOffset={-0.12}
+                  showFloorReticle={false}
+                  timelineProgress={syncedProgress}
+                />
+              </Suspense>
+            </Canvas>
+          </div>
+          {showGuides && (
+            <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-60">
+              <span className="text-[7px] font-mono font-bold tracking-widest text-cyan-400 bg-black/80 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                {translate('ar.face_east')}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* CENTRAL APEX GUIDE & 44S SYNCHRONIZED TIMER */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 border-2 border-dashed border-cyan-400/80 rounded-2xl flex flex-col items-center justify-center bg-black/90 shadow-[0_0_28px_rgba(6,182,212,0.4)] backdrop-blur-sm">
+            <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc] mb-1 animate-ping" />
+            <span className="font-mono text-base sm:text-lg font-black text-white leading-none">
+              {String(countdown44s).padStart(2, '0')}s
+            </span>
+            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-wider text-cyan-300 mt-1">
+              {translate('ar.pushups')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom hint tag */}
+      <div className="absolute bottom-20 z-30 px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-purple-500/40 text-purple-300 text-[10px] font-bold shadow-2xl pointer-events-none text-center max-w-xs">
+        {translate('ar.pyramid_apex_hint')}
+      </div>
+    </div>
   );
 };
 
@@ -428,14 +549,18 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
   targetSets,
   targetReps,
   timer,
+  initialMode,
 }) => {
   const { translate } = useApp();
 
-  // Mode selection: Pyramid 360 (default) | Projector | 3D Studio | Camera AR
-  const [projectionMode, setProjectionMode] = useState<ARProjectionMode>('pyramid_360');
+  // Mode selection: Camera AR (default real room camera + floor plane) | Pyramid 360 | Projector | 3D Studio
+  const [projectionMode, setProjectionMode] = useState<ARProjectionMode>(initialMode || 'camera_ar');
   const [showHowItWorksModal, setShowHowItWorksModal] = useState<boolean>(false);
   const [showProjectionConnectModal, setShowProjectionConnectModal] = useState<boolean>(false);
   const [projectionConnectTab, setProjectionConnectTab] = useState<'cable' | 'wireless'>('cable');
+
+  const [connectedTvDevice, setConnectedTvDevice] = useState<string | null>(null);
+  const [isTriggeringTVCast, setIsTriggeringTVCast] = useState<boolean>(false);
 
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isRequestingCamera, setIsRequestingCamera] = useState<boolean>(false);
@@ -577,29 +702,30 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
     }
   };
 
-  const [selectedTvBrand, setSelectedTvBrand] = useState<'lg' | 'samsung' | 'chromecast' | 'apple' | 'projector'>('lg');
-
-  // Wireless TV & Presentation Cast Handler
+  // Wireless TV & Presentation Cast Handler - Native System Wireless Display Picker
   const handleStartTVCast = async () => {
-    // 1. Try modern Web Presentation API (opens native Cast/TV picker in Chromium)
-    if ((window as any).PresentationRequest) {
-      try {
-        const presentationRequest = new (window as any).PresentationRequest([window.location.href]);
-        await presentationRequest.start();
-        return;
-      } catch (err: any) {
-        console.log('Presentation API prompt dismissed:', err?.message);
+    setIsTriggeringTVCast(true);
+    try {
+      const res = await launchNativeTVMirroring({
+        onConnected: () => {
+          setConnectedTvDevice(translate('ar.wireless_tv_title'));
+          setWallProjectionStyle('pure_cinema');
+          setShowProjectionConnectModal(false);
+          toggleFullscreen();
+        },
+        onDisconnected: () => {
+          setConnectedTvDevice(null);
+        }
+      });
+      if (res.success) {
+        setConnectedTvDevice(translate('ar.wireless_tv_title'));
+        setWallProjectionStyle('pure_cinema');
+        setShowProjectionConnectModal(false);
       }
-    }
-
-    // 2. Try Display Media (browser native screen sharing picker for TVs/Monitors)
-    if (navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices) {
-      try {
-        await (navigator.mediaDevices as any).getDisplayMedia({ video: true });
-        return;
-      } catch (dispErr: any) {
-        console.log('Display media canceled:', dispErr?.message);
-      }
+    } catch (err: any) {
+      console.log('TV Mirroring error:', err);
+    } finally {
+      setIsTriggeringTVCast(false);
     }
   };
 
@@ -767,55 +893,17 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* MODE 2: PYRAMIDE HOLOGRAPHIQUE 360° (SUR TABLE)         */}
-      {/* Running synchronously in ONE single WebGL Canvas        */}
+      {/* MODE 2: PYRAMIDE HOLOGRAPHIQUE 360° (4 VIEWPORTS ACTIFS) */}
+      {/* Rendu 4 faces distinctes avec rotations strictes & 44s  */}
       {/* ======================================================== */}
       {projectionMode === 'pyramid_360' && (
-        <div className="absolute inset-0 z-10 bg-black flex items-center justify-center overflow-hidden">
-          <Canvas
-            gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-            camera={{ position: [0, 0, 4.2], fov: 40 }}
-            dpr={[1, 2]}
-          >
-            <color attach="background" args={['#000000']} />
-            <ambientLight intensity={1.8} color="#ffffff" />
-            <directionalLight position={[0, 4, 3]} intensity={2.2} color="#ffffff" />
-            <directionalLight position={[0, 0, 4]} intensity={1.6} color="#c084fc" />
-
-            <Suspense fallback={<ARMatrixLoader />}>
-              <UnifiedPyramid360Scene
-                url={modelUrl}
-                exerciseName={exerciseName}
-                exerciseId={exerciseId}
-                isPaused={isPaused}
-                speed={speed}
-                pyramidOffset={pyramidDistance}
-                facetScale={0.36 * scaleMultiplier}
-                showGuides={showPyramidGuides}
-              />
-            </Suspense>
-          </Canvas>
-
-          {/* 2D Guide Frame at center of screen for physical transparent prism base */}
-          {showPyramidGuides && (
-            <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 border-2 border-dashed border-cyan-400/80 rounded-2xl flex flex-col items-center justify-center bg-cyan-950/20 backdrop-blur-[2px] shadow-[0_0_24px_rgba(6,182,212,0.4)]">
-                <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc] mb-0.5 animate-ping" />
-                <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-cyan-300 text-center leading-tight">
-                  {translate('ar.place_prism_here')}
-                </span>
-                <span className="text-[7px] sm:text-[8px] font-mono text-gray-400 text-center mt-0.5">
-                  {translate('ar.square_base_center')}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Instructions tag */}
-          <div className="absolute bottom-20 z-30 px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-purple-500/40 text-purple-300 text-[10px] font-bold shadow-2xl pointer-events-none text-center max-w-xs">
-            {translate('ar.pyramid_hint')}
-          </div>
-        </div>
+        <PyramidFourFacesContainer
+          modelUrl={modelUrl}
+          isPaused={isPaused}
+          speed={speed}
+          scaleMultiplier={scaleMultiplier}
+          showGuides={showPyramidGuides}
+        />
       )}
 
       {/* ======================================================== */}
@@ -871,58 +959,6 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* MODE 4: STUDIO DOJO 3D (360° WORKOUT STAGE)              */}
-      {/* ======================================================== */}
-      {projectionMode === 'studio_3d' && (
-        <div className="absolute inset-0 z-10 bg-[#08080c] flex items-center justify-center overflow-hidden">
-          <Canvas
-            gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-            camera={{ position: [0, 0.08, 3.3], fov: 38 }}
-            dpr={[1, 2]}
-          >
-            <color attach="background" args={['#08080c']} />
-            <ambientLight intensity={1.5} color="#ffffff" />
-            <directionalLight position={[3.0, 6.0, 4.0]} intensity={1.8} color="#ffffff" />
-            <directionalLight position={[-3.0, 4.0, 2.5]} intensity={0.9} color="#818cf8" />
-            <directionalLight position={[0, 3.5, -3.5]} intensity={2.0} color="#c084fc" />
-            <pointLight position={[0, 0.5, 1.8]} intensity={1.2} color="#ec4899" />
-
-            <VirtualStudioWall 
-              floorY={-0.84 + heightOffset} 
-              wallDistance={-1.2} 
-              isPureCinema={false} 
-            />
-
-            <HolographicCinemaEmitter floorY={-0.84 + heightOffset} />
-
-            <Suspense fallback={<ARMatrixLoader />}>
-              <ARModelRig
-                url={modelUrl}
-                exerciseName={exerciseName}
-                exerciseId={exerciseId}
-                isPaused={isPaused}
-                speed={speed}
-                scaleMultiplier={scaleMultiplier}
-                rotationY={rotationY}
-                heightOffset={heightOffset}
-                showFloorReticle={true}
-              />
-            </Suspense>
-
-            <OrbitControls
-              enableZoom={true}
-              enablePan={false}
-              target={[0, -0.05, 0]}
-              minDistance={1.0}
-              maxDistance={4.2}
-              minPolarAngle={Math.PI / 4}
-              maxPolarAngle={Math.PI / 1.75}
-            />
-          </Canvas>
-        </div>
-      )}
-
-      {/* ======================================================== */}
       {/* TOP HEADER: CLEAN 2-ROW ARCHITECTURE (NEVER CLUTTERING)  */}
       {/* ======================================================== */}
       <header className="relative z-40 w-full flex flex-col items-center gap-2 p-2.5 sm:p-4 pointer-events-none">
@@ -965,20 +1001,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
               <span>{translate('ar.projection')}</span>
             </button>
 
-            {/* 3. Studio 3D */}
-            <button
-              onClick={() => setProjectionMode('studio_3d')}
-              className={`px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap ${
-                projectionMode === 'studio_3d'
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <Layers size={13} />
-              <span>{translate('ar.studio_3d')}</span>
-            </button>
-
-            {/* 4. Caméra RA */}
+            {/* 3. Caméra RA */}
             <button
               onClick={() => setProjectionMode('camera_ar')}
               className={`px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap ${
@@ -1026,6 +1049,14 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
         {/* 1. Pyramid Sub-Bar */}
         {projectionMode === 'pyramid_360' && (
           <div className="pointer-events-auto animate-fadeIn flex flex-wrap items-center justify-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-950/95 backdrop-blur-xl border border-purple-500/60 shadow-2xl">
+            <button
+              onClick={() => setProjectionMode('camera_ar')}
+              className="px-3 py-1 rounded-lg bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white font-black text-[9px] uppercase tracking-wider flex items-center gap-1 shadow-lg active:scale-95 transition-all mr-1"
+            >
+              <Camera size={12} />
+              <span>{translate('ar.activate_camera_floor')}</span>
+            </button>
+            <div className="w-px h-3.5 bg-white/20 mx-0.5" />
             <span className="text-[9px] font-bold text-purple-300 uppercase tracking-wider mr-1 hidden sm:inline">
               {translate('ar.prism_size')}
             </span>
@@ -1138,20 +1169,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
           </div>
         )}
 
-        {/* 3. Studio 3D Sub-Bar */}
-        {projectionMode === 'studio_3d' && (
-          <div className="pointer-events-auto animate-fadeIn flex flex-wrap items-center justify-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-950/95 backdrop-blur-xl border border-cyan-500/60 shadow-2xl">
-            <button
-              onClick={() => { setRotationY(0); setHeightOffset(0); setScaleMultiplier(1.0); }}
-              className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[9px] font-bold flex items-center gap-1 transition-all"
-            >
-              <RotateCw size={12} />
-              <span>{translate('ar.reset_center')}</span>
-            </button>
-          </div>
-        )}
-
-        {/* 4. Camera AR Sub-Bar (NO TORCH, NO STARS, NO FLASHES) */}
+        {/* 3. Camera AR Sub-Bar (NO TORCH, NO STARS, NO FLASHES) */}
         {projectionMode === 'camera_ar' && (
           <div className="pointer-events-auto animate-fadeIn flex flex-wrap items-center justify-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-950/95 backdrop-blur-xl border border-white/20 shadow-2xl">
             <button
@@ -1161,12 +1179,6 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
             >
               <FlipHorizontal size={12} />
               <span>{cameraFacing === 'user' ? translate('ar.camera_front') : translate('ar.camera_room')}</span>
-            </button>
-            <button
-              onClick={() => setProjectionMode('studio_3d')}
-              className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white border border-white/20 text-[9px] font-bold flex items-center gap-1 transition-all"
-            >
-              <span>{translate('ar.studio_3d')}</span>
             </button>
           </div>
         )}
@@ -1501,144 +1513,103 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
               </div>
             )}
 
-            {/* TAB 2: SANS CÂBLE (WI-FI / SMART VIEW / CAST) */}
+            {/* TAB 2: WIRELESS / WI-FI / SMART VIEW / CAST */}
             {projectionConnectTab === 'wireless' && (
-              <div className="space-y-3 animate-fadeIn text-[11px] text-gray-300">
-                {/* Direct Clarification Notice */}
-                <div className="p-3 rounded-2xl bg-amber-950/30 border border-amber-500/40 text-[10px] text-amber-200/90 leading-relaxed flex items-start gap-2.5">
-                  <span className="text-base shrink-0">💡</span>
-                  <div>
-                    <strong className="text-amber-300 block text-[11px] mb-0.5">{translate('ar.tv_notice_laptop_title')}</strong>
-                    <span className="leading-snug">{translate('ar.tv_notice_laptop')}</span>
+              <div className="space-y-3.5 animate-fadeIn text-[11px] text-gray-300">
+                {/* Active Wi-Fi Connection Status */}
+                <div className="p-3.5 rounded-2xl bg-neutral-950/90 border border-amber-500/40 flex items-center justify-between shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center shrink-0">
+                      <Wifi className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <div>
+                      <strong className="text-white text-xs font-black uppercase tracking-wider block">
+                        {translate('ar.wireless_tv_title')}
+                      </strong>
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {translate('ar.wireless_tv_desc')}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* TV Brand Selector Pills */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-300 block">
-                    {translate('ar.tv_select_brand')}
-                  </span>
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
-                    {[
-                      { id: 'lg', label: 'TV LG (webOS)', icon: Tv },
-                      { id: 'samsung', label: 'TV Samsung', icon: Tv },
-                      { id: 'chromecast', label: 'Chromecast', icon: Cast },
-                      { id: 'apple', label: 'Apple TV', icon: Monitor },
-                      { id: 'projector', label: 'Projecteur', icon: Wifi },
-                    ].map((b) => (
-                      <button
-                        key={b.id}
-                        type="button"
-                        onClick={() => setSelectedTvBrand(b.id as any)}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1.5 shrink-0 transition-all ${
-                          selectedTvBrand === b.id
-                            ? 'bg-amber-500 text-black shadow-md'
-                            : 'bg-black/60 text-gray-300 hover:text-white border border-white/10'
-                        }`}
-                      >
-                        <b.icon size={12} />
-                        <span>{b.label}</span>
-                      </button>
-                    ))}
+                {/* Connected Confirmation Banner if active */}
+                {connectedTvDevice && (
+                  <div className="p-3 rounded-2xl bg-emerald-950/70 border border-emerald-500/60 flex items-center justify-between animate-fadeIn">
+                    <div className="flex items-center gap-2.5">
+                      <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+                      <div>
+                        <p className="font-bold text-white text-xs">{connectedTvDevice}</p>
+                        <p className="text-[10px] text-emerald-300">{translate('ar.connected_device')}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setConnectedTvDevice(null)}
+                      className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-300 border border-red-500/40 text-[9px] font-bold"
+                    >
+                      {translate('ar.disconnect')}
+                    </button>
+                  </div>
+                )}
+
+                {/* ANDROID & APPLE NATIVE INSTRUCTIONS */}
+                <div className="space-y-2.5">
+                  <div className="p-3 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-amber-400 uppercase text-[10px]">
+                      <Smartphone size={13} />
+                      <span>{translate('ar.android_title')}</span>
+                    </div>
+                    <p className="leading-relaxed text-gray-400 text-[10px]">
+                      {translate('ar.android_guide')}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-cyan-400 uppercase text-[10px]">
+                      <Monitor size={13} />
+                      <span>{translate('ar.apple_title')}</span>
+                    </div>
+                    <p className="leading-relaxed text-gray-400 text-[10px]">
+                      {translate('ar.apple_guide')}
+                    </p>
                   </div>
                 </div>
 
-                {/* Brand-Specific Instructions */}
-                <div className="p-3 rounded-2xl bg-black/60 border border-amber-500/30 space-y-2 text-[10px]">
-                  {selectedTvBrand === 'lg' && (
-                    <>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
-                        <p>{translate('ar.step_wifi_lg_1')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
-                        <p>{translate('ar.step_wifi_lg_2')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
-                        <p>{translate('ar.step_wifi_lg_3')}</p>
-                      </div>
-                    </>
-                  )}
+                {/* SINGLE PRIMARY LAUNCH BUTTON & CINEMA FULLSCREEN */}
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleStartTVCast}
+                    disabled={isTriggeringTVCast}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-black font-black uppercase text-xs sm:text-sm tracking-wider shadow-xl shadow-amber-900/30 flex items-center justify-center gap-2.5 transition-all active:scale-95 border border-amber-300"
+                  >
+                    {isTriggeringTVCast ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>{translate('ar.opening_picker')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Tv className="w-5 h-5" />
+                        <span>{translate('ar.launch_mirroring')}</span>
+                      </>
+                    )}
+                  </button>
 
-                  {selectedTvBrand === 'samsung' && (
-                    <>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
-                        <p>{translate('ar.step_wifi_samsung_1')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
-                        <p>{translate('ar.step_wifi_samsung_2')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
-                        <p>{translate('ar.step_wifi_samsung_3')}</p>
-                      </div>
-                    </>
-                  )}
-
-                  {selectedTvBrand === 'chromecast' && (
-                    <>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
-                        <p>{translate('ar.step_wifi_chromecast_1')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
-                        <p>{translate('ar.step_wifi_chromecast_2')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
-                        <p>{translate('ar.step_wifi_chromecast_3')}</p>
-                      </div>
-                    </>
-                  )}
-
-                  {selectedTvBrand === 'apple' && (
-                    <>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
-                        <p>{translate('ar.step_wifi_apple_1')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
-                        <p>{translate('ar.step_wifi_apple_2')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
-                        <p>{translate('ar.step_wifi_apple_3')}</p>
-                      </div>
-                    </>
-                  )}
-
-                  {selectedTvBrand === 'projector' && (
-                    <>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">1</span>
-                        <p>{translate('ar.step_wifi_projector_1')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">2</span>
-                        <p>{translate('ar.step_wifi_projector_2')}</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0">3</span>
-                        <p>{translate('ar.step_wifi_projector_3')}</p>
-                      </div>
-                    </>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWallProjectionStyle('pure_cinema');
+                      setShowProjectionConnectModal(false);
+                      toggleFullscreen();
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-850 border border-neutral-700 text-white text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Maximize size={13} className="text-amber-400" />
+                    <span>{translate('ar.cinema_fullscreen')}</span>
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleStartTVCast}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black uppercase text-xs tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
-                >
-                  <Cast size={15} />
-                  <span>{translate('ar.launch_tv_cast')}</span>
-                </button>
               </div>
             )}
           </div>

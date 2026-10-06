@@ -302,7 +302,7 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     id: 'jack',
     name: 'Jumping Jacks',
     category: 'jack',
-    clipId: 'jump',
+    clipId: 'jumping_jack',
     startingPosture: 'standing',
     cycleDuration: 1.1,
     contacts: {
@@ -321,6 +321,27 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
       'saltos de tijera', 'hampelmann', 'polichinelo',
       'прыжки', 'джампинг джек',
       'ジャンピングジャック', '开合跳', 'قفز الحبل'
+    ],
+  },
+  jumping_jack: {
+    id: 'jumping_jack',
+    name: 'Jumping Jacks',
+    category: 'jack',
+    clipId: 'jumping_jack',
+    startingPosture: 'standing',
+    cycleDuration: 1.1,
+    contacts: {
+      leftFootGround: true,
+      rightFootGround: true,
+      leftHandGround: false,
+      rightHandGround: false,
+      feetSpacing: 0.28,
+      handOrientation: 'free',
+      preventFloorPenetration: true,
+      minKneeFloorClearance: 0.20,
+    },
+    keywords: [
+      'jumping_jack', 'jumping jack', 'jumping jacks', 'jack', 'jacks'
     ],
   },
 
@@ -543,7 +564,57 @@ export const EXERCISE_DEFINITIONS: Record<string, ExerciseDefinition> = {
     ],
   },
 
-  // 15. IDLE / RECOVERY (Posture neutre stable)
+  // 15. BICEP CURL (Dumbbell Bicep Curls / Curls Haltères)
+  bicep_curl: {
+    id: 'bicep_curl',
+    name: 'Dumbbell Bicep Curls',
+    category: 'idle' as any,
+    clipId: 'bicep_curl',
+    startingPosture: 'standing',
+    cycleDuration: 2.8,
+    contacts: {
+      leftFootGround: true,
+      rightFootGround: true,
+      leftHandGround: false,
+      rightHandGround: false,
+      feetSpacing: 0.28,
+      handOrientation: 'free',
+      preventFloorPenetration: true,
+      minKneeFloorClearance: 0.30,
+    },
+    keywords: [
+      'dumbbell bicep curls', 'bicep curls', 'bicep curl', 'dumbbell curl',
+      'curls biceps', 'curl haltere', 'curl bicep', 'biceps', 'bicep',
+      'curls', 'curl'
+    ],
+  },
+
+  // 16. HIGH KNEES (High Knees Sprint in Place / Montées de genoux)
+  high_knees: {
+    id: 'high_knees',
+    name: 'High Knees Sprint in Place',
+    category: 'run',
+    clipId: 'high_knees',
+    startingPosture: 'standing',
+    cycleDuration: 0.82,
+    contacts: {
+      leftFootGround: true,
+      rightFootGround: false,
+      leftHandGround: false,
+      rightHandGround: false,
+      feetSpacing: 0.24,
+      handOrientation: 'free',
+      preventFloorPenetration: true,
+      minKneeFloorClearance: 0.20,
+    },
+    keywords: [
+      'high knees sprint in place', 'high knees sprint', 'high knees',
+      'high knee', 'high_knees', 'montees de genoux', 'montee de genoux',
+      'genoux hauts', 'sprint in place', 'sprint sur place'
+    ],
+  },
+
+  // 17. IDLE / RECOVERY (Posture neutre stable)
   idle: {
     id: 'idle',
     name: 'Posture de Récupération (Repos)',
@@ -589,6 +660,15 @@ export function resolveExerciseDefinition(query?: string | null): ExerciseDefini
   }
 
   // 1b. Match common exercises from GitHub exercices-json & specific aliases
+  if (clean.includes('jack') || clean.includes('jumping')) {
+    return EXERCISE_DEFINITIONS.jumping_jack;
+  }
+  if (clean.includes('bicep') || clean.includes('curl')) {
+    return EXERCISE_DEFINITIONS.bicep_curl;
+  }
+  if (clean.includes('high_knee') || clean.includes('high knee') || (clean.includes('knee') && clean.includes('sprint')) || clean.includes('genou')) {
+    return EXERCISE_DEFINITIONS.high_knees;
+  }
   if (clean.includes('dip') || clean.includes('fondos') || clean.includes('mergulho')) {
     return EXERCISE_DEFINITIONS.dips;
   }

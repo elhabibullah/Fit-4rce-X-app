@@ -19,7 +19,7 @@ if (typeof window !== 'undefined') {
 // 1. SQUAT: Biomechanically pristine full deep squat
 // Full depth (thighs parallel/below parallel), knees tracking firmly OUTWARDS over toes (varus abduction, zero valgus inward collapse),
 // heels 100% planted on the floor, upright chest with counterbalance arms
-const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 3.2, [
+const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 3.0, [
   // 0.00: Standing tall, athletic shoulder-width stance, knees straight, chest high
   {
     time: 0.0,
@@ -28,8 +28,8 @@ const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 3.2, [
       Spine: { pitch: 0.04, yaw: 0, roll: 0 },
       LeftArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
       RightArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
-      LeftUpLeg: { pitch: 0, yaw: 0.12, roll: 0.08 }, // Natural slight toe-out stance (15 deg)
-      RightUpLeg: { pitch: 0, yaw: 0.12, roll: 0.08 },
+      LeftUpLeg: { pitch: 0, yaw: 0.16, roll: 0.04 }, // Natural slight toe-out stance (15 deg)
+      RightUpLeg: { pitch: 0, yaw: 0.16, roll: 0.04 },
       LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
       RightFoot: { pitch: 0, yaw: 0, roll: 0 },
     },
@@ -44,8 +44,8 @@ const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 3.2, [
       RightArm: { pitch: 0.75, yaw: 0, roll: 0.05 },
       LeftForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
       RightForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.85, yaw: 0.16, roll: 0.20 }, // Knees pushing OUTWARDS
-      RightUpLeg: { pitch: 0.85, yaw: 0.16, roll: 0.20 }, // Symmetrical outward knee tracking
+      LeftUpLeg: { pitch: 0.85, yaw: 0.26, roll: 0.04 }, // Knees pushing OUTWARDS away from midline
+      RightUpLeg: { pitch: 0.85, yaw: 0.26, roll: 0.04 }, // Symmetrical outward knee tracking
       LeftLeg: { pitch: 0.95, yaw: 0, roll: 0 },
       RightLeg: { pitch: 0.95, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0.20, yaw: 0, roll: 0 }, // Weight firmly distributed over solid heels
@@ -63,8 +63,8 @@ const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 3.2, [
       RightArm: { pitch: 1.25, yaw: 0, roll: 0.05 },
       LeftForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
       RightForeArm: { pitch: 0.20, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 1.54, yaw: 0.22, roll: 0.32 }, // Full deep depth, knees tracking outward
-      RightUpLeg: { pitch: 1.54, yaw: 0.22, roll: 0.32 }, // Symmetrical knee abduction
+      LeftUpLeg: { pitch: 1.54, yaw: 0.32, roll: 0.04 }, // Full deep depth, knees tracking outward, NO inward crossing
+      RightUpLeg: { pitch: 1.54, yaw: 0.32, roll: 0.04 }, // Symmetrical knee abduction
       LeftLeg: { pitch: 1.56, yaw: 0, roll: 0 },          // Deep knee flexion
       RightLeg: { pitch: 1.56, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0.35, yaw: 0, roll: 0 },         // 100% flat foot on floor, heel solid
@@ -81,8 +81,8 @@ const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 3.2, [
       RightArm: { pitch: 0.75, yaw: 0, roll: 0.05 },
       LeftForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
       RightForeArm: { pitch: 0.15, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0.85, yaw: 0.16, roll: 0.20 },
-      RightUpLeg: { pitch: 0.85, yaw: 0.16, roll: 0.20 },
+      LeftUpLeg: { pitch: 0.85, yaw: 0.26, roll: 0.04 },
+      RightUpLeg: { pitch: 0.85, yaw: 0.26, roll: 0.04 },
       LeftLeg: { pitch: 0.95, yaw: 0, roll: 0 },
       RightLeg: { pitch: 0.95, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0.20, yaw: 0, roll: 0 },
@@ -97,8 +97,8 @@ const SQUAT_CLIP = new HumanoidMotionClip('squat', 'Squat', 3.2, [
       Spine: { pitch: 0.04, yaw: 0, roll: 0 },
       LeftArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
       RightArm: { pitch: 0.15, yaw: 0, roll: 0.10 },
-      LeftUpLeg: { pitch: 0, yaw: 0.12, roll: 0.08 },
-      RightUpLeg: { pitch: 0, yaw: 0.12, roll: 0.08 },
+      LeftUpLeg: { pitch: 0, yaw: 0.16, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0.16, roll: 0.04 },
       LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
       RightFoot: { pitch: 0, yaw: 0, roll: 0 },
     },
@@ -1236,76 +1236,84 @@ const WALK_CLIP = new HumanoidMotionClip('walk', 'Walk', 1.1, [
   },
 ]);
 
-// 14. JUMPING JACKS: Symmetrical coronal arm & leg abduction (ROLL) - eliminates pantin/doll sway
+// 14. JUMPING JACKS: Symmetrical coronal arm & leg abduction (ROLL) with dynamic shoulder elevation
 const JUMP_CLIP = new HumanoidMotionClip('jump', 'Jumping Jacks', 1.1, [
-  // 0.00: Standing tall, feet together, arms at sides
+  // 0.00: Standing tall, feet together, arms relaxed at sides
   {
     time: 0.0,
     hipsOffset: [0, 0, 0],
     bones: {
       Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftShoulder: { pitch: 0, yaw: 0, roll: 0 },
+      RightShoulder: { pitch: 0, yaw: 0, roll: 0 },
       LeftArm: { pitch: 0.02, yaw: 0, roll: 0.08 },
       RightArm: { pitch: 0.02, yaw: 0, roll: 0.08 },
-      LeftForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
-      LeftLeg: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightLeg: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftForeArm: { pitch: 0.08, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      LeftLeg: { pitch: 0.04, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.04, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
       RightFoot: { pitch: 0, yaw: 0, roll: 0 },
     },
   },
-  // 0.25: Jump ascending - arms abduct outward past 90 degrees in coronal plane, legs open symmetrically
+  // 0.25: Jump ascending - arms abduct outward past 90 degrees, shoulders shrug upward, legs open wide symmetrically
   {
     time: 0.25,
-    hipsOffset: [0, 0.12, 0],
+    hipsOffset: [0, 0.14, 0],
     bones: {
       Spine: { pitch: 0.02, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.05, yaw: 0, roll: 1.45 },
-      RightArm: { pitch: 0.05, yaw: 0, roll: 1.45 },
-      LeftForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.30 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.30 },
+      LeftShoulder: { pitch: 0.02, yaw: 0, roll: 0.22 }, // Dynamic shoulder shrug & elevation
+      RightShoulder: { pitch: 0.02, yaw: 0, roll: 0.22 },
+      LeftArm: { pitch: 0.04, yaw: 0, roll: 1.55 },     // Wide arc sweep past horizontal
+      RightArm: { pitch: 0.04, yaw: 0, roll: 1.55 },
+      LeftForeArm: { pitch: 0.08, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.38 },      // Wide OUTWARD leg abduction
+      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.38 },     // Symmetrical outward spread
       LeftLeg: { pitch: 0.10, yaw: 0, roll: 0 },
       RightLeg: { pitch: 0.10, yaw: 0, roll: 0 },
-      LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.10, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.10, yaw: 0, roll: 0 },
     },
   },
-  // 0.50: Peak jump - arms meet overhead in majestic V, legs wide, hips elevated in air
+  // 0.50: Peak jump - arms meet overhead in majestic V, shoulders fully elevated, legs wide, hips elevated
   {
     time: 0.50,
-    hipsOffset: [0, 0.18, 0],
+    hipsOffset: [0, 0.20, 0],
     bones: {
       Spine: { pitch: 0.02, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.08, yaw: 0, roll: 2.70 },
-      RightArm: { pitch: 0.08, yaw: 0, roll: 2.70 },
-      LeftForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.10, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.42 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.42 },
-      LeftLeg: { pitch: 0.15, yaw: 0, roll: 0 },
-      RightLeg: { pitch: 0.15, yaw: 0, roll: 0 },
-      LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
-      RightFoot: { pitch: 0, yaw: 0, roll: 0 },
+      LeftShoulder: { pitch: 0.04, yaw: 0, roll: 0.35 }, // Full dynamic shoulder elevation / shrug (deltoids/traps active)
+      RightShoulder: { pitch: 0.04, yaw: 0, roll: 0.35 },
+      LeftArm: { pitch: 0.05, yaw: 0, roll: 2.75 },     // Hands meet overhead in triumphant V
+      RightArm: { pitch: 0.05, yaw: 0, roll: 2.75 },
+      LeftForeArm: { pitch: 0.14, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.14, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0.08, roll: 0.48 },    // Fully abducted athletic wide landing stance
+      RightUpLeg: { pitch: 0, yaw: 0.08, roll: 0.48 },
+      LeftLeg: { pitch: 0.14, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.14, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.05, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.05, yaw: 0, roll: 0 },
     },
   },
-  // 0.75: Jump descending - arms and legs returning smoothly
+  // 0.75: Jump descending - shoulders and arms returning smoothly in control
   {
     time: 0.75,
     hipsOffset: [0, 0.08, 0],
     bones: {
       Spine: { pitch: 0.02, yaw: 0, roll: 0 },
-      LeftArm: { pitch: 0.05, yaw: 0, roll: 1.45 },
-      RightArm: { pitch: 0.05, yaw: 0, roll: 1.45 },
-      LeftForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.22 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.22 },
-      LeftLeg: { pitch: 0.10, yaw: 0, roll: 0 },
-      RightLeg: { pitch: 0.10, yaw: 0, roll: 0 },
+      LeftShoulder: { pitch: 0.02, yaw: 0, roll: 0.20 },
+      RightShoulder: { pitch: 0.02, yaw: 0, roll: 0.20 },
+      LeftArm: { pitch: 0.04, yaw: 0, roll: 1.45 },
+      RightArm: { pitch: 0.04, yaw: 0, roll: 1.45 },
+      LeftForeArm: { pitch: 0.08, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.24 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.24 },
+      LeftLeg: { pitch: 0.08, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.08, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
       RightFoot: { pitch: 0, yaw: 0, roll: 0 },
     },
@@ -1316,14 +1324,16 @@ const JUMP_CLIP = new HumanoidMotionClip('jump', 'Jumping Jacks', 1.1, [
     hipsOffset: [0, 0, 0],
     bones: {
       Spine: { pitch: 0.02, yaw: 0, roll: 0 },
+      LeftShoulder: { pitch: 0, yaw: 0, roll: 0 },
+      RightShoulder: { pitch: 0, yaw: 0, roll: 0 },
       LeftArm: { pitch: 0.02, yaw: 0, roll: 0.08 },
       RightArm: { pitch: 0.02, yaw: 0, roll: 0.08 },
-      LeftForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightForeArm: { pitch: 0.05, yaw: 0, roll: 0 },
-      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
-      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.05 },
-      LeftLeg: { pitch: 0.05, yaw: 0, roll: 0 },
-      RightLeg: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftForeArm: { pitch: 0.08, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.04 },
+      LeftLeg: { pitch: 0.04, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.04, yaw: 0, roll: 0 },
       LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
       RightFoot: { pitch: 0, yaw: 0, roll: 0 },
     },
@@ -1531,9 +1541,210 @@ const BOX_CLIP = new HumanoidMotionClip('box', 'Boxing', 1.4, [
   },
 ]);
 
+// 17. BICEP CURL: Dynamic, authentic dumbbell bicep curls with peak squeeze & controlled eccentric
+const BICEP_CURL_CLIP = new HumanoidMotionClip('bicep_curl', 'Dumbbell Bicep Curls', 2.8, [
+  // 0.00: Standing tall, athletic stance, dumbbells at sides
+  {
+    time: 0.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.08, yaw: 0, roll: 0.08 },
+      RightArm: { pitch: 0.08, yaw: 0, roll: 0.08 },
+      LeftForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.0, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+      LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.25: Concentric curl - forearms curling up dynamically to 90 degrees
+  {
+    time: 0.25,
+    hipsOffset: [0, -0.01, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.14, yaw: 0, roll: 0.06 },
+      RightArm: { pitch: 0.14, yaw: 0, roll: 0.06 },
+      LeftForeArm: { pitch: 1.45, yaw: 0, roll: 0.10 },
+      RightForeArm: { pitch: 1.45, yaw: 0, roll: 0.10 },
+      LeftHand: { pitch: -0.15, yaw: 0, roll: 0 },
+      RightHand: { pitch: -0.15, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+    },
+  },
+  // 0.50: Peak contraction at top - forearms fully curled, biceps squeezed, elbows stationary
+  {
+    time: 0.50,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.04, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.22, yaw: 0, roll: 0.05 },
+      RightArm: { pitch: 0.22, yaw: 0, roll: 0.05 },
+      LeftForeArm: { pitch: 2.30, yaw: 0, roll: 0.18 },
+      RightForeArm: { pitch: 2.30, yaw: 0, roll: 0.18 },
+      LeftHand: { pitch: -0.25, yaw: 0, roll: 0 },
+      RightHand: { pitch: -0.25, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+    },
+  },
+  // 0.75: Controlled eccentric descent - fighting gravity down to 90 degrees
+  {
+    time: 0.75,
+    hipsOffset: [0, -0.01, 0],
+    bones: {
+      Spine: { pitch: 0.05, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.14, yaw: 0, roll: 0.06 },
+      RightArm: { pitch: 0.14, yaw: 0, roll: 0.06 },
+      LeftForeArm: { pitch: 1.45, yaw: 0, roll: 0.10 },
+      RightForeArm: { pitch: 1.45, yaw: 0, roll: 0.10 },
+      LeftHand: { pitch: -0.15, yaw: 0, roll: 0 },
+      RightHand: { pitch: -0.15, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+    },
+  },
+  // 1.00: Return to bottom starting extension
+  {
+    time: 1.0,
+    hipsOffset: [0, 0, 0],
+    bones: {
+      Spine: { pitch: 0.03, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.08, yaw: 0, roll: 0.08 },
+      RightArm: { pitch: 0.08, yaw: 0, roll: 0.08 },
+      LeftForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.12, yaw: 0, roll: 0 },
+      LeftHand: { pitch: 0.0, yaw: 0, roll: 0 },
+      RightHand: { pitch: 0.0, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: 0, yaw: 0, roll: 0.06 },
+      LeftFoot: { pitch: 0, yaw: 0, roll: 0 },
+      RightFoot: { pitch: 0, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
+// 18. HIGH KNEES SPRINT: Explosive dynamic in-place sprint with high knee drive and arm pump
+const HIGH_KNEES_CLIP = new HumanoidMotionClip('high_knees', 'High Knees Sprint in Place', 0.82, [
+  // 0.00: Left knee driven high (90 deg), right foot grounded, right arm forward, left arm back
+  {
+    time: 0.0,
+    hipsOffset: [0, 0.05, 0],
+    bones: {
+      Spine: { pitch: 0.10, yaw: 0.05, roll: 0 },
+      LeftArm: { pitch: -0.65, yaw: 0, roll: 0.15 }, // pumping backward
+      RightArm: { pitch: 1.10, yaw: 0, roll: 0.10 }, // driving forward
+      LeftForeArm: { pitch: 0.55, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 1.55, yaw: 0, roll: 0.08 }, // HIGH KNEE
+      RightUpLeg: { pitch: -0.12, yaw: 0, roll: 0.06 }, // grounded support
+      LeftLeg: { pitch: 1.60, yaw: 0, roll: 0 }, // sharp 90-deg knee bend
+      RightLeg: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.25, yaw: 0, roll: 0 }, // toe dorsiflexed
+      RightFoot: { pitch: -0.30, yaw: 0, roll: 0 }, // on ball of foot
+    },
+  },
+  // 0.25: Airborne switch - left foot descending, right knee beginning to drive up
+  {
+    time: 0.25,
+    hipsOffset: [0, 0.08, 0],
+    bones: {
+      Spine: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.15, yaw: 0, roll: 0.12 },
+      RightArm: { pitch: 0.15, yaw: 0, roll: 0.12 },
+      LeftForeArm: { pitch: 0.90, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.90, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.55, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: 0.55, yaw: 0, roll: 0.06 },
+      LeftLeg: { pitch: 0.70, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.70, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.10, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.10, yaw: 0, roll: 0 },
+    },
+  },
+  // 0.50: Right knee driven high (90 deg), left foot grounded, left arm forward, right arm back
+  {
+    time: 0.50,
+    hipsOffset: [0, 0.05, 0],
+    bones: {
+      Spine: { pitch: 0.10, yaw: -0.05, roll: 0 },
+      LeftArm: { pitch: 1.10, yaw: 0, roll: 0.10 }, // driving forward
+      RightArm: { pitch: -0.65, yaw: 0, roll: 0.15 }, // pumping backward
+      LeftForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.55, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: -0.12, yaw: 0, roll: 0.06 }, // grounded support
+      RightUpLeg: { pitch: 1.55, yaw: 0, roll: 0.08 }, // HIGH KNEE
+      LeftLeg: { pitch: 0.08, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 1.60, yaw: 0, roll: 0 }, // sharp 90-deg knee bend
+      LeftFoot: { pitch: -0.30, yaw: 0, roll: 0 }, // on ball of foot
+      RightFoot: { pitch: 0.25, yaw: 0, roll: 0 }, // toe dorsiflexed
+    },
+  },
+  // 0.75: Airborne switch back
+  {
+    time: 0.75,
+    hipsOffset: [0, 0.08, 0],
+    bones: {
+      Spine: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftArm: { pitch: 0.15, yaw: 0, roll: 0.12 },
+      RightArm: { pitch: 0.15, yaw: 0, roll: 0.12 },
+      LeftForeArm: { pitch: 0.90, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 0.90, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 0.55, yaw: 0, roll: 0.06 },
+      RightUpLeg: { pitch: 0.55, yaw: 0, roll: 0.06 },
+      LeftLeg: { pitch: 0.70, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.70, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: -0.10, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.10, yaw: 0, roll: 0 },
+    },
+  },
+  // 1.00: Return to 0.00
+  {
+    time: 1.0,
+    hipsOffset: [0, 0.05, 0],
+    bones: {
+      Spine: { pitch: 0.10, yaw: 0.05, roll: 0 },
+      LeftArm: { pitch: -0.65, yaw: 0, roll: 0.15 },
+      RightArm: { pitch: 1.10, yaw: 0, roll: 0.10 },
+      LeftForeArm: { pitch: 0.55, yaw: 0, roll: 0 },
+      RightForeArm: { pitch: 1.35, yaw: 0, roll: 0 },
+      LeftUpLeg: { pitch: 1.55, yaw: 0, roll: 0.08 },
+      RightUpLeg: { pitch: -0.12, yaw: 0, roll: 0.06 },
+      LeftLeg: { pitch: 1.60, yaw: 0, roll: 0 },
+      RightLeg: { pitch: 0.08, yaw: 0, roll: 0 },
+      LeftFoot: { pitch: 0.25, yaw: 0, roll: 0 },
+      RightFoot: { pitch: -0.30, yaw: 0, roll: 0 },
+    },
+  },
+]);
+
 export const CLIPS_REGISTRY: Record<string, HumanoidMotionClip> = {
   squat: SQUAT_CLIP,
   squats: SQUAT_CLIP,
+  air_squat: SQUAT_CLIP,
+  air_squats: SQUAT_CLIP,
+  bodyweight_air_squats: SQUAT_CLIP,
+  bodyweight_squats: SQUAT_CLIP,
+  bicep_curl: BICEP_CURL_CLIP,
+  bicep_curls: BICEP_CURL_CLIP,
+  dumbbell_bicep_curls: BICEP_CURL_CLIP,
+  dumbbell_bicep_curl: BICEP_CURL_CLIP,
+  dumbell_bicep_curls: BICEP_CURL_CLIP,
+  dumbell_bicep_curl: BICEP_CURL_CLIP,
+  curl_biceps: BICEP_CURL_CLIP,
+  curls: BICEP_CURL_CLIP,
+  curl: BICEP_CURL_CLIP,
+  high_knees: HIGH_KNEES_CLIP,
+  high_knees_sprint_in_place: HIGH_KNEES_CLIP,
+  high_knees_sprint: HIGH_KNEES_CLIP,
+  high_knee: HIGH_KNEES_CLIP,
+  high_knee_sprint: HIGH_KNEES_CLIP,
+  montees_de_genoux: HIGH_KNEES_CLIP,
   lunge: LUNGE_CLIP,
   lunges: LUNGE_CLIP,
   reverse_lunge: REVERSE_LUNGE_CLIP,
@@ -1569,6 +1780,11 @@ export const CLIPS_REGISTRY: Record<string, HumanoidMotionClip> = {
   run: RUN_CLIP,
   walk: WALK_CLIP,
   jump: JUMP_CLIP,
+  jumping_jack: JUMP_CLIP,
+  jumping_jacks: JUMP_CLIP,
+  jack: JUMP_CLIP,
+  jacks: JUMP_CLIP,
+  jumping: JUMP_CLIP,
   burpee: BURPEE_CLIP,
   burpees: BURPEE_CLIP,
   box: BOX_CLIP,
