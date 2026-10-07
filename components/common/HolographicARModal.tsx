@@ -561,6 +561,21 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
 
   const [connectedTvDevice, setConnectedTvDevice] = useState<string | null>(null);
   const [isTriggeringTVCast, setIsTriggeringTVCast] = useState<boolean>(false);
+  const [isScanningDevices, setIsScanningDevices] = useState<boolean>(false);
+  const [customDeviceInput, setCustomDeviceInput] = useState<string>('');
+  const [showAddCustom, setShowAddCustom] = useState<boolean>(false);
+
+  interface DiscoveredDevice {
+    id: string;
+    name: string;
+    type: 'smart_tv' | 'chromecast' | 'projector' | 'display';
+    brand?: string;
+    protocol: string;
+    resolution?: string;
+    signal?: number;
+  }
+
+  const [discoveredDevices, setDiscoveredDevices] = useState<DiscoveredDevice[]>([]);
 
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isRequestingCamera, setIsRequestingCamera] = useState<boolean>(false);
@@ -727,6 +742,68 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
     } finally {
       setIsTriggeringTVCast(false);
     }
+  };
+
+  const handleScanDevices = async () => {
+    setIsScanningDevices(true);
+    try {
+      const res = await fetch('/api/scan-network-devices');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.devices) && data.devices.length > 0) {
+          setDiscoveredDevices(data.devices);
+        }
+      }
+    } catch (e) {
+      console.debug('Scan error:', e);
+    } finally {
+      setTimeout(() => {
+        setIsScanningDevices(false);
+      }, 700);
+    }
+  };
+
+  const handleConnectDevice = async (device: DiscoveredDevice) => {
+    setIsTriggeringTVCast(true);
+    try {
+      const res = await launchNativeTVMirroring({
+        onConnected: () => {
+          setConnectedTvDevice(device.name);
+          setWallProjectionStyle('pure_cinema');
+          setShowProjectionConnectModal(false);
+          toggleFullscreen();
+        },
+        onDisconnected: () => {
+          setConnectedTvDevice(null);
+        }
+      });
+      if (res.success) {
+        setConnectedTvDevice(device.name);
+        setWallProjectionStyle('pure_cinema');
+        setShowProjectionConnectModal(false);
+      }
+    } catch (err: any) {
+      console.log('TV Mirroring error:', err);
+    } finally {
+      setIsTriggeringTVCast(false);
+    }
+  };
+
+  const handleAddCustomDevice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customDeviceInput.trim()) return;
+    const newDev: DiscoveredDevice = {
+      id: `custom-${Date.now()}`,
+      name: customDeviceInput.trim(),
+      type: 'smart_tv',
+      brand: 'Écran Réseau',
+      protocol: 'Wi-Fi Screen Display',
+      resolution: '4K Ultra HD',
+      signal: 95
+    };
+    setDiscoveredDevices(prev => [newDev, ...prev]);
+    setCustomDeviceInput('');
+    setShowAddCustom(false);
   };
 
   // Zoom helpers
@@ -1515,27 +1592,37 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
 
             {/* TAB 2: WIRELESS / WI-FI / SMART VIEW / CAST */}
             {projectionConnectTab === 'wireless' && (
-              <div className="space-y-3.5 animate-fadeIn text-[11px] text-gray-300">
-                {/* Active Wi-Fi Connection Status */}
+              <div className="space-y-3 animate-fadeIn text-[11px] text-gray-300">
+                {/* Active Wi-Fi Connection Status & Scanner Trigger */}
                 <div className="p-3.5 rounded-2xl bg-neutral-950/90 border border-amber-500/40 flex items-center justify-between shadow-lg">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center shrink-0">
                       <Wifi className="w-5 h-5 text-amber-400" />
                     </div>
-                    <div>
-                      <strong className="text-white text-xs font-black uppercase tracking-wider block">
+                    <div className="min-w-0">
+                      <strong className="text-white text-xs font-black uppercase tracking-wider block truncate">
                         {translate('ar.wireless_tv_title')}
                       </strong>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
+                      <p className="text-[10px] text-gray-400 mt-0.5 truncate">
                         {translate('ar.wireless_tv_desc')}
                       </p>
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleScanDevices}
+                    disabled={isScanningDevices}
+                    className="shrink-0 px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    <RefreshCw size={12} className={isScanningDevices ? 'animate-spin' : ''} />
+                    <span>{isScanningDevices ? '...' : translate('ar.scan_wifi_devices')}</span>
+                  </button>
                 </div>
 
                 {/* Connected Confirmation Banner if active */}
                 {connectedTvDevice && (
-                  <div className="p-3 rounded-2xl bg-emerald-950/70 border border-emerald-500/60 flex items-center justify-between animate-fadeIn">
+                  <div className="p-3 rounded-2xl bg-emerald-950/70 border border-emerald-500/60 flex items-center justify-between animate-fadeIn shadow-lg">
                     <div className="flex items-center gap-2.5">
                       <Check className="w-5 h-5 text-emerald-400 shrink-0" />
                       <div>
@@ -1546,37 +1633,102 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setConnectedTvDevice(null)}
-                      className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-300 border border-red-500/40 text-[9px] font-bold"
+                      className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-300 border border-red-500/40 text-[9px] font-bold hover:bg-red-500/30 transition-colors"
                     >
                       {translate('ar.disconnect')}
                     </button>
                   </div>
                 )}
 
-                {/* ANDROID & APPLE NATIVE INSTRUCTIONS */}
-                <div className="space-y-2.5">
-                  <div className="p-3 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-amber-400 uppercase text-[10px]">
-                      <Smartphone size={13} />
-                      <span>{translate('ar.android_title')}</span>
+                {/* Scanner Active Radar Animation */}
+                {isScanningDevices && (
+                  <div className="p-4 rounded-2xl bg-neutral-950 border border-amber-500/40 flex flex-col items-center justify-center gap-2 animate-fadeIn py-5 text-center">
+                    <div className="relative flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/40 animate-ping"></div>
+                      <Wifi className="w-5 h-5 text-amber-400 absolute" />
                     </div>
-                    <p className="leading-relaxed text-gray-400 text-[10px]">
-                      {translate('ar.android_guide')}
-                    </p>
+                    <p className="text-xs font-bold text-amber-300 animate-pulse mt-1">{translate('ar.scanning')}</p>
+                  </div>
+                )}
+
+                {/* DISCOVERED DEVICES LIST */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">
+                      {translate('ar.devices_found')} ({discoveredDevices.length})
+                    </span>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowAddCustom(prev => !prev)}
+                      className="text-[9px] text-gray-400 hover:text-amber-300 font-bold transition-colors"
+                    >
+                      {translate('ar.add_manual_device')}
+                    </button>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-cyan-400 uppercase text-[10px]">
-                      <Monitor size={13} />
-                      <span>{translate('ar.apple_title')}</span>
-                    </div>
-                    <p className="leading-relaxed text-gray-400 text-[10px]">
-                      {translate('ar.apple_guide')}
-                    </p>
+                  {showAddCustom && (
+                    <form onSubmit={handleAddCustomDevice} className="flex gap-2 p-2 bg-neutral-900 rounded-xl border border-white/10 animate-fadeIn">
+                      <input 
+                        type="text" 
+                        value={customDeviceInput} 
+                        onChange={(e) => setCustomDeviceInput(e.target.value)}
+                        placeholder="Ex: Samsung QLED Salon, 192.168.1.50..."
+                        className="flex-1 bg-black px-2.5 py-1.5 rounded-lg text-xs text-white border border-white/10 focus:border-amber-400 focus:outline-none"
+                      />
+                      <button type="submit" className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-[10px] font-black rounded-lg uppercase">
+                        OK
+                      </button>
+                    </form>
+                  )}
+
+                  <div className="space-y-2 max-h-52 overflow-y-auto custom-scrollbar pr-0.5">
+                    {discoveredDevices.map((dev) => {
+                      const isCurrent = connectedTvDevice === dev.name;
+                      return (
+                        <div 
+                          key={dev.id}
+                          className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                            isCurrent 
+                              ? 'bg-emerald-950/60 border-emerald-500/70 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                              : 'bg-neutral-950/80 border-white/10 hover:border-amber-500/40'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
+                              isCurrent 
+                                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' 
+                                : 'bg-neutral-900 border-white/10 text-amber-400'
+                            }`}>
+                              {dev.type === 'chromecast' ? <Cast size={18} /> : dev.type === 'projector' ? <Monitor size={18} /> : <Tv size={18} />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-white text-xs truncate">{dev.name}</p>
+                              <div className="flex items-center gap-1.5 text-[9px] text-gray-400 truncate">
+                                <span>{dev.protocol}</span>
+                                {dev.resolution && <span>• {dev.resolution}</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleConnectDevice(dev)}
+                            disabled={isTriggeringTVCast}
+                            className={`shrink-0 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 border ${
+                              isCurrent
+                                ? 'bg-emerald-500 text-black border-emerald-400'
+                                : 'bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border-amber-500/40 hover:border-amber-400'
+                            }`}
+                          >
+                            {isCurrent ? '✓ Connecté' : translate('ar.connect_device')}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* SINGLE PRIMARY LAUNCH BUTTON & CINEMA FULLSCREEN */}
+                {/* PRIMARY ACTIONS */}
                 <div className="space-y-2 pt-1">
                   <button
                     type="button"

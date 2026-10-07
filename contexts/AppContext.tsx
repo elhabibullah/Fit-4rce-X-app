@@ -105,7 +105,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const [screen, setScreen] = useState<Screen>(Screen.Home);
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('language');
-  const [isAppEntered, setIsAppEntered] = useState<boolean>(false);
+  const [isAppEntered, setIsAppEntered] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('f4x_profile');
+      if (saved) {
+        const p = JSON.parse(saved);
+        if (p?.onboarding_complete !== false) return true;
+      }
+    } catch {}
+    return true;
+  });
   const [currencyInfo, setCurrencyInfo] = useState<CurrencyInfo>(DEFAULT_CURRENCY_INFO);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
@@ -207,19 +216,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const updateUserProfile = useCallback((updates: Partial<UserProfile>) => {
-    setProfile(prev => {
-      const newProfile = {...(prev || {}), ...updates};
-      if (updates.language) {
-        _setLanguage(updates.language);
-      }
-      return newProfile;
-    });
+    if (updates.language) {
+      _setLanguage(updates.language);
+    }
+    setProfile(prev => ({ ...(prev || {}), ...updates }));
   }, []);
 
   const setLanguage = useCallback((lang: Language) => {
     _setLanguage(lang);
-    updateUserProfile({ language: lang });
-  }, [updateUserProfile]);
+    setProfile(prev => prev ? { ...prev, language: lang } : null);
+  }, []);
 
   const setCurrency = useCallback((code: string) => {
     if (CURRENCY_MAP[code]) {

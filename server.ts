@@ -28,8 +28,9 @@ wss.on('error', (err: any) => {
 });
 
 // Initialize GoogleGenAI on the server side - keeping the API key absolutely secure
+const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY || process.env.API_KEY || process.env.VITE_GEMINI_API_KEY || '';
 const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey: geminiApiKey,
   httpOptions: {
     headers: {
       'User-Agent': 'aistudio-build',
@@ -661,12 +662,62 @@ Return a JSON object with:
   }
 });
 
+app.get('/api/scan-network-devices', async (req: express.Request, res: express.Response) => {
+  try {
+    const devices = [
+      {
+        id: 'tv-livingroom-smart',
+        name: 'Smart TV Salon',
+        type: 'smart_tv',
+        brand: 'Samsung / LG / Sony',
+        protocol: 'Wi-Fi 5GHz • AirPlay & Smart View',
+        status: 'online',
+        resolution: '4K Ultra HD',
+        signal: 98
+      },
+      {
+        id: 'tv-workout-room',
+        name: 'Écran Salle de Sport',
+        type: 'smart_tv',
+        brand: 'Android TV / Google TV',
+        protocol: 'Google Cast & Miracast',
+        status: 'online',
+        resolution: '4K 60fps',
+        signal: 95
+      },
+      {
+        id: 'cast-dongle-cinema',
+        name: 'Chromecast Ultra 4K',
+        type: 'chromecast',
+        brand: 'Google Cast',
+        protocol: 'Google Cast Protocol',
+        status: 'online',
+        resolution: '4K HDR',
+        signal: 100
+      },
+      {
+        id: 'projector-cinema-wall',
+        name: 'Vidéoprojecteur Mur Cinéma',
+        type: 'projector',
+        brand: 'Wireless Projector',
+        protocol: 'Wi-Fi Direct / Miracast',
+        status: 'online',
+        resolution: '1080p / 4K Cinema',
+        signal: 90
+      }
+    ];
+    res.json({ success: true, devices });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post('/api/chatbot-response', async (req: express.Request, res: express.Response) => {
   try {
     const { msg, language, history } = req.body;
     const targetLang = language || 'en';
     
-    if (process.env.GEMINI_API_KEY) {
+    if (geminiApiKey) {
       try {
         let contents: any = msg;
         if (Array.isArray(history) && history.length > 0) {

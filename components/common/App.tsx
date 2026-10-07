@@ -24,6 +24,7 @@ import RunningScreen from '../../screens/RunningScreen.tsx';
 import { CheckCircle } from 'lucide-react';
 import AICoach from './AICoach.tsx';
 import HolographicGearModal from '../profile/HolographicGearModal.tsx';
+import SensorsPermissionModal from './SensorsPermissionModal.tsx';
 import { ENVIRONMENT_THUMBNAILS } from './VirtualEnvironment.tsx';
 import GlobalErrorBoundary from './GlobalErrorBoundary.tsx';
 import Loader from './Loader.tsx';
@@ -77,7 +78,8 @@ const App: React.FC = () => {
   if (!isAppEntered) {
     return (
       <GlobalErrorBoundary>
-        <div className="bg-black min-h-screen w-full overflow-y-auto">
+        <div className="bg-black min-h-screen w-full overflow-y-auto relative">
+          <SensorsPermissionModal />
           {showSignIn ? (
             <SignInScreen onBack={() => setShowSignIn(false)} />
           ) : (
@@ -124,6 +126,7 @@ const App: React.FC = () => {
         </main>
 
         {isCoachOpen && <AICoach isVisible={isCoachOpen} onClose={handleCloseCoach} />}
+        <SensorsPermissionModal />
         {!isImmersive && <BottomNav />}
 
         {statusMessage && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Bot, Mic, MicOff, Volume2, X, Sparkles, Loader2, Send, CornerDownLeft } from 'lucide-react';
+import { Bot, Mic, MicOff, Volume2, X, Loader2 } from 'lucide-react';
 import { useApp } from '../../hooks/useApp.ts';
 import { Language, WorkoutGenerationParams } from '../../types.ts';
 import { getChatbotResponse } from '../../services/aiService.ts';
@@ -67,14 +67,142 @@ const QUICK_PROMPTS: Record<Language, string[]> = {
 };
 
 const COACH_TITLE_PROMPTS: Record<Language, string> = {
-  [Language.FR]: "Parlez ou écrivez pour lancer votre séance sur mesure",
-  [Language.ES]: "Habla o escribe para iniciar tu entrenamiento a medida",
-  [Language.AR]: "تحدث أو اكتب لبدء تمرينك المخصص",
-  [Language.PT]: "Fale ou digite para iniciar seu treino personalizado",
-  [Language.JA]: "話すか入力して専用ワークアウトを開始",
-  [Language.ZH]: "说话或输入文字以开始定制训练",
-  [Language.RU]: "Говорите или пишите, чтобы начать тренировку",
-  [Language.EN]: "Speak or type to generate your custom workout"
+  [Language.FR]: "Parlez ou touchez le micro pour lancer votre séance sur mesure",
+  [Language.ES]: "Habla o toca el micrófono para iniciar tu entrenamiento a medida",
+  [Language.AR]: "تحدث أو اضغط على الميكروفون لبدء تمرينك المخصص",
+  [Language.PT]: "Fale ou toque no microfone para iniciar seu treino personalizado",
+  [Language.JA]: "話すかマイクをタップして専用ワークアウトを開始",
+  [Language.ZH]: "说话或点击麦克风以开始定制训练",
+  [Language.RU]: "Говорите или нажмите на микрофон, чтобы начать тренировку",
+  [Language.EN]: "Speak or tap the microphone to generate your custom workout"
+};
+
+const COACH_UI_STRINGS: Record<Language, {
+  speakingStatus: string;
+  listeningStatus: string;
+  idleStatus: string;
+  listeningBtn: string;
+  touchBtn: string;
+  speakingPrompt: string;
+  listeningPrompt: string;
+  you: string;
+  thinking: string;
+  coachTitle: string;
+  muteTitle: string;
+  unmuteTitle: string;
+}> = {
+  [Language.FR]: {
+    speakingStatus: "Coach en train de parler...",
+    listeningStatus: "Microphone actif (Parlez)",
+    idleStatus: "En attente...",
+    listeningBtn: "À L'ÉCOUTE",
+    touchBtn: "TOUCHER",
+    speakingPrompt: "Le coach vous répond...",
+    listeningPrompt: "Dites ce que vous voulez travailler...",
+    you: "VOUS",
+    thinking: "Le coach analyse avec Gemini 2.5...",
+    coachTitle: "COACH IA FIT-4RCE X",
+    muteTitle: "Voix coupée",
+    unmuteTitle: "Voix active"
+  },
+  [Language.EN]: {
+    speakingStatus: "Coach speaking...",
+    listeningStatus: "Microphone active (Speak now)",
+    idleStatus: "Standby...",
+    listeningBtn: "LISTENING",
+    touchBtn: "TAP TO SPEAK",
+    speakingPrompt: "Coach is replying...",
+    listeningPrompt: "Tell me what you'd like to train...",
+    you: "YOU",
+    thinking: "Coach is analyzing with Gemini 2.5...",
+    coachTitle: "FIT-4RCE X AI COACH",
+    muteTitle: "Muted",
+    unmuteTitle: "Voice active"
+  },
+  [Language.ES]: {
+    speakingStatus: "Entrenador hablando...",
+    listeningStatus: "Micrófono activo (Habla ahora)",
+    idleStatus: "En espera...",
+    listeningBtn: "ESCUCHANDO",
+    touchBtn: "TOCAR",
+    speakingPrompt: "El entrenador te responde...",
+    listeningPrompt: "Dime qué quieres entrenar hoy...",
+    you: "TÚ",
+    thinking: "El entrenador analiza con Gemini 2.5...",
+    coachTitle: "ENTRENADOR IA FIT-4RCE X",
+    muteTitle: "Silenciado",
+    unmuteTitle: "Voz activa"
+  },
+  [Language.AR]: {
+    speakingStatus: "المدرب يتحدث الآن...",
+    listeningStatus: "الميكروفون نشط (تحدث الآن)",
+    idleStatus: "في وضع الاستعداد...",
+    listeningBtn: "يستمع الآن",
+    touchBtn: "اضغط للتحدث",
+    speakingPrompt: "المدرب يجيبك الآن...",
+    listeningPrompt: "أخبرني ما الذي تريد تدريبه اليوم...",
+    you: "أنت",
+    thinking: "المدرب يحلل مع Gemini 2.5...",
+    coachTitle: "مدرب FIT-4RCE X الذكي",
+    muteTitle: "صامت",
+    unmuteTitle: "الصوت نشط"
+  },
+  [Language.PT]: {
+    speakingStatus: "Treinador falando...",
+    listeningStatus: "Microfone ativo (Fale agora)",
+    idleStatus: "Aguardando...",
+    listeningBtn: "OUVINDO",
+    touchBtn: "TOQUE",
+    speakingPrompt: "O treinador está respondendo...",
+    listeningPrompt: "Diga o que você quer treinar hoje...",
+    you: "VOCÊ",
+    thinking: "O treinador analisa com Gemini 2.5...",
+    coachTitle: "TREINADOR IA FIT-4RCE X",
+    muteTitle: "Voz silenciada",
+    unmuteTitle: "Voz ativa"
+  },
+  [Language.JA]: {
+    speakingStatus: "コーチが話しています...",
+    listeningStatus: "マイク有効（話してください）",
+    idleStatus: "待機中...",
+    listeningBtn: "聞き取り中",
+    touchBtn: "タップして話す",
+    speakingPrompt: "コーチが回答しています...",
+    listeningPrompt: "鍛えたい部位や目標を教えてください...",
+    you: "あなた",
+    thinking: "Gemini 2.5でワークアウトを分析中...",
+    coachTitle: "FIT-4RCE X AIコーチ",
+    muteTitle: "ミュート中",
+    unmuteTitle: "音声有効"
+  },
+  [Language.ZH]: {
+    speakingStatus: "教练正在讲话...",
+    listeningStatus: "麦克风已激活（请讲话）",
+    idleStatus: "等待中...",
+    listeningBtn: "正在倾听",
+    touchBtn: "点击说话",
+    speakingPrompt: "教练正在回应您...",
+    listeningPrompt: "请告诉我您今天想训练什么...",
+    you: "您",
+    thinking: "教练正在使用Gemini 2.5分析训练...",
+    coachTitle: "FIT-4RCE X AI教练",
+    muteTitle: "已静音",
+    unmuteTitle: "语音已开启"
+  },
+  [Language.RU]: {
+    speakingStatus: "Тренер говорит...",
+    listeningStatus: "Микрофон активен (Говорите)",
+    idleStatus: "Ожидание...",
+    listeningBtn: "СЛУШАЮ",
+    touchBtn: "НАЖМИТЕ",
+    speakingPrompt: "Тренер отвечает вам...",
+    listeningPrompt: "Скажите, какую группу мышц хотите тренировать...",
+    you: "ВЫ",
+    thinking: "Тренер анализирует с Gemini 2.5...",
+    coachTitle: "ИИ ТРЕНЕР FIT-4RCE X",
+    muteTitle: "Звук отключен",
+    unmuteTitle: "Звук включен"
+  }
 };
 
 const parseVoiceWorkoutParams = (text: string): WorkoutGenerationParams => {
@@ -112,41 +240,42 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState('');
-  const [textInput, setTextInput] = useState('');
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [micPermissionGranted, setMicPermissionGranted] = useState<boolean | null>(null);
+
+  // Synchronous refs to prevent stale closures and avoid useEffect re-render cascades
+  const messagesRef = useRef<Message[]>(messages);
+  messagesRef.current = messages;
+
+  const isVisibleRef = useRef(isVisible);
+  isVisibleRef.current = isVisible;
 
   const isMutedRef = useRef(isMuted);
-  const isListeningRef = useRef(false);
+  isMutedRef.current = isMuted;
+
+  const isAiSpeakingRef = useRef(isAiSpeaking);
+  isAiSpeakingRef.current = isAiSpeaking;
+
+  const isThinkingRef = useRef(isThinking);
+  isThinkingRef.current = isThinking;
+
+  const currentTranscriptRef = useRef(currentTranscript);
+  currentTranscriptRef.current = currentTranscript;
+
+  const isListeningRef = useRef(isListening);
+  isListeningRef.current = isListening;
+
+  const handleUserMessageRef = useRef<(text: string) => void>(() => {});
+  const startRecognitionRef = useRef<() => void>(() => {});
   const recognitionRef = useRef<any>(null);
-  const isAiSpeakingRef = useRef(false);
-  const isThinkingRef = useRef(false);
   const silenceTimerRef = useRef<any>(null);
-  const isVisibleRef = useRef(isVisible);
   const accumulatedContextRef = useRef<string>('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    isVisibleRef.current = isVisible;
-  }, [isVisible]);
+  const uiTexts = useMemo(() => {
+    return COACH_UI_STRINGS[language] || COACH_UI_STRINGS[Language.EN];
+  }, [language]);
 
-  useEffect(() => {
-    isMutedRef.current = isMuted;
-  }, [isMuted]);
-
-  useEffect(() => {
-    isAiSpeakingRef.current = isAiSpeaking;
-  }, [isAiSpeaking]);
-
-  useEffect(() => {
-    isThinkingRef.current = isThinking;
-  }, [isThinking]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, currentTranscript, isThinking]);
-
+  // Map app language to standard SpeechRecognition BCP-47 locale
   const speechLang = useMemo(() => {
     switch (language) {
       case Language.FR: return 'fr-FR';
@@ -160,9 +289,12 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     }
   }, [language]);
 
-  // Clean up audio & speech engines
-  const cleanupAudio = useCallback(() => {
+  // Clean up audio & speech engines without setting state (safe for unmount / effect cleanup)
+  const cleanupAudioHardware = useCallback(() => {
     isListeningRef.current = false;
+    isAiSpeakingRef.current = false;
+    isThinkingRef.current = false;
+
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
@@ -172,38 +304,30 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     }
     if (recognitionRef.current) {
       try {
+        recognitionRef.current.onresult = null;
         recognitionRef.current.onend = null;
         recognitionRef.current.onerror = null;
         recognitionRef.current.abort();
       } catch (e) {}
       recognitionRef.current = null;
     }
-    setIsListening(false);
-    setIsAiSpeaking(false);
-    setIsThinking(false);
   }, []);
 
-  // Stop microphone listening safely
+  // Stop microphone listening safely and update UI state
   const stopRecognition = useCallback(() => {
-    isListeningRef.current = false;
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
-    }
+    cleanupAudioHardware();
     setIsListening(false);
-  }, []);
+  }, [cleanupAudioHardware]);
 
   // Launch workout transition
   const executeWorkoutLaunch = useCallback((promptText: string) => {
-    cleanupAudio();
+    cleanupAudioHardware();
+    setIsListening(false);
+    setIsAiSpeaking(false);
+    setIsThinking(false);
     const params = parseVoiceWorkoutParams(promptText || accumulatedContextRef.current || 'fitness');
     startWorkoutFromVoice(params);
-  }, [cleanupAudio, startWorkoutFromVoice]);
+  }, [cleanupAudioHardware, startWorkoutFromVoice]);
 
   // Spoken feedback via SpeechSynthesis
   const speakVoice = useCallback((text: string, onFinish?: () => void) => {
@@ -218,30 +342,28 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         utterance.pitch = 1.0;
         utterance.onstart = () => {
           setIsAiSpeaking(true);
-          isAiSpeakingRef.current = true;
         };
         utterance.onend = () => {
           setIsAiSpeaking(false);
-          isAiSpeakingRef.current = false;
           if (onFinish) {
             onFinish();
           } else if (isVisibleRef.current) {
-            setTimeout(startRecognition, 400);
+            setTimeout(() => {
+              if (isVisibleRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
+                startRecognitionRef.current();
+              }
+            }, 300);
           }
         };
         utterance.onerror = () => {
           setIsAiSpeaking(false);
-          isAiSpeakingRef.current = false;
           if (onFinish) {
             onFinish();
-          } else if (isVisibleRef.current) {
-            setTimeout(startRecognition, 400);
           }
         };
         window.speechSynthesis.speak(utterance);
       } catch (e) {
         setIsAiSpeaking(false);
-        isAiSpeakingRef.current = false;
         if (onFinish) onFinish();
       }
     } else {
@@ -249,24 +371,21 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     }
   }, [speechLang, stopRecognition]);
 
-  // Process user message (speech or text)
-  const handleUserMessage = useCallback(async (userText: string) => {
-    if (!userText || !userText.trim()) return;
-    const cleanText = userText.trim();
-    setCurrentTranscript('');
-    setTextInput('');
-    accumulatedContextRef.current += ` ${cleanText}`;
+  // User message submit handler
+  const handleUserMessage = useCallback(async (text: string) => {
+    const cleanText = text.trim();
+    if (!cleanText) return;
 
+    setCurrentTranscript('');
+    currentTranscriptRef.current = '';
     stopRecognition();
+
     setMessages(prev => [...prev, { role: 'user', text: cleanText }]);
+    accumulatedContextRef.current = (accumulatedContextRef.current ? accumulatedContextRef.current + ' ' : '') + cleanText;
 
     const lower = cleanText.toLowerCase();
-
-    // Check readiness triggers
     const isReadyTrigger = (
-      lower.includes('prêt') || lower.includes('pret') ||
-      lower.includes('ready') || lower.includes('commencer') ||
-      lower.includes('parti') || lower.includes('lance') ||
+      lower.includes('prêt') || lower.includes('pret') || lower.includes('lance') ||
       lower.includes('start') || lower.includes("let's go") ||
       lower.includes('جاهز') || lower.includes('ابدأ') || lower.includes('يلا') ||
       lower.includes('listo') || lower.includes('vamos') || lower.includes('empezar') ||
@@ -285,15 +404,14 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       return;
     }
 
-    // Call server-side Gemini
+    // Call server-side Gemini / rich conversational intelligence
     setIsThinking(true);
-    isThinkingRef.current = true;
     try {
-      const historyList = messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
+      const historyList = messagesRef.current.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
       const aiReply = await getChatbotResponse(cleanText, language, historyList);
       
       const shouldLaunch = aiReply.includes('[GENERATE_WORKOUT]') ||
-        /je (te|vous) g[eé]n[eè]re|g[eé]n[eé]ration de (tes|vos) exercices|je lance (ta|votre) s[eé]ance|g[eé]n[eè]re ta s[eé]ance|generating your|preparing your custom|prépare vos exercices/i.test(aiReply);
+        /je (te|vous) g[eé]n[eè]re|g[eé]n[eè]ration de (tes|vos) exercices|je lance (ta|votre) s[eé]ance|g[eé]n[eè]re ta s[eé]ance|generating your|preparing your custom|prépare vos exercices/i.test(aiReply);
 
       const displayText = aiReply.replace(/\[GENERATE_WORKOUT\]/g, '').trim();
       setMessages(prev => [...prev, { role: 'assistant', text: displayText }]);
@@ -307,33 +425,23 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       }
     } catch (err) {
       console.warn("AI Coach response error:", err);
-      const fallbackMsg = "Bien reçu ! Quel type d'exercices souhaitez-vous cibler aujourd'hui ?";
+      const fallbackMsg = language === Language.FR 
+        ? "Bien reçu ! Quel type d'exercices souhaitez-vous cibler aujourd'hui ?"
+        : "Got it! Which muscle group or exercise style would you like to target today?";
       setMessages(prev => [...prev, { role: 'assistant', text: fallbackMsg }]);
       speakVoice(fallbackMsg);
     } finally {
       setIsThinking(false);
-      isThinkingRef.current = false;
     }
-  }, [messages, language, translate, speakVoice, stopRecognition, executeWorkoutLaunch]);
+  }, [language, translate, speakVoice, stopRecognition, executeWorkoutLaunch]);
 
-  // Start continuous microphone recognition
-  const startRecognition = useCallback(async () => {
+  // Keep handleUserMessage ref in sync synchronously
+  handleUserMessageRef.current = handleUserMessage;
+
+  // Start continuous microphone recognition with Web Speech API
+  const startRecognition = useCallback(() => {
     if (!isVisibleRef.current) return;
     if (isAiSpeakingRef.current || isThinkingRef.current) return;
-
-    // 1. Explicitly request microphone stream if not yet granted so browser prompts once
-    if (micPermissionGranted === null) {
-      try {
-        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          stream.getTracks().forEach(t => t.stop());
-          setMicPermissionGranted(true);
-        }
-      } catch (micErr) {
-        console.warn("Microphone permission prompt:", micErr);
-        setMicPermissionGranted(false);
-      }
-    }
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -344,7 +452,9 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
     if (recognitionRef.current) {
       try { 
+        recognitionRef.current.onresult = null;
         recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
         recognitionRef.current.abort(); 
       } catch (e) {}
       recognitionRef.current = null;
@@ -353,7 +463,9 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = speechLang;
-      recognition.continuous = true;
+      // On Android Chrome continuous=false prevents hangs and enables responsive speech
+      const isMobileDevice = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      recognition.continuous = !isMobileDevice;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
@@ -365,40 +477,46 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       recognition.onresult = (event: any) => {
         if (isAiSpeakingRef.current || isThinkingRef.current) return;
 
-        let fullTranscript = '';
-        for (let i = 0; i < event.results.length; ++i) {
-          fullTranscript += event.results[i][0].transcript + ' ';
+        let interimText = '';
+        let finalText = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const item = event.results[i];
+          if (item.isFinal) {
+            finalText += item[0].transcript + ' ';
+          } else {
+            interimText += item[0].transcript + ' ';
+          }
         }
 
-        const spoken = fullTranscript.trim();
+        const spoken = (finalText || interimText).trim();
         if (spoken) {
           setCurrentTranscript(spoken);
+          currentTranscriptRef.current = spoken;
           if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
           silenceTimerRef.current = setTimeout(() => {
-            handleUserMessage(spoken);
-          }, 1100);
+            const toSend = currentTranscriptRef.current.trim();
+            if (toSend) {
+              handleUserMessageRef.current(toSend);
+            }
+          }, 950);
         }
       };
 
       recognition.onerror = (event: any) => {
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          isListeningRef.current = false;
-          setIsListening(false);
-          setMicPermissionGranted(false);
-        }
+        console.warn('SpeechRecognition status:', event?.error);
+        isListeningRef.current = false;
+        setIsListening(false);
       };
 
       recognition.onend = () => {
-        if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
-          try {
-            recognition.start();
-          } catch (e) {
-            isListeningRef.current = false;
-            setIsListening(false);
-          }
-        } else {
-          isListeningRef.current = false;
-          setIsListening(false);
+        isListeningRef.current = false;
+        setIsListening(false);
+        // If there was text waiting to be processed when silence ended, send it immediately
+        if (currentTranscriptRef.current && currentTranscriptRef.current.trim()) {
+          const pending = currentTranscriptRef.current.trim();
+          currentTranscriptRef.current = '';
+          handleUserMessageRef.current(pending);
         }
       };
 
@@ -407,54 +525,58 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       isListeningRef.current = true;
       setIsListening(true);
     } catch (e) {
-      console.warn('Speech recognition start failed:', e);
+      console.warn('Speech recognition start error:', e);
       isListeningRef.current = false;
       setIsListening(false);
     }
-  }, [speechLang, handleUserMessage]);
+  }, [speechLang]);
 
-  const toggleListening = () => {
+  startRecognitionRef.current = startRecognition;
+
+  // Click on the turquoise orb: direct user gesture triggers mic permission + toggles or validates immediately
+  const toggleListening = async () => {
     if (isListening) {
       stopRecognition();
-      if (currentTranscript.trim()) {
-        handleUserMessage(currentTranscript.trim());
+      if (currentTranscriptRef.current.trim()) {
+        const text = currentTranscriptRef.current.trim();
+        currentTranscriptRef.current = '';
+        handleUserMessage(text);
       }
     } else {
+      // Direct user click: prompt browser for microphone permission
+      try {
+        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(t => t.stop());
+        }
+      } catch (e) {
+        console.warn("User mic activation prompt:", e);
+      }
       startRecognition();
     }
   };
 
-  const handleTextSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!textInput.trim()) return;
-    handleUserMessage(textInput.trim());
-  };
-
-  // Reset state on modal open
+  // Reset state on modal open - strictly triggers only once when isVisible becomes true
   useEffect(() => {
     if (!isVisible) {
-      cleanupAudio();
+      cleanupAudioHardware();
       return;
     }
     
     setMessages([]);
     setCurrentTranscript('');
-    setTextInput('');
+    currentTranscriptRef.current = '';
     accumulatedContextRef.current = '';
 
-    // Auto-listen
-    startRecognition();
-
     return () => {
-      cleanupAudio();
+      cleanupAudioHardware();
     };
-  }, [isVisible]);
+  }, [isVisible, cleanupAudioHardware]);
 
   if (!isVisible) return null;
 
   const quickOptions = QUICK_PROMPTS[language] || QUICK_PROMPTS[Language.EN];
   const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
-  const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
 
   return (
     <div 
@@ -465,17 +587,17 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       {/* TOP BAR */}
       <div className="w-full max-w-lg flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-purple-900/60 border border-purple-500/40 flex items-center justify-center shadow-[0_0_20px_rgba(138,43,226,0.5)]">
-            <Bot className="w-5 h-5 text-purple-300" />
+          <div className="w-10 h-10 rounded-2xl bg-cyan-950/80 border border-cyan-500/50 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+            <Bot className="w-5 h-5 text-cyan-300" />
           </div>
           <div>
             <h2 className="text-xs font-black text-white uppercase tracking-widest leading-none flex items-center gap-1.5">
               <span>{translate('chatbot.title')}</span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">IA LIVE</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">IA LIVE</span>
             </h2>
-            <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1.5">
-              <span className={`w-2 h-2 rounded-full ${isAiSpeaking ? 'bg-cyan-400 animate-ping' : isListening ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`}></span>
-              {isAiSpeaking ? 'Coach en train de parler...' : isListening ? 'Microphone actif (Parlez)' : 'En attente...'}
+            <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-1.5">
+              <span className={`w-2 h-2 rounded-full ${isAiSpeaking ? 'bg-cyan-300 animate-ping' : isListening ? 'bg-teal-400 animate-pulse' : 'bg-cyan-800'}`}></span>
+              {isAiSpeaking ? uiTexts.speakingStatus : isListening ? uiTexts.listeningStatus : uiTexts.idleStatus}
             </span>
           </div>
         </div>
@@ -488,7 +610,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
             className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border ${
               isMuted ? 'bg-red-950/80 border-red-500/50 text-red-400' : 'bg-white/10 border-white/15 text-gray-300 hover:text-white'
             }`}
-            title={isMuted ? 'Voix coupée' : 'Voix active'}
+            title={isMuted ? uiTexts.muteTitle : uiTexts.unmuteTitle}
           >
             {isMuted ? <MicOff size={16} /> : <Volume2 size={16} />}
           </button>
@@ -496,7 +618,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
           {/* Close */}
           <button 
             type="button"
-            onClick={() => { cleanupAudio(); onClose(); }}
+            onClick={() => { cleanupAudioHardware(); onClose(); }}
             className="w-9 h-9 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
           >
             <X size={18} />
@@ -504,124 +626,107 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         </div>
       </div>
 
-      {/* CENTRAL CONVERSATION & VISUALIZER */}
-      <div className="w-full max-w-lg flex-1 flex flex-col items-center justify-between px-5 py-3 space-y-4 overflow-y-auto custom-scrollbar">
+      {/* CENTRAL CONVERSATION & VISUALIZER - EXACTLY IN THE MIDDLE OF THE SCREEN */}
+      <div className="w-full max-w-lg flex-1 flex flex-col items-center justify-center px-5 py-4 space-y-6 overflow-hidden">
         
-        {/* VOICE VISUALIZER ORB */}
-        <div className="relative flex items-center justify-center my-2 shrink-0">
+        {/* VOICE VISUALIZER ORB - LE MERVEILLEUX CERCLE BLEU TURQUOISE AU MILIEU */}
+        <div className="relative flex items-center justify-center shrink-0">
           {isListening && (
             <>
-              <div className="absolute w-44 h-44 rounded-full bg-purple-600/20 animate-ping [animation-duration:2.5s] pointer-events-none"></div>
-              <div className="absolute w-36 h-36 rounded-full bg-emerald-500/25 animate-pulse pointer-events-none"></div>
+              <div className="absolute w-48 h-48 rounded-full bg-cyan-500/25 animate-ping [animation-duration:2.2s] pointer-events-none"></div>
+              <div className="absolute w-40 h-40 rounded-full bg-teal-400/30 animate-pulse pointer-events-none"></div>
             </>
           )}
           {isAiSpeaking && (
             <>
-              <div className="absolute w-48 h-48 rounded-full bg-cyan-500/20 animate-ping [animation-duration:1.8s] pointer-events-none"></div>
-              <div className="absolute w-40 h-40 rounded-full bg-purple-500/30 animate-pulse pointer-events-none"></div>
+              <div className="absolute w-52 h-52 rounded-full bg-cyan-400/30 animate-ping [animation-duration:1.8s] pointer-events-none"></div>
+              <div className="absolute w-44 h-44 rounded-full bg-teal-300/35 animate-pulse pointer-events-none"></div>
             </>
           )}
 
           <button
             type="button"
             onClick={toggleListening}
-            className={`relative z-10 w-28 h-28 rounded-full flex flex-col items-center justify-center transition-all duration-300 shadow-2xl active:scale-95 border-2 ${
+            className={`relative z-10 w-32 h-32 rounded-full flex flex-col items-center justify-center transition-all duration-300 active:scale-95 border-2 ${
               isAiSpeaking
-                ? 'bg-gradient-to-tr from-purple-700 via-indigo-600 to-cyan-400 border-cyan-300 shadow-[0_0_50px_rgba(6,182,212,0.6)]'
+                ? 'bg-gradient-to-tr from-cyan-500 via-teal-400 to-cyan-300 border-white shadow-[0_0_60px_rgba(6,182,212,0.95)]'
                 : isListening
-                ? 'bg-gradient-to-tr from-purple-600 to-emerald-600 border-emerald-300 shadow-[0_0_40px_rgba(16,185,129,0.5)]'
-                : 'bg-zinc-900 border-purple-500/40 hover:border-purple-400 shadow-[0_0_30px_rgba(138,43,226,0.3)]'
+                ? 'bg-gradient-to-tr from-cyan-600 via-cyan-400 to-teal-300 border-cyan-200 shadow-[0_0_50px_rgba(6,182,212,0.85)]'
+                : 'bg-gradient-to-tr from-cyan-950 via-cyan-900 to-teal-950 border-cyan-500/60 hover:border-cyan-400 text-cyan-300 shadow-[0_0_35px_rgba(6,182,212,0.5)]'
             }`}
           >
             {isAiSpeaking ? (
-              <div className="flex items-end gap-1 h-7">
+              <div className="flex items-end gap-1.5 h-8">
                 <div className="w-1.5 h-3 bg-white rounded-full animate-bounce [animation-delay:0.1s]"></div>
-                <div className="w-1.5 h-6 bg-white rounded-full animate-bounce [animation-delay:0.25s]"></div>
+                <div className="w-1.5 h-7 bg-white rounded-full animate-bounce [animation-delay:0.25s]"></div>
                 <div className="w-1.5 h-5 bg-white rounded-full animate-bounce [animation-delay:0.4s]"></div>
-                <div className="w-1.5 h-6 bg-white rounded-full animate-bounce [animation-delay:0.15s]"></div>
+                <div className="w-1.5 h-7 bg-white rounded-full animate-bounce [animation-delay:0.15s]"></div>
                 <div className="w-1.5 h-3 bg-white rounded-full animate-bounce [animation-delay:0.35s]"></div>
               </div>
             ) : isListening ? (
               <>
-                <Mic size={32} className="text-white animate-pulse" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-200 mt-1">À L'ÉCOUTE</span>
+                <Mic size={36} className="text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)] animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-white drop-shadow-[0_0_6px_rgba(6,182,212,0.8)] mt-1.5">
+                  {uiTexts.listeningBtn}
+                </span>
               </>
             ) : (
               <>
-                <Mic size={32} className="text-purple-400 hover:text-white transition-colors" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 mt-1">TOUCHER</span>
+                <Mic size={36} className="text-cyan-300 hover:text-white transition-colors drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-cyan-300 mt-1.5">
+                  {uiTexts.touchBtn}
+                </span>
               </>
             )}
           </button>
         </div>
 
-        {/* STATUS TITLE */}
-        <div className="text-center space-y-0.5 shrink-0">
+        {/* STATUS TITLE UNDER ORB */}
+        <div className="text-center space-y-1 shrink-0 max-w-xs px-2">
           <p className="text-xs sm:text-sm font-semibold text-white tracking-wide">
             {isAiSpeaking 
-              ? 'Le coach vous répond...' 
+              ? uiTexts.speakingPrompt
               : isListening 
-              ? 'Dites ce que vous voulez travailler...' 
+              ? uiTexts.listeningPrompt
               : COACH_TITLE_PROMPTS[language] || COACH_TITLE_PROMPTS[Language.EN]}
           </p>
         </div>
 
-        {/* LIVE TRANSCRIPTS & CHAT HISTORY */}
-        <div className="w-full space-y-2.5 flex-1 min-h-[90px] flex flex-col justify-end">
-          {/* User speech or text message */}
-          {(currentTranscript || lastUserMessage) && (
-            <div className="flex justify-end w-full animate-fadeIn">
-              <div className="max-w-[90%] rounded-2xl rounded-br-none px-4 py-2.5 bg-purple-900/60 border border-purple-500/40 text-purple-100 text-xs sm:text-sm leading-relaxed shadow-lg flex items-center justify-between gap-3">
-                <div>
-                  <span className="text-[8px] uppercase font-black text-purple-300 block">VOUS</span>
-                  <p className="break-words">« {currentTranscript || lastUserMessage?.text} »</p>
-                </div>
-                {currentTranscript && (
-                  <button
-                    type="button"
-                    onClick={() => handleUserMessage(currentTranscript)}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-black uppercase tracking-wider shrink-0"
-                  >
-                    Valider
-                  </button>
-                )}
-              </div>
+        {/* LIVE SPOKEN TRANSCRIPTION & AI FEEDBACK IN CENTER */}
+        <div className="w-full max-w-md min-h-[50px] flex flex-col items-center justify-center text-center px-4">
+          {currentTranscript && (
+            <div className="animate-fadeIn px-4 py-2.5 rounded-2xl bg-cyan-950/80 border border-cyan-500/50 text-cyan-200 text-xs sm:text-sm shadow-lg">
+              <span className="text-[8px] font-black uppercase text-cyan-400 block mb-0.5">{uiTexts.you}</span>
+              <p className="font-medium italic">« {currentTranscript} »</p>
             </div>
           )}
 
-          {/* Coach thinking loader */}
           {isThinking && (
-            <div className="flex justify-start w-full animate-fadeIn">
-              <div className="rounded-2xl rounded-bl-none px-4 py-2.5 bg-zinc-900 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2">
-                <Loader2 size={14} className="animate-spin text-purple-400" />
-                <span className="animate-pulse">Le coach analyse avec Gemini 2.5...</span>
-              </div>
+            <div className="animate-fadeIn flex items-center gap-2 text-cyan-400 text-xs py-2">
+              <Loader2 size={16} className="animate-spin text-cyan-400" />
+              <span className="animate-pulse">{uiTexts.thinking}</span>
             </div>
           )}
 
-          {/* Coach spoken answer */}
-          {lastAssistantMessage && !isThinking && (
-            <div className="flex justify-start w-full animate-fadeIn">
-              <div className="max-w-[92%] rounded-2xl rounded-bl-none px-4 py-3 bg-zinc-900/90 border border-purple-500/40 text-zinc-100 text-xs sm:text-sm leading-relaxed shadow-lg space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <Bot size={13} className="text-purple-400" />
-                  <span className="text-[9px] uppercase font-black text-purple-400">COACH IA FIT-4RCE X</span>
-                </div>
-                <p className="break-words whitespace-pre-wrap">{lastAssistantMessage.text}</p>
+          {lastAssistantMessage && !isThinking && !currentTranscript && (
+            <div className="animate-fadeIn px-4 py-3 rounded-2xl bg-zinc-900/90 border border-cyan-500/40 text-zinc-100 text-xs sm:text-sm leading-relaxed max-w-sm shadow-lg">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Bot size={13} className="text-cyan-400" />
+                <span className="text-[9px] uppercase font-black text-cyan-400">{uiTexts.coachTitle}</span>
               </div>
+              <p className="break-words">{lastAssistantMessage.text}</p>
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
-        {/* QUICK SUGGESTION PILLS */}
-        <div className="w-full flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 shrink-0">
+        {/* QUICK SUGGESTION PILLS AT BOTTOM */}
+        <div className="w-full flex items-center justify-center gap-2 flex-wrap pt-2 shrink-0">
           {quickOptions.map((opt, i) => (
             <button
               key={i}
               type="button"
               onClick={() => handleUserMessage(opt)}
-              className="px-3 py-1.5 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-purple-500/50 text-[10px] font-bold text-gray-300 hover:text-white whitespace-nowrap transition-all shrink-0 active:scale-95"
+              className="px-3.5 py-1.5 rounded-full bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-700 hover:border-cyan-500/50 text-[10px] sm:text-xs font-bold text-gray-300 hover:text-white transition-all active:scale-95 shadow-md"
             >
               {opt}
             </button>
@@ -629,27 +734,8 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         </div>
       </div>
 
-      {/* BOTTOM INPUT BAR: BOTH VOICE AND TEXT WORK SEAMLESSLY */}
-      <div className="w-full max-w-lg p-3 bg-neutral-950 border-t border-white/10 shrink-0">
-        <form onSubmit={handleTextSubmit} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-            placeholder="Écrivez ou dites vos souhaits d'exercices..."
-            className="flex-1 bg-neutral-900 border border-neutral-800 focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none transition-all"
-          />
-
-          <button
-            type="submit"
-            disabled={!textInput.trim() || isThinking}
-            className="px-3.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-bold text-xs flex items-center justify-center transition-all shrink-0 shadow-lg shadow-purple-900/30"
-            title="Envoyer au coach"
-          >
-            <Send size={14} />
-          </button>
-        </form>
-      </div>
+      {/* FOOTER PADDING */}
+      <div className="w-full h-4 shrink-0" />
     </div>
   );
 };
