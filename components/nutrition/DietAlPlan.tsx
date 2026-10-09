@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../../hooks/useApp.ts';
 import { Apple, Bookmark, RefreshCw, Bell, ChevronLeft, Sparkles } from 'lucide-react';
 import { generateDietPlan } from '../../services/aiService.ts';
@@ -140,13 +140,15 @@ const DietAlPlan: React.FC = () => {
         ];
     };
 
+    const hasInitializedRef = useRef(false);
     // Ensure we always have a plan loaded so the screen is NEVER blank
     useEffect(() => {
-        if (!dietPlan || !Array.isArray(dietPlan) || dietPlan.length === 0) {
+        if (!hasInitializedRef.current && (!dietPlan || !Array.isArray(dietPlan) || dietPlan.length === 0)) {
+            hasInitializedRef.current = true;
             const defaultPlan = getStaticDefaultPlan();
             setDietPlan(defaultPlan);
         }
-    }, [language]);
+    }, [language, setDietPlan]);
 
     const activePlan = useMemo((): MealPlanSection[] => {
         let rawMeals: any[] | null = null;

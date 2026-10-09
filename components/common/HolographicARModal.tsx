@@ -722,8 +722,19 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
     setIsTriggeringTVCast(true);
     try {
       const res = await launchNativeTVMirroring({
-        onConnected: () => {
-          setConnectedTvDevice(translate('ar.wireless_tv_title'));
+        onConnected: (detectedName?: string) => {
+          const finalName = detectedName || 'Écran connecté';
+          setConnectedTvDevice(finalName);
+          setDiscoveredDevices(prev => {
+            if (prev.some(d => d.name === finalName)) return prev;
+            return [{
+              id: `dev-${Date.now()}`,
+              name: finalName,
+              type: 'smart_tv',
+              protocol: 'Sans fil actif',
+              resolution: 'Connecté'
+            }, ...prev];
+          });
           setWallProjectionStyle('pure_cinema');
           setShowProjectionConnectModal(false);
           toggleFullscreen();
@@ -733,7 +744,18 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
         }
       });
       if (res.success) {
-        setConnectedTvDevice(translate('ar.wireless_tv_title'));
+        const finalName = res.deviceName || 'Écran connecté';
+        setConnectedTvDevice(finalName);
+        setDiscoveredDevices(prev => {
+          if (prev.some(d => d.name === finalName)) return prev;
+          return [{
+            id: `dev-${Date.now()}`,
+            name: finalName,
+            type: 'smart_tv',
+            protocol: 'Sans fil actif',
+            resolution: 'Connecté'
+          }, ...prev];
+        });
         setWallProjectionStyle('pure_cinema');
         setShowProjectionConnectModal(false);
       }
@@ -747,19 +769,11 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
   const handleScanDevices = async () => {
     setIsScanningDevices(true);
     try {
-      const res = await fetch('/api/scan-network-devices');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.devices) && data.devices.length > 0) {
-          setDiscoveredDevices(data.devices);
-        }
-      }
+      await handleStartTVCast();
     } catch (e) {
       console.debug('Scan error:', e);
     } finally {
-      setTimeout(() => {
-        setIsScanningDevices(false);
-      }, 700);
+      setIsScanningDevices(false);
     }
   };
 
@@ -767,8 +781,8 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
     setIsTriggeringTVCast(true);
     try {
       const res = await launchNativeTVMirroring({
-        onConnected: () => {
-          setConnectedTvDevice(device.name);
+        onConnected: (detectedName?: string) => {
+          setConnectedTvDevice(detectedName || device.name);
           setWallProjectionStyle('pure_cinema');
           setShowProjectionConnectModal(false);
           toggleFullscreen();
@@ -778,7 +792,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
         }
       });
       if (res.success) {
-        setConnectedTvDevice(device.name);
+        setConnectedTvDevice(res.deviceName || device.name);
         setWallProjectionStyle('pure_cinema');
         setShowProjectionConnectModal(false);
       }
@@ -1672,7 +1686,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
                         type="text" 
                         value={customDeviceInput} 
                         onChange={(e) => setCustomDeviceInput(e.target.value)}
-                        placeholder="Ex: Samsung QLED Salon, 192.168.1.50..."
+                        placeholder="Ex: Mon écran salon, 192.168.1.50..."
                         className="flex-1 bg-black px-2.5 py-1.5 rounded-lg text-xs text-white border border-white/10 focus:border-amber-400 focus:outline-none"
                       />
                       <button type="submit" className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-[10px] font-black rounded-lg uppercase">
@@ -1681,51 +1695,63 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
                     </form>
                   )}
 
-                  <div className="space-y-2 max-h-52 overflow-y-auto custom-scrollbar pr-0.5">
-                    {discoveredDevices.map((dev) => {
-                      const isCurrent = connectedTvDevice === dev.name;
-                      return (
-                        <div 
-                          key={dev.id}
-                          className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
-                            isCurrent 
-                              ? 'bg-emerald-950/60 border-emerald-500/70 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
-                              : 'bg-neutral-950/80 border-white/10 hover:border-amber-500/40'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
+                  {discoveredDevices.length === 0 ? (
+                    <div className="p-4 rounded-2xl bg-neutral-950/60 border border-white/5 text-center space-y-1.5">
+                      <Tv className="w-6 h-6 text-gray-500 mx-auto" />
+                      <p className="text-xs text-gray-300 font-medium">
+                        Aucun écran connecté pour le moment
+                      </p>
+                      <p className="text-[10px] text-gray-500">
+                        Cliquez sur « Lancer la diffusion » ci-dessous pour choisir votre écran via le système.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-52 overflow-y-auto custom-scrollbar pr-0.5">
+                      {discoveredDevices.map((dev) => {
+                        const isCurrent = connectedTvDevice === dev.name;
+                        return (
+                          <div 
+                            key={dev.id}
+                            className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
                               isCurrent 
-                                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' 
-                                : 'bg-neutral-900 border-white/10 text-amber-400'
-                            }`}>
-                              {dev.type === 'chromecast' ? <Cast size={18} /> : dev.type === 'projector' ? <Monitor size={18} /> : <Tv size={18} />}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-bold text-white text-xs truncate">{dev.name}</p>
-                              <div className="flex items-center gap-1.5 text-[9px] text-gray-400 truncate">
-                                <span>{dev.protocol}</span>
-                                {dev.resolution && <span>• {dev.resolution}</span>}
-                              </div>
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleConnectDevice(dev)}
-                            disabled={isTriggeringTVCast}
-                            className={`shrink-0 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 border ${
-                              isCurrent
-                                ? 'bg-emerald-500 text-black border-emerald-400'
-                                : 'bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border-amber-500/40 hover:border-amber-400'
+                                ? 'bg-emerald-950/60 border-emerald-500/70 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                                : 'bg-neutral-950/80 border-white/10 hover:border-amber-500/40'
                             }`}
                           >
-                            {isCurrent ? '✓ Connecté' : translate('ar.connect_device')}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
+                                isCurrent 
+                                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' 
+                                  : 'bg-neutral-900 border-white/10 text-amber-400'
+                              }`}>
+                                {dev.type === 'chromecast' ? <Cast size={18} /> : dev.type === 'projector' ? <Monitor size={18} /> : <Tv size={18} />}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-white text-xs truncate">{dev.name}</p>
+                                <div className="flex items-center gap-1.5 text-[9px] text-gray-400 truncate">
+                                  <span>{dev.protocol}</span>
+                                  {dev.resolution && <span>• {dev.resolution}</span>}
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleConnectDevice(dev)}
+                              disabled={isTriggeringTVCast}
+                              className={`shrink-0 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 border ${
+                                isCurrent
+                                  ? 'bg-emerald-500 text-black border-emerald-400'
+                                  : 'bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border-amber-500/40 hover:border-amber-400'
+                              }`}
+                            >
+                              {isCurrent ? '✓ Connecté' : translate('ar.connect_device')}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* PRIMARY ACTIONS */}

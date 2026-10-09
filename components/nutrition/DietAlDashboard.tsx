@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useApp } from '../../hooks/useApp.ts';
 import { Share2, Flame, Watch, ArrowUpRight, Sparkles, PlusCircle } from 'lucide-react';
 import { generateDietPlan } from '../../services/aiService.ts';
@@ -97,24 +97,28 @@ const DietAlDashboard: React.FC = () => {
     const cGoal = 440;
     const fGoal = 80;
 
+    const hasFetchedRef = useRef(false);
+
     useEffect(() => {
         const fetchPlan = async () => {
+            if (hasFetchedRef.current) return;
             if (!dailyMacros && profile && language && planId === 'premium') {
+                hasFetchedRef.current = true;
                 setIsLoading(true);
                 try {
                     const plan = await generateDietPlan(profile, language);
-                    if (plan) {
+                    if (plan && plan.meals) {
                         setDietPlan(plan.meals);
-                        setDailyMacros({
-                            calories: { goal: calorieGoal, current: 0 },
-                            protein: { goal: pGoal, current: 0 },
-                            fat: { goal: fGoal, current: 0 },
-                            carbs: { goal: cGoal, current: 0 },
-                        });
                     }
                 } catch (e) {
                     console.error("Failed to generate diet plan:", e);
                 } finally {
+                    setDailyMacros({
+                        calories: { goal: calorieGoal, current: 0 },
+                        protein: { goal: pGoal, current: 0 },
+                        fat: { goal: fGoal, current: 0 },
+                        carbs: { goal: cGoal, current: 0 },
+                    });
                     setIsLoading(false);
                 }
             }

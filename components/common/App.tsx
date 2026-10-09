@@ -79,7 +79,6 @@ const App: React.FC = () => {
     return (
       <GlobalErrorBoundary>
         <div className="bg-black min-h-screen w-full overflow-y-auto relative">
-          <SensorsPermissionModal />
           {showSignIn ? (
             <SignInScreen onBack={() => setShowSignIn(false)} />
           ) : (

@@ -10,17 +10,18 @@
 export interface CastResult {
   success: boolean;
   method: 'google_cast' | 'presentation_api' | 'display_media' | 'remote_playback' | 'fullscreen' | 'none';
+  deviceName?: string;
   error?: string;
 }
 
 export interface CastOptions {
-  onConnected?: () => void;
+  onConnected?: (deviceName?: string) => void;
   onDisconnected?: () => void;
 }
 
 /**
  * Universal Screen Mirroring (System Native Display Picker)
- * Works across Samsung TVs, LG TVs, PC, Mac, Android, and external monitors.
+ * Works across all operating systems, TVs, PC, Mac, Android, and external monitors.
  */
 export const launchScreenMirroring = async (options?: CastOptions): Promise<CastResult> => {
   if (navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function') {
@@ -34,13 +35,15 @@ export const launchScreenMirroring = async (options?: CastOptions): Promise<Cast
 
       if (stream) {
         const tracks = stream.getVideoTracks();
+        const rawLabel = tracks[0]?.label || '';
+        const deviceName = rawLabel ? rawLabel : 'Écran connecté';
         if (tracks.length > 0) {
           tracks[0].onended = () => {
             options?.onDisconnected?.();
           };
         }
-        options?.onConnected?.();
-        return { success: true, method: 'display_media' };
+        options?.onConnected?.(deviceName);
+        return { success: true, method: 'display_media', deviceName };
       }
     } catch (err: any) {
       if (err?.name === 'NotAllowedError' || err?.name === 'AbortError') {
@@ -53,18 +56,30 @@ export const launchScreenMirroring = async (options?: CastOptions): Promise<Cast
 };
 
 /**
- * Google Cast Web SDK (Chromecast, Google TV, Android TV, Sony TV)
+ * Google Cast Web SDK (Chromecast, Google TV, Android TV, Smart TVs with Cast)
+ * Uses the built-in Default Media Receiver (CC1AD845) which requires NO developer console registration!
  */
 export const launchGoogleCast = async (options?: CastOptions): Promise<CastResult> => {
   try {
     const cast = (window as any).cast;
+    const chrome = (window as any).chrome;
     if (cast && cast.framework) {
       const castContext = cast.framework.CastContext.getInstance();
       if (castContext) {
+        try {
+          const appId = chrome?.cast?.media?.DEFAULT_MEDIA_RECEIVER_APP_ID || 'CC1AD845';
+          castContext.setOptions({
+            receiverApplicationId: appId,
+            autoJoinPolicy: chrome?.cast?.AutoJoinPolicy?.ORIGIN_SCOPED || 'origin_scoped'
+          });
+        } catch (e) {}
+
         const err = await castContext.requestSession();
         if (!err) {
-          options?.onConnected?.();
-          return { success: true, method: 'google_cast' };
+          const session = castContext.getCurrentSession();
+          const deviceName = session?.getCastDevice()?.friendlyName || 'Écran Google Cast';
+          options?.onConnected?.(deviceName);
+          return { success: true, method: 'google_cast', deviceName };
         }
       }
     }
@@ -85,10 +100,11 @@ export const launchGoogleCast = async (options?: CastOptions): Promise<CastResul
       ]);
       const connection = await request.start();
       if (connection) {
+        const deviceName = 'Écran sans fil connecté';
         connection.onclose = () => options?.onDisconnected?.();
         connection.onterminate = () => options?.onDisconnected?.();
-        options?.onConnected?.();
-        return { success: true, method: 'presentation_api' };
+        options?.onConnected?.(deviceName);
+        return { success: true, method: 'presentation_api', deviceName };
       }
     }
   } catch (err: any) {
@@ -98,32 +114,39 @@ export const launchGoogleCast = async (options?: CastOptions): Promise<CastResul
     console.debug('Presentation API bypass:', err);
   }
 
-  return { success: false, method: 'none', error: 'Aucun appareil Google Cast détecté sur ce réseau.' };
+  return { success: false, method: 'none', error: 'Aucun appareil Cast détecté.' };
 };
 
 /**
- * Default TV Mirroring Launcher:
- * Attempts Display Media (Universal Mirroring) or Google Cast depending on availability.
+ * Universal Native TV & Screen Mirroring Launcher:
+ * Triggers the browser and OS native device selector dialog.
  */
 export const launchNativeTVMirroring = async (options?: CastOptions): Promise<CastResult> => {
-  // 1. If getDisplayMedia is available, trigger universal screen mirroring
+  // If Google Cast framework is ready, try Cast first
+  if ((window as any).cast && (window as any).cast.framework) {
+    const castRes = await launchGoogleCast(options);
+    if (castRes.success) return castRes;
+    if (castRes.error === 'Annulé par l’utilisateur') return castRes;
+  }
+
+  // Universal Screen Mirroring (System Display Picker)
   if (navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function') {
     const res = await launchScreenMirroring(options);
     if (res.success) return res;
     if (res.error === 'Sélection annulée par l’utilisateur.') return res;
   }
 
-  // 2. Try Google Cast / Presentation API
+  // Try Presentation API if DisplayMedia wasn't chosen
   const castRes = await launchGoogleCast(options);
   if (castRes.success) return castRes;
   if (castRes.error?.includes('Annulé')) return castRes;
 
-  // 3. Fallback: Fullscreen theater mode
+  // Fallback: Fullscreen theater mode
   try {
     if (document.documentElement.requestFullscreen) {
       await document.documentElement.requestFullscreen();
-      options?.onConnected?.();
-      return { success: true, method: 'fullscreen' };
+      options?.onConnected?.('Plein écran');
+      return { success: true, method: 'fullscreen', deviceName: 'Plein écran' };
     }
   } catch (err) {
     console.debug('Fullscreen fallback error:', err);
