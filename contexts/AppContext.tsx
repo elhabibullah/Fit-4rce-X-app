@@ -105,16 +105,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const [screen, setScreen] = useState<Screen>(Screen.Home);
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('language');
-  const [isAppEntered, setIsAppEntered] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('f4x_profile');
-      if (saved) {
-        const p = JSON.parse(saved);
-        if (p?.onboarding_complete !== false) return true;
-      }
-    } catch {}
-    return true;
-  });
+  // Always start from the very beginning of the journey on every reload as requested
+  const [isAppEntered, setIsAppEntered] = useState<boolean>(false);
   const [currencyInfo, setCurrencyInfo] = useState<CurrencyInfo>(DEFAULT_CURRENCY_INFO);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
@@ -305,8 +297,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [language, setScreen, setSelectedPlan, setIsGeneratingWorkout]);
 
-  // ON MOUNT: LOADING STATUS ONLY
+  // ON MOUNT: LOADING STATUS & FRESH JOURNEY RESET
   useEffect(() => {
+    try {
+      sessionStorage.removeItem('fit4rce_sensors_dismissed');
+      localStorage.removeItem('fit4rce_sensors_consent_v2');
+    } catch {}
     const timer = setTimeout(() => setLoading(false), 2500);
     return () => clearTimeout(timer);
   }, []);

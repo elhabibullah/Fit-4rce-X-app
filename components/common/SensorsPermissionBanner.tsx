@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, MapPin, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Mic, MapPin, Camera, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useApp } from '../../hooks/useApp.ts';
 
 export const SensorsPermissionBanner: React.FC = () => {
   const { translate } = useApp();
   const [micStatus, setMicStatus] = useState<'prompt' | 'granted' | 'denied' | 'unknown'>('unknown');
   const [geoStatus, setGeoStatus] = useState<'prompt' | 'granted' | 'denied' | 'unknown'>('unknown');
+  const [camStatus, setCamStatus] = useState<'prompt' | 'granted' | 'denied' | 'unknown'>('unknown');
   const [isRequesting, setIsRequesting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -23,6 +24,12 @@ export const SensorsPermissionBanner: React.FC = () => {
           setGeoStatus(geoPerm.state as any);
           geoPerm.onchange = () => setGeoStatus(geoPerm.state as any);
         } catch (e) {}
+
+        try {
+          const camPerm = await navigator.permissions.query({ name: 'camera' as any });
+          setCamStatus(camPerm.state as any);
+          camPerm.onchange = () => setCamStatus(camPerm.state as any);
+        } catch (e) {}
       }
     } catch (e) {}
   };
@@ -36,8 +43,9 @@ export const SensorsPermissionBanner: React.FC = () => {
     setFeedback(null);
     let micOk = false;
     let geoOk = false;
+    let camOk = false;
 
-    // 1. Request Microphone
+    // 1. Microphone request
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -46,38 +54,51 @@ export const SensorsPermissionBanner: React.FC = () => {
         micOk = true;
       }
     } catch (err) {
-      console.warn("Mic permission error:", err);
       setMicStatus('denied');
     }
 
-    // 2. Request Geolocation
+    // 2. Camera request
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(t => t.stop());
+        setCamStatus('granted');
+        camOk = true;
+      }
+    } catch (err) {
+      setCamStatus('denied');
+    }
+
+    // 3. Geolocation request with safe 2-second timeout
     try {
       if (navigator.geolocation) {
         await new Promise<void>((resolve) => {
+          const timer = setTimeout(() => resolve(), 2000);
           navigator.geolocation.getCurrentPosition(
             () => {
+              clearTimeout(timer);
               setGeoStatus('granted');
               geoOk = true;
               resolve();
             },
             () => {
+              clearTimeout(timer);
               setGeoStatus('denied');
               resolve();
             },
-            { timeout: 8000, enableHighAccuracy: true }
+            { timeout: 2000, enableHighAccuracy: true, maximumAge: 60000 }
           );
         });
       }
     } catch (err) {
-      console.warn("Geo permission error:", err);
       setGeoStatus('denied');
     }
 
     setIsRequesting(false);
-    if (micOk && geoOk) {
+    if (micOk && geoOk && camOk) {
       setFeedback(translate('sensors.feedback_all'));
-    } else if (micOk) {
-      setFeedback(translate('sensors.feedback_mic_only'));
+    } else if (micOk || geoOk || camOk) {
+      setFeedback("Capteurs activés avec succès.");
     } else {
       setFeedback(translate('sensors.feedback_none'));
     }
@@ -99,15 +120,20 @@ export const SensorsPermissionBanner: React.FC = () => {
                 {isAllGranted ? translate('sensors.ready') : translate('sensors.required')}
               </span>
             </div>
-            <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
+            <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400 flex-wrap">
               <span className="flex items-center gap-1">
                 <Mic size={10} className={micStatus === 'granted' ? 'text-green-400' : 'text-yellow-400'} />
-                <span>{translate('sensors.mic')}: {micStatus === 'granted' ? translate('sensors.granted') : translate('sensors.pending')}</span>
+                <span>Micro: {micStatus === 'granted' ? 'OK' : 'Attente'}</span>
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <MapPin size={10} className={geoStatus === 'granted' ? 'text-green-400' : 'text-yellow-400'} />
-                <span>{translate('sensors.gps')}: {geoStatus === 'granted' ? translate('sensors.granted') : translate('sensors.pending')}</span>
+                <span>GPS: {geoStatus === 'granted' ? 'OK' : 'Attente'}</span>
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Camera size={10} className={camStatus === 'granted' ? 'text-green-400' : 'text-yellow-400'} />
+                <span>Vision AR: {camStatus === 'granted' ? 'OK' : 'Attente'}</span>
               </span>
             </div>
           </div>
@@ -132,3 +158,5 @@ export const SensorsPermissionBanner: React.FC = () => {
     </div>
   );
 };
+
+export default SensorsPermissionBanner;
