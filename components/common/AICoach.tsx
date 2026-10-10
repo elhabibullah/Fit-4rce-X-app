@@ -329,7 +329,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     startWorkoutFromVoice(params);
   }, [cleanupAudioHardware, startWorkoutFromVoice]);
 
-  // Spoken feedback via SpeechSynthesis
+  // Spoken feedback via SpeechSynthesis with high-quality natural voice selection
   const speakVoice = useCallback((text: string, onFinish?: () => void) => {
     stopRecognition();
 
@@ -338,8 +338,25 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = speechLang;
-        utterance.rate = 1.05;
+        utterance.rate = 1.0;
         utterance.pitch = 1.0;
+
+        // Pick the most natural, human-like voice available for the language
+        const availableVoices = window.speechSynthesis.getVoices();
+        if (availableVoices && availableVoices.length > 0) {
+          const langPrefix = speechLang.slice(0, 2).toLowerCase();
+          const langMatch = availableVoices.filter(v => v.lang.toLowerCase().replace('_', '-').startsWith(langPrefix));
+          
+          // Prioritize high-definition natural Google / Apple / Neural voices over robotic standard synth
+          const naturalVoice = langMatch.find(v => 
+            /natural|neural|premium|enhanced|google|siri/i.test(v.name)
+          ) || langMatch.find(v => !v.localService) || langMatch[0];
+
+          if (naturalVoice) {
+            utterance.voice = naturalVoice;
+          }
+        }
+
         utterance.onstart = () => {
           setIsAiSpeaking(true);
         };
@@ -463,9 +480,9 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = speechLang;
-      // On Android Chrome continuous=false prevents hangs and enables responsive speech
-      const isMobileDevice = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      recognition.continuous = !isMobileDevice;
+      // Note: On Chrome for Android, continuous recognition can prematurely close with 'no-speech'
+      // We set continuous = true, and auto-restart on normal end if still in listening mode
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
@@ -504,19 +521,44 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       };
 
       recognition.onerror = (event: any) => {
-        console.warn('SpeechRecognition status:', event?.error);
-        isListeningRef.current = false;
-        setIsListening(false);
+        const errType = event?.error;
+        console.warn('SpeechRecognition status:', errType);
+        // 'no-speech' is non-fatal: user simply didn't talk during window
+        if (errType === 'no-speech') {
+          return;
+        }
+        if (errType !== 'aborted') {
+          isListeningRef.current = false;
+          setIsListening(false);
+        }
       };
 
       recognition.onend = () => {
-        isListeningRef.current = false;
-        setIsListening(false);
         // If there was text waiting to be processed when silence ended, send it immediately
         if (currentTranscriptRef.current && currentTranscriptRef.current.trim()) {
           const pending = currentTranscriptRef.current.trim();
           currentTranscriptRef.current = '';
           handleUserMessageRef.current(pending);
+          isListeningRef.current = false;
+          setIsListening(false);
+          return;
+        }
+
+        // On mobile Chrome, recognition can fire onend after pauses. If user still wants listening and coach is not speaking, seamlessly re-engage
+        if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
+          setTimeout(() => {
+            if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
+              try {
+                recognition.start();
+              } catch (restartErr) {
+                // If start fails, fallback to full startRecognition
+                startRecognition();
+              }
+            }
+          }, 150);
+        } else {
+          isListeningRef.current = false;
+          setIsListening(false);
         }
       };
 
@@ -533,7 +575,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
   startRecognitionRef.current = startRecognition;
 
-  // Click on the turquoise orb: direct user gesture triggers mic permission + toggles or validates immediately
+  // Click on the turquoise orb: direct user gesture triggers mic permission & starts recognition
   const toggleListening = async () => {
     if (isListening) {
       stopRecognition();
@@ -543,11 +585,16 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         handleUserMessage(text);
       }
     } else {
-      // Direct user click: prompt browser for microphone permission
+      // Direct user click: prompt browser for microphone permission without stopping stream before recognition connects
       try {
         if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          stream.getTracks().forEach(t => t.stop());
+          // Do not instantly cut the hardware track before starting recognition on mobile devices
+          setTimeout(() => {
+            try {
+              stream.getTracks().forEach(t => t.stop());
+            } catch (trackErr) {}
+          }, 1500);
         }
       } catch (e) {
         console.warn("User mic activation prompt:", e);

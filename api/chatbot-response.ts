@@ -150,13 +150,33 @@ export default async function handler(req: any, res: any) {
     try {
       let contents: any = cleanMsg;
       if (Array.isArray(history) && history.length > 0) {
-        contents = [
-          ...history.map((h: any) => ({
-            role: h.role === 'user' ? 'user' : 'model',
-            parts: [{ text: h.text }]
-          })),
-          { role: 'user', parts: [{ text: cleanMsg }] }
-        ];
+        const rawTurns = history.map((h: any) => ({
+          role: (h.role === 'user' ? 'user' : 'model') as 'user' | 'model',
+          parts: [{ text: String(h.text || '') }]
+        }));
+
+        // Gemini multi-turn conversation must start with a 'user' turn
+        const firstUserIdx = rawTurns.findIndex(t => t.role === 'user');
+        const validHistory = firstUserIdx !== -1 ? rawTurns.slice(firstUserIdx) : [];
+
+        // Collapse consecutive turns of same role into single turns
+        const alternating: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+        for (const turn of validHistory) {
+          if (alternating.length > 0 && alternating[alternating.length - 1].role === turn.role) {
+            alternating[alternating.length - 1].parts[0].text += '\n' + turn.parts[0].text;
+          } else {
+            alternating.push(turn);
+          }
+        }
+
+        // Append latest clean user message
+        if (alternating.length > 0 && alternating[alternating.length - 1].role === 'user') {
+          alternating[alternating.length - 1].parts[0].text += '\n' + cleanMsg;
+        } else {
+          alternating.push({ role: 'user', parts: [{ text: cleanMsg }] });
+        }
+
+        contents = alternating;
       }
 
       const response = await ai.models.generateContent({
