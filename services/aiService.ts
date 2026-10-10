@@ -219,24 +219,43 @@ export const generateWorkoutWithOpenAI = generateWorkout;
 export const generateWorkoutWithAnthropic = generateWorkout;
 export const generateWorkoutWithPerplexity = generateWorkout;
 
-export const getChatbotResponse = async (msg: string, language: string = 'en', history?: Array<{ role: string; text: string }>) => {
+export const getVoiceCoachResponse = async (
+    query: { msg?: string; audioBase64?: string; mimeType?: string },
+    language: string = 'en',
+    history?: Array<{ role: string; text: string }>
+): Promise<{ text: string; audio: string | null }> => {
     try {
         const response = await fetch('/api/chatbot-response', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ msg, language, history })
+            body: JSON.stringify({
+                msg: query.msg,
+                audioBase64: query.audioBase64,
+                mimeType: query.mimeType,
+                language,
+                history
+            })
         });
         const contentType = response.headers.get('content-type') || '';
         if (response.ok && contentType.includes('application/json')) {
             const data = await response.json();
-            if (data && typeof data.text === 'string' && data.text.trim()) {
-                return data.text.trim();
+            if (data && typeof data.text === 'string') {
+                return { text: data.text.trim(), audio: data.audio || null };
             }
         }
     } catch (e) {
-        console.warn("API chatbot-response offline or unreachable, switching to local coach engine:", e);
+        console.warn("API chatbot-response unreachable, switching to fallback:", e);
     }
+    const fallbackText = getSmartFallbackReply(query.msg || 'hello', language);
+    return { text: fallbackText, audio: null };
+};
 
+export const getChatbotResponse = async (msg: string, language: string = 'en', history?: Array<{ role: string; text: string }>) => {
+    const res = await getVoiceCoachResponse({ msg }, language, history);
+    return res.text;
+};
+
+const getSmartFallbackReply = (msg: string, language: string): string => {
     // High-level client-side conversational AI intelligence:
     const l = (language || 'en').toLowerCase().slice(0, 2);
     const lower = (msg || '').toLowerCase();

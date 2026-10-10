@@ -673,73 +673,140 @@ app.get('/api/scan-network-devices', async (req: express.Request, res: express.R
 
 app.post('/api/chatbot-response', async (req: express.Request, res: express.Response) => {
   try {
-    const { msg, language, history } = req.body;
-    const targetLang = language || 'en';
-    
+    const { msg, language, history, audioBase64, mimeType } = req.body;
+    const targetLang = (language || 'en').toLowerCase().slice(0, 2);
+    const cleanMsg = (msg || '').trim();
+
+    // Special initial greeting
+    if (cleanMsg === '__GREETING__') {
+      const greetings: Record<string, string> = {
+        fr: "Bonjour ! Comment allez-vous aujourd'hui ? Comment puis-je vous aider ?",
+        en: "Hi, how are you today? How can I help?",
+        es: "¡Hola! ¿Cómo estás hoy? ¿Cómo puedo ayudarte?",
+        ar: "مرحباً، كيف حالك اليوم؟ كيف يمكنني مساعدتك؟",
+        pt: "Olá, como você está hoje? Como posso ajudar?",
+        ja: "こんにちは！今日の調子はいかがですか？どのようなサポートが必要ですか？",
+        zh: "你好！今天感觉怎么样？我能为你提供什么帮助？",
+        ru: "Привет! Как вы себя чувствуете сегодня? Чем я могу помочь?"
+      };
+      const greetText = greetings[targetLang] || greetings.en;
+
+      if (geminiApiKey) {
+        try {
+          const ttsRes = await ai.models.generateContent({
+            model: 'gemini-3.8-flash-lite-tts',
+            contents: [{ role: 'user', parts: [{ text: greetText }] }],
+            config: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }
+              }
+            }
+          });
+          const audio = ttsRes.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+          res.json({ text: greetText, audio });
+          return;
+        } catch (e) {
+          console.warn('Greeting TTS error in server.ts:', e);
+        }
+      }
+      res.json({ text: greetText, audio: null });
+      return;
+    }
+
     if (geminiApiKey) {
       try {
-        let contents: any = msg;
-        if (Array.isArray(history) && history.length > 0) {
-          const rawTurns = history.map((h: any) => ({
-            role: (h.role === 'user' ? 'user' : 'model') as 'user' | 'model',
-            parts: [{ text: String(h.text || '') }]
-          }));
+        let contents: any;
 
-          // Multi-turn Gemini MUST begin with role 'user'
-          const firstUserIndex = rawTurns.findIndex(t => t.role === 'user');
-          const validHistory = firstUserIndex !== -1 ? rawTurns.slice(firstUserIndex) : [];
-
-          // Collapse consecutive identical roles
-          const alternating: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
-          for (const turn of validHistory) {
-            if (alternating.length > 0 && alternating[alternating.length - 1].role === turn.role) {
-              alternating[alternating.length - 1].parts[0].text += '\n' + turn.parts[0].text;
-            } else {
-              alternating.push(turn);
+        if (audioBase64) {
+          contents = [
+            {
+              role: 'user',
+              parts: [
+                { inlineData: { mimeType: mimeType || 'audio/webm', data: audioBase64 } },
+                { text: `Listen carefully to my voice. Respond as my personal female fitness coach in the language: ${targetLang}. Keep your answer motivating, direct and under 3 spoken sentences.` }
+              ]
             }
-          }
+          ];
+        } else {
+          contents = cleanMsg;
+          if (Array.isArray(history) && history.length > 0) {
+            const rawTurns = history.map((h: any) => ({
+              role: (h.role === 'user' ? 'user' : 'model') as 'user' | 'model',
+              parts: [{ text: String(h.text || '') }]
+            }));
 
-          // Append current user message
-          if (alternating.length > 0 && alternating[alternating.length - 1].role === 'user') {
-            alternating[alternating.length - 1].parts[0].text += '\n' + msg;
-          } else {
-            alternating.push({ role: 'user', parts: [{ text: msg }] });
-          }
+            // Multi-turn Gemini MUST begin with role 'user'
+            const firstUserIndex = rawTurns.findIndex(t => t.role === 'user');
+            const validHistory = firstUserIndex !== -1 ? rawTurns.slice(firstUserIndex) : [];
 
-          contents = alternating;
+            // Collapse consecutive identical roles
+            const alternating: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+            for (const turn of validHistory) {
+              if (alternating.length > 0 && alternating[alternating.length - 1].role === turn.role) {
+                alternating[alternating.length - 1].parts[0].text += '\n' + turn.parts[0].text;
+              } else {
+                alternating.push(turn);
+              }
+            }
+
+            // Append current user message
+            if (alternating.length > 0 && alternating[alternating.length - 1].role === 'user') {
+              alternating[alternating.length - 1].parts[0].text += '\n' + cleanMsg;
+            } else {
+              alternating.push({ role: 'user', parts: [{ text: cleanMsg }] });
+            }
+
+            contents = alternating;
+          }
         }
 
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
           contents: contents,
           config: {
-            systemInstruction: `You are Fit-4rce X AI Holographic Coach, a passionate, energetic, and empathetic personal fitness trainer speaking live with your athlete.
+            systemInstruction: `You are Fit Force AI Coach, an inspiring, energetic, empathetic personal female fitness coach speaking live with your athlete.
 Tone & Persona:
 - Talk like a real, charismatic fitness coach in person: friendly, positive, motivating, and completely natural (avoid robotic formulas, rigid checklists, or cold synthetic phrasing).
-- Keep your speech dynamic, spontaneous, and direct (2-3 natural spoken sentences max per turn). No markdown formatting, no bullet points, no asterisks, since your words are spoken aloud by text-to-speech.
+- Keep your speech dynamic, spontaneous, and direct (2-3 natural spoken sentences max per turn). No markdown formatting, no bullet points, no asterisks, since your words are spoken aloud by Gemini audio.
 - Guide the athlete smoothly: ask about their physical feeling, their training level, gear (bodyweight, dumbbells, machines), or target muscles.
 - When the athlete is ready to start (or says "let's go", "lance", "prêt", "ready", "start", "vamos", "c'est bon"), enthusiastically cheer them on and end your message with "[GENERATE_WORKOUT]" so the 3D workout loads immediately.
 
-CRITICAL MANDATE: You MUST reply entirely in the requested language code: "${targetLang}".
-- 'fr' -> French
-- 'es' -> Spanish
-- 'ar' -> Arabic
-- 'pt' -> Portuguese
-- 'ja' -> Japanese
-- 'zh' -> Chinese
-- 'ru' -> Russian
-- 'en' -> English
-Never mix languages or default to English/French unless requested.`
+CRITICAL MANDATE: You MUST reply entirely in the requested language code: "${targetLang}". Never mix languages.`
           }
         });
-        res.json({ text: response.text || "OK" });
+
+        const replyText = response.text || "OK";
+
+        // Generate natural human female voice audio via Gemini TTS
+        let audio: string | null = null;
+        try {
+          const spokenScript = replyText.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
+          if (spokenScript) {
+            const ttsResponse = await ai.models.generateContent({
+              model: 'gemini-3.8-flash-lite-tts',
+              contents: [{ role: 'user', parts: [{ text: spokenScript }] }],
+              config: {
+                responseModalities: ['AUDIO'],
+                speechConfig: {
+                  voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }
+                }
+              }
+            });
+            audio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+          }
+        } catch (ttsErr) {
+          console.warn('Server Gemini TTS error:', ttsErr);
+        }
+
+        res.json({ text: replyText, audio });
         return;
       } catch (geminiErr) {
         console.warn("Gemini chatbot error:", geminiErr);
       }
     }
 
-    const isReadyUser = /prêt|pret|lance|start|ready|go|vamos|listo|جاهز|يلا|開始|准备|готов/i.test(msg || '');
+    const isReadyUser = /prêt|pret|lance|start|ready|go|vamos|listo|جاهز|يلا|開始|准备|готов/i.test(cleanMsg || '');
     const fallbacks: Record<string, string> = {
       fr: isReadyUser ? "C'est parti ! Je génère votre séance avec le coach 3D. Donnez le meilleur de vous-même ! [GENERATE_WORKOUT]" : "Bien reçu ! Je prépare vos exercices sur mesure.",
       es: isReadyUser ? "¡Vamos con todo! Preparando tu entrenamiento 3D ahora mismo. [GENERATE_WORKOUT]" : "¡Perfecto! Estoy preparando tus ejercicios personalizados.",
@@ -751,7 +818,7 @@ Never mix languages or default to English/French unless requested.`
       en: isReadyUser ? "Awesome! Generating your custom 3D workout now. Let's crush this! [GENERATE_WORKOUT]" : "Awesome! I'm preparing your custom exercises right now."
     };
     const reply = fallbacks[targetLang] || fallbacks.en;
-    res.json({ text: reply });
+    res.json({ text: reply, audio: null });
   } catch (error: any) {
     console.error("API error chatbot-response:", error);
     res.status(500).json({ error: error.message });

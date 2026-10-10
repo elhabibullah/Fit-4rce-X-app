@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Bot, Mic, MicOff, Volume2, X, Loader2 } from 'lucide-react';
 import { useApp } from '../../hooks/useApp.ts';
 import { Language, WorkoutGenerationParams } from '../../types.ts';
-import { getChatbotResponse } from '../../services/aiService.ts';
+import { getVoiceCoachResponse } from '../../services/aiService.ts';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -67,14 +67,14 @@ const QUICK_PROMPTS: Record<Language, string[]> = {
 };
 
 const COACH_TITLE_PROMPTS: Record<Language, string> = {
-  [Language.FR]: "Parlez ou touchez le micro pour lancer votre séance sur mesure",
-  [Language.ES]: "Habla o toca el micrófono para iniciar tu entrenamiento a medida",
-  [Language.AR]: "تحدث أو اضغط على الميكروفون لبدء تمرينك المخصص",
-  [Language.PT]: "Fale ou toque no microfone para iniciar seu treino personalizado",
-  [Language.JA]: "話すかマイクをタップして専用ワークアウトを開始",
-  [Language.ZH]: "说话或点击麦克风以开始定制训练",
-  [Language.RU]: "Говорите или нажмите на микрофон, чтобы начать тренировку",
-  [Language.EN]: "Speak or tap the microphone to generate your custom workout"
+  [Language.FR]: "Parlez ou touchez l'orbe pour dialoguer avec votre coach",
+  [Language.ES]: "Habla o toca el orbe para dialogar con tu entrenadora",
+  [Language.AR]: "تحدث أو المس الدائرة لبدء الحوار مع مدربتك",
+  [Language.PT]: "Fale ou toque na esfera para conversar com sua treinadora",
+  [Language.JA]: "話すかオーブをタップしてコーチと対話",
+  [Language.ZH]: "说话或点击光球以与教练对话",
+  [Language.RU]: "Говорите или нажмите на сферу для диалога с тренером",
+  [Language.EN]: "Speak or tap the orb to talk with your coach"
 };
 
 const COACH_UI_STRINGS: Record<Language, {
@@ -100,8 +100,8 @@ const COACH_UI_STRINGS: Record<Language, {
     speakingPrompt: "Le coach vous répond...",
     listeningPrompt: "Dites ce que vous voulez travailler...",
     you: "VOUS",
-    thinking: "Le coach analyse avec Gemini 2.5...",
-    coachTitle: "COACH IA FIT-4RCE X",
+    thinking: "Le coach analyse avec Gemini...",
+    coachTitle: "COACH IA FIT FORCE",
     muteTitle: "Voix coupée",
     unmuteTitle: "Voix active"
   },
@@ -114,50 +114,50 @@ const COACH_UI_STRINGS: Record<Language, {
     speakingPrompt: "Coach is replying...",
     listeningPrompt: "Tell me what you'd like to train...",
     you: "YOU",
-    thinking: "Coach is analyzing with Gemini 2.5...",
-    coachTitle: "FIT-4RCE X AI COACH",
+    thinking: "Coach is analyzing with Gemini...",
+    coachTitle: "FIT FORCE AI COACH",
     muteTitle: "Muted",
     unmuteTitle: "Voice active"
   },
   [Language.ES]: {
-    speakingStatus: "Entrenador hablando...",
+    speakingStatus: "Entrenadora hablando...",
     listeningStatus: "Micrófono activo (Habla ahora)",
     idleStatus: "En espera...",
     listeningBtn: "ESCUCHANDO",
     touchBtn: "TOCAR",
-    speakingPrompt: "El entrenador te responde...",
+    speakingPrompt: "La entrenadora te responde...",
     listeningPrompt: "Dime qué quieres entrenar hoy...",
     you: "TÚ",
-    thinking: "El entrenador analiza con Gemini 2.5...",
-    coachTitle: "ENTRENADOR IA FIT-4RCE X",
+    thinking: "La entrenadora analiza con Gemini...",
+    coachTitle: "ENTRENADORA IA FIT FORCE",
     muteTitle: "Silenciado",
     unmuteTitle: "Voz activa"
   },
   [Language.AR]: {
-    speakingStatus: "المدرب يتحدث الآن...",
+    speakingStatus: "المدربة تتحدث الآن...",
     listeningStatus: "الميكروفون نشط (تحدث الآن)",
     idleStatus: "في وضع الاستعداد...",
     listeningBtn: "يستمع الآن",
     touchBtn: "اضغط للتحدث",
-    speakingPrompt: "المدرب يجيبك الآن...",
+    speakingPrompt: "المدربة تجيبك الآن...",
     listeningPrompt: "أخبرني ما الذي تريد تدريبه اليوم...",
     you: "أنت",
-    thinking: "المدرب يحلل مع Gemini 2.5...",
-    coachTitle: "مدرب FIT-4RCE X الذكي",
+    thinking: "المدربة تحلل مع Gemini...",
+    coachTitle: "مدربة FIT FORCE الذكية",
     muteTitle: "صامت",
     unmuteTitle: "الصوت نشط"
   },
   [Language.PT]: {
-    speakingStatus: "Treinador falando...",
+    speakingStatus: "Treinadora falando...",
     listeningStatus: "Microfone ativo (Fale agora)",
     idleStatus: "Aguardando...",
     listeningBtn: "OUVINDO",
     touchBtn: "TOQUE",
-    speakingPrompt: "O treinador está respondendo...",
+    speakingPrompt: "A treinadora está respondendo...",
     listeningPrompt: "Diga o que você quer treinar hoje...",
     you: "VOCÊ",
-    thinking: "O treinador analisa com Gemini 2.5...",
-    coachTitle: "TREINADOR IA FIT-4RCE X",
+    thinking: "A treinadora analisa com Gemini...",
+    coachTitle: "TREINADORA IA FIT FORCE",
     muteTitle: "Voz silenciada",
     unmuteTitle: "Voz ativa"
   },
@@ -170,8 +170,8 @@ const COACH_UI_STRINGS: Record<Language, {
     speakingPrompt: "コーチが回答しています...",
     listeningPrompt: "鍛えたい部位や目標を教えてください...",
     you: "あなた",
-    thinking: "Gemini 2.5でワークアウトを分析中...",
-    coachTitle: "FIT-4RCE X AIコーチ",
+    thinking: "Geminiでワークアウトを分析中...",
+    coachTitle: "FIT FORCE AIコーチ",
     muteTitle: "ミュート中",
     unmuteTitle: "音声有効"
   },
@@ -184,8 +184,8 @@ const COACH_UI_STRINGS: Record<Language, {
     speakingPrompt: "教练正在回应您...",
     listeningPrompt: "请告诉我您今天想训练什么...",
     you: "您",
-    thinking: "教练正在使用Gemini 2.5分析训练...",
-    coachTitle: "FIT-4RCE X AI教练",
+    thinking: "教练正在使用Gemini分析训练...",
+    coachTitle: "FIT FORCE AI教练",
     muteTitle: "已静音",
     unmuteTitle: "语音已开启"
   },
@@ -198,60 +198,11 @@ const COACH_UI_STRINGS: Record<Language, {
     speakingPrompt: "Тренер отвечает вам...",
     listeningPrompt: "Скажите, какую группу мышц хотите тренировать...",
     you: "ВЫ",
-    thinking: "Тренер анализирует с Gemini 2.5...",
-    coachTitle: "ИИ ТРЕНЕР FIT-4RCE X",
+    thinking: "Тренер анализирует с Gemini...",
+    coachTitle: "ИИ ТРЕНЕР FIT FORCE",
     muteTitle: "Звук отключен",
     unmuteTitle: "Звук включен"
   }
-};
-
-// Natural conversational greetings spoken out loud by the coach
-const COACH_GREETINGS: Record<Language, string> = {
-  [Language.EN]: "Hi, how are you today? How can I help?",
-  [Language.FR]: "Bonjour ! Comment allez-vous aujourd'hui ? Comment puis-je vous aider ?",
-  [Language.ES]: "¡Hola! ¿Cómo estás hoy? ¿Cómo puedo ayudarte?",
-  [Language.AR]: "مرحباً، كيف حالك اليوم؟ كيف يمكنني مساعدتك؟",
-  [Language.PT]: "Olá, como você está hoje? Como posso ajudar?",
-  [Language.JA]: "こんにちは！今日の調子はいかがですか？どのようなサポートが必要ですか？",
-  [Language.ZH]: "你好！今天感觉怎么样？我能为你提供什么帮助？",
-  [Language.RU]: "Привет! Как вы себя чувствуете сегодня? Чем я могу помочь?"
-};
-
-// Strips markdown, bracket codes, and brand artifacts that cause speech synthesis to spell out robotic abbreviations
-const cleanTextForSpeech = (rawText: string): string => {
-  if (!rawText) return '';
-  return rawText
-    .replace(/\[GENERATE_WORKOUT\]/gi, '')
-    .replace(/\bFit-4rce\s*X\b/gi, 'Fit Force')
-    .replace(/\bFit-4rce\b/gi, 'Fit Force')
-    .replace(/\bF4X\b/gi, 'Fit Force')
-    .replace(/\b3D\b/gi, '3D')
-    .replace(/[*#_~`>[\]()]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-};
-
-// Bulletproof selection of pleasant, natural female voice across Android Chrome, Desktop Chrome, Edge & Safari
-const selectNaturalFemaleVoice = (voices: SpeechSynthesisVoice[], langCode: string): SpeechSynthesisVoice | null => {
-  if (!voices || voices.length === 0) return null;
-  const langPrefix = langCode.slice(0, 2).toLowerCase();
-  const langVoices = voices.filter(v => v.lang.toLowerCase().replace('_', '-').startsWith(langPrefix));
-  if (langVoices.length === 0) return null;
-
-  // 1. Explicitly named feminine voices across major operating systems & browsers
-  const femaleKeywords = /(female|femme|mujer|mulher|женск|zira|samantha|victoria|karen|jenny|aria|ava|allison|julie|hortense|denise|am[eé]lie|marie|c[eé]line|audrey|l[eé]a|monica|m[oó]nica|helena|elena|paulina|sofia|kyoko|yuna|tingting|yaoyao|milena|tatyana)/i;
-  const femaleVoice = langVoices.find(v => femaleKeywords.test(v.name));
-  if (femaleVoice) return femaleVoice;
-
-  // 2. High-fidelity localized Google / Apple / system voices (e.g. Google français, Google US English)
-  const brandedVoice = langVoices.find(v => /google|apple|siri/i.test(v.name));
-  if (brandedVoice) return brandedVoice;
-
-  // 3. System default voice for this language
-  const defaultVoice = langVoices.find(v => v.default);
-  if (defaultVoice) return defaultVoice;
-
-  return langVoices[0];
 };
 
 const parseVoiceWorkoutParams = (text: string): WorkoutGenerationParams => {
@@ -291,9 +242,8 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
-  // Synchronous refs to prevent stale closures and avoid useEffect re-render cascades
+  // Synchronous refs to prevent stale closures
   const messagesRef = useRef<Message[]>(messages);
   messagesRef.current = messages;
 
@@ -316,37 +266,19 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   isListeningRef.current = isListening;
 
   const handleUserMessageRef = useRef<(text: string) => void>(() => {});
-  const startRecognitionRef = useRef<() => void>(() => {});
+  const startListeningRef = useRef<() => void>(() => {});
   const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const silenceTimerRef = useRef<any>(null);
   const accumulatedContextRef = useRef<string>('');
-  const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-  // Monitor available speech synthesis voices as soon as browser engine populates them
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    const updateVoices = () => {
-      try {
-        const v = window.speechSynthesis.getVoices();
-        if (v && v.length > 0) {
-          setVoices(v);
-        }
-      } catch (e) {}
-    };
-    updateVoices();
-    window.speechSynthesis.onvoiceschanged = updateVoices;
-    return () => {
-      if (window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = null;
-      }
-    };
-  }, []);
+  const geminiAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const uiTexts = useMemo(() => {
     return COACH_UI_STRINGS[language] || COACH_UI_STRINGS[Language.EN];
   }, [language]);
 
-  // Map app language to standard SpeechRecognition BCP-47 locale
   const speechLang = useMemo(() => {
     switch (language) {
       case Language.FR: return 'fr-FR';
@@ -360,22 +292,28 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     }
   }, [language]);
 
-  // Clean up audio & speech engines without setting state (safe for unmount / effect cleanup)
+  // Safely stop audio and microphone hardware
   const cleanupAudioHardware = useCallback(() => {
     isListeningRef.current = false;
     isAiSpeakingRef.current = false;
     isThinkingRef.current = false;
+    setIsListening(false);
+    setIsAiSpeaking(false);
+    setIsThinking(false);
 
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try { 
-        window.speechSynthesis.cancel(); 
+
+    if (geminiAudioRef.current) {
+      try {
+        geminiAudioRef.current.pause();
+        geminiAudioRef.current.src = '';
       } catch (e) {}
+      geminiAudioRef.current = null;
     }
-    activeUtteranceRef.current = null;
+
     if (recognitionRef.current) {
       try {
         recognitionRef.current.onresult = null;
@@ -385,114 +323,217 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       } catch (e) {}
       recognitionRef.current = null;
     }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {}
+      mediaRecorderRef.current = null;
+    }
+
+    if (mediaStreamRef.current) {
+      try {
+        mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      } catch (e) {}
+      mediaStreamRef.current = null;
+    }
   }, []);
 
-  // Stop microphone listening safely and update UI state
-  const stopRecognition = useCallback(() => {
-    cleanupAudioHardware();
+  // Stop microphone listening safely
+  const stopListening = useCallback(() => {
+    isListeningRef.current = false;
     setIsListening(false);
-  }, [cleanupAudioHardware]);
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (e) {}
+      recognitionRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {}
+    }
+  }, []);
 
   // Launch workout transition
   const executeWorkoutLaunch = useCallback((promptText: string) => {
     cleanupAudioHardware();
-    setIsListening(false);
-    setIsAiSpeaking(false);
-    setIsThinking(false);
     const params = parseVoiceWorkoutParams(promptText || accumulatedContextRef.current || 'fitness');
     startWorkoutFromVoice(params);
   }, [cleanupAudioHardware, startWorkoutFromVoice]);
 
-  // Spoken feedback via SpeechSynthesis with warm, natural female voice selection
-  const speakVoice = useCallback((text: string, onFinish?: () => void) => {
-    stopRecognition();
-
-    const cleanSpoken = cleanTextForSpeech(text);
-    if (!cleanSpoken) {
+  // Play genuine, ultra-realistic Google Gemini WAV audio (Female voice: Kore)
+  const playGeminiAudio = useCallback((base64Audio: string | null, onFinish?: () => void) => {
+    if (isMutedRef.current || !base64Audio) {
       if (onFinish) onFinish();
       return;
     }
 
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window && !isMutedRef.current) {
-      try {
-        window.speechSynthesis.cancel();
-        try { window.speechSynthesis.resume(); } catch (e) {}
+    stopListening();
 
-        const utterance = new SpeechSynthesisUtterance(cleanSpoken);
-        utterance.lang = speechLang;
-        // Natural human conversation speed and warm, pleasant pitch
-        utterance.rate = 1.0;
-        utterance.pitch = 1.05;
-
-        // Pick the natural female voice
-        const currentVoices = voices.length > 0 ? voices : window.speechSynthesis.getVoices();
-        const selectedVoice = selectNaturalFemaleVoice(currentVoices, speechLang);
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
-        }
-
-        // Keep reference in activeUtteranceRef to prevent Chromium garbage collector cutting off audio mid-speech
-        activeUtteranceRef.current = utterance;
-
-        utterance.onstart = () => {
-          setIsAiSpeaking(true);
-        };
-
-        utterance.onend = () => {
-          activeUtteranceRef.current = null;
-          setIsAiSpeaking(false);
-          if (onFinish) {
-            onFinish();
-          } else if (isVisibleRef.current) {
-            // Automatically resume listening so conversation flows naturally back and forth
-            setTimeout(() => {
-              if (isVisibleRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
-                startRecognitionRef.current();
-              }
-            }, 250);
-          }
-        };
-
-        utterance.onerror = (errEvent) => {
-          activeUtteranceRef.current = null;
-          setIsAiSpeaking(false);
-          if (onFinish) {
-            onFinish();
-          } else if (isVisibleRef.current) {
-            setTimeout(() => {
-              if (isVisibleRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
-                startRecognitionRef.current();
-              }
-            }, 250);
-          }
-        };
-
-        // Small 40ms delay after cancel to prevent Chromium audio queue stutter
-        setTimeout(() => {
-          try {
-            window.speechSynthesis.speak(utterance);
-          } catch (speakErr) {
-            setIsAiSpeaking(false);
-            if (onFinish) onFinish();
-          }
-        }, 40);
-      } catch (e) {
-        setIsAiSpeaking(false);
-        if (onFinish) onFinish();
+    try {
+      if (geminiAudioRef.current) {
+        try {
+          geminiAudioRef.current.pause();
+          geminiAudioRef.current.src = '';
+        } catch (e) {}
       }
-    } else {
+
+      const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
+      geminiAudioRef.current = audio;
+
+      audio.onplay = () => {
+        isAiSpeakingRef.current = true;
+        setIsAiSpeaking(true);
+      };
+
+      audio.onended = () => {
+        isAiSpeakingRef.current = false;
+        setIsAiSpeaking(false);
+        geminiAudioRef.current = null;
+        if (onFinish) {
+          onFinish();
+        } else if (isVisibleRef.current) {
+          // Immediately engage listening so conversation flows naturally
+          startListeningRef.current();
+        }
+      };
+
+      audio.onerror = () => {
+        isAiSpeakingRef.current = false;
+        setIsAiSpeaking(false);
+        geminiAudioRef.current = null;
+        if (onFinish) onFinish();
+      };
+
+      audio.play().catch(playErr => {
+        console.warn('Audio play notice:', playErr);
+        isAiSpeakingRef.current = false;
+        setIsAiSpeaking(false);
+        geminiAudioRef.current = null;
+        if (onFinish) onFinish();
+      });
+    } catch (e) {
+      isAiSpeakingRef.current = false;
+      setIsAiSpeaking(false);
       if (onFinish) onFinish();
     }
-  }, [speechLang, voices, stopRecognition]);
+  }, [stopListening]);
 
-  // User message submit handler
-  const handleUserMessage = useCallback(async (text: string) => {
+  // Dual-engine microphone: MediaRecorder fallback for Android WebView (WebIntoApp)
+  const startMediaRecorderListening = useCallback(async () => {
+    if (!isVisibleRef.current || isAiSpeakingRef.current || isThinkingRef.current) return;
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setIsListening(false);
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+
+      const mimeType = typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : 'audio/wav';
+
+      const recorder = new MediaRecorder(stream, { mimeType: mimeType as any });
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        if (audioChunksRef.current.length > 0) {
+          const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+          audioChunksRef.current = [];
+          if (blob.size > 800) {
+            submitAudioBlob(blob, recorder.mimeType || 'audio/webm');
+          }
+        }
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach(t => t.stop());
+          mediaStreamRef.current = null;
+        }
+      };
+
+      recorder.start(250);
+      isListeningRef.current = true;
+      setIsListening(true);
+    } catch (micErr) {
+      console.warn('MediaRecorder permission or hardware notice:', micErr);
+      isListeningRef.current = false;
+      setIsListening(false);
+    }
+  }, []);
+
+  // Submit audio blob directly to Gemini for speech recognition & response
+  const submitAudioBlob = async (blob: Blob, mimeType: string) => {
+    isListeningRef.current = false;
+    setIsListening(false);
+    setIsThinking(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const resultStr = reader.result as string;
+        const base64data = resultStr ? resultStr.split(',')[1] : null;
+        if (!base64data) {
+          setIsThinking(false);
+          return;
+        }
+
+        const historyList = messagesRef.current.map(m => ({
+          role: m.role === 'user' ? 'user' : 'model',
+          text: m.text
+        }));
+
+        const res = await getVoiceCoachResponse({
+          audioBase64: base64data,
+          mimeType
+        }, language, historyList);
+
+        setIsThinking(false);
+        setMessages(prev => [...prev, { role: 'assistant', text: res.text }]);
+        accumulatedContextRef.current += ' ' + res.text;
+
+        const shouldLaunch = res.text.includes('[GENERATE_WORKOUT]') ||
+          /lance (ta|votre) s[eé]ance|g[eé]n[eè]re ta s[eé]ance/i.test(res.text);
+
+        if (res.audio) {
+          playGeminiAudio(res.audio, () => {
+            if (shouldLaunch) executeWorkoutLaunch(accumulatedContextRef.current);
+            else if (isVisibleRef.current) startListeningRef.current();
+          });
+        } else {
+          if (shouldLaunch) executeWorkoutLaunch(accumulatedContextRef.current);
+          else if (isVisibleRef.current) startListeningRef.current();
+        }
+      };
+      reader.readAsDataURL(blob);
+    } catch (err) {
+      console.error('Audio submit error:', err);
+      setIsThinking(false);
+      startListeningRef.current();
+    }
+  };
+
+  // Submit text message to Gemini
+  const submitTextMessage = useCallback(async (text: string) => {
     const cleanText = text.trim();
     if (!cleanText) return;
 
     setCurrentTranscript('');
     currentTranscriptRef.current = '';
-    stopRecognition();
+    stopListening();
 
     setMessages(prev => [...prev, { role: 'user', text: cleanText }]);
     accumulatedContextRef.current = (accumulatedContextRef.current ? accumulatedContextRef.current + ' ' : '') + cleanText;
@@ -512,30 +553,42 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     if (isReadyTrigger) {
       const confirmText = translate('workout.loading.calculating') || "C'est parti ! Je génère votre séance avec le coach 3D.";
       setMessages(prev => [...prev, { role: 'assistant', text: confirmText }]);
-      speakVoice(confirmText, () => {
-        executeWorkoutLaunch(accumulatedContextRef.current);
-      });
-      return;
-    }
-
-    // Call server-side Gemini / rich conversational intelligence
-    setIsThinking(true);
-    try {
-      const historyList = messagesRef.current.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
-      const aiReply = await getChatbotResponse(cleanText, language, historyList);
-      
-      const shouldLaunch = aiReply.includes('[GENERATE_WORKOUT]') ||
-        /je (te|vous) g[eé]n[eè]re|g[eé]n[eè]ration de (tes|vos) exercices|je lance (ta|votre) s[eé]ance|g[eé]n[eè]re ta s[eé]ance|generating your|preparing your custom|prépare vos exercices/i.test(aiReply);
-
-      const displayText = aiReply.replace(/\[GENERATE_WORKOUT\]/g, '').trim();
-      setMessages(prev => [...prev, { role: 'assistant', text: displayText }]);
-
-      if (shouldLaunch) {
-        speakVoice(displayText, () => {
+      const res = await getVoiceCoachResponse({ msg: confirmText }, language);
+      if (res.audio) {
+        playGeminiAudio(res.audio, () => {
           executeWorkoutLaunch(accumulatedContextRef.current);
         });
       } else {
-        speakVoice(displayText);
+        executeWorkoutLaunch(accumulatedContextRef.current);
+      }
+      return;
+    }
+
+    setIsThinking(true);
+    try {
+      const historyList = messagesRef.current.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
+      const res = await getVoiceCoachResponse({ msg: cleanText }, language, historyList);
+      
+      const shouldLaunch = res.text.includes('[GENERATE_WORKOUT]') ||
+        /lance (ta|votre) s[eé]ance|g[eé]n[eè]re ta s[eé]ance|generating your|preparing your custom/i.test(res.text);
+
+      const displayText = res.text.replace(/\[GENERATE_WORKOUT\]/g, '').trim();
+      setMessages(prev => [...prev, { role: 'assistant', text: displayText }]);
+
+      if (res.audio) {
+        playGeminiAudio(res.audio, () => {
+          if (shouldLaunch) {
+            executeWorkoutLaunch(accumulatedContextRef.current);
+          } else if (isVisibleRef.current) {
+            startListeningRef.current();
+          }
+        });
+      } else {
+        if (shouldLaunch) {
+          executeWorkoutLaunch(accumulatedContextRef.current);
+        } else if (isVisibleRef.current) {
+          startListeningRef.current();
+        }
       }
     } catch (err) {
       console.warn("AI Coach response error:", err);
@@ -543,183 +596,183 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         ? "Bien reçu ! Quel type d'exercices souhaitez-vous cibler aujourd'hui ?"
         : "Got it! Which muscle group or exercise style would you like to target today?";
       setMessages(prev => [...prev, { role: 'assistant', text: fallbackMsg }]);
-      speakVoice(fallbackMsg);
+      startListeningRef.current();
     } finally {
       setIsThinking(false);
     }
-  }, [language, translate, speakVoice, stopRecognition, executeWorkoutLaunch]);
+  }, [language, translate, playGeminiAudio, stopListening, executeWorkoutLaunch]);
 
-  // Keep handleUserMessage ref in sync synchronously
-  handleUserMessageRef.current = handleUserMessage;
+  handleUserMessageRef.current = submitTextMessage;
 
-  // Start microphone recognition with Web Speech API optimized for Desktop & Chrome Android
-  const startRecognition = useCallback(() => {
+  // Dual-Engine Listening Startup: Web Speech API on Chrome PC/Mobile with automatic MediaRecorder fallback for Android WebView
+  const startListening = useCallback(() => {
     if (!isVisibleRef.current) return;
     if (isAiSpeakingRef.current || isThinkingRef.current) return;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.warn('SpeechRecognition API not available in this browser');
-      setIsListening(false);
+
+    if (SpeechRecognition) {
+      try {
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.onresult = null;
+            recognitionRef.current.onend = null;
+            recognitionRef.current.onerror = null;
+            recognitionRef.current.abort();
+          } catch (e) {}
+          recognitionRef.current = null;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = speechLang;
+
+        const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        recognition.continuous = !isMobile;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+          isListeningRef.current = true;
+          setIsListening(true);
+        };
+
+        recognition.onresult = (event: any) => {
+          if (isAiSpeakingRef.current || isThinkingRef.current) return;
+
+          let interimText = '';
+          let finalText = '';
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const item = event.results[i];
+            if (item.isFinal) finalText += item[0].transcript + ' ';
+            else interimText += item[0].transcript + ' ';
+          }
+
+          const spoken = (finalText || interimText).trim();
+          if (spoken) {
+            setCurrentTranscript(spoken);
+            currentTranscriptRef.current = spoken;
+
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+            const delay = finalText.trim() ? 600 : 900;
+            silenceTimerRef.current = setTimeout(() => {
+              const toSend = currentTranscriptRef.current.trim();
+              if (toSend) {
+                submitTextMessage(toSend);
+              }
+            }, delay);
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          const errType = event?.error;
+          if (errType === 'no-speech') return;
+          console.warn('SpeechRecognition notice:', errType);
+          // On mobile Android WebView, if speech service is not available, switch to MediaRecorder
+          if (errType === 'not-allowed' || errType === 'service-not-allowed') {
+            startMediaRecorderListening();
+          }
+        };
+
+        recognition.onend = () => {
+          if (currentTranscriptRef.current && currentTranscriptRef.current.trim()) {
+            const pending = currentTranscriptRef.current.trim();
+            currentTranscriptRef.current = '';
+            submitTextMessage(pending);
+            return;
+          }
+
+          if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
+            setTimeout(() => {
+              if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
+                try {
+                  recognition.start();
+                } catch (e) {
+                  startListening();
+                }
+              }
+            }, 120);
+          } else {
+            setIsListening(false);
+          }
+        };
+
+        recognition.start();
+        recognitionRef.current = recognition;
+        isListeningRef.current = true;
+        setIsListening(true);
+        return;
+      } catch (speechErr) {
+        console.warn('SpeechRecognition start failed, using MediaRecorder:', speechErr);
+      }
+    }
+
+    // Direct MediaRecorder fallback for WebIntoApp APK & browsers without Web Speech API
+    startMediaRecorderListening();
+  }, [speechLang, submitTextMessage, startMediaRecorderListening]);
+
+  startListeningRef.current = startListening;
+
+  // Toggle listening via central orb tap
+  const toggleListening = () => {
+    // If AI is currently speaking, user tap interrupts the coach and immediately switches to listening
+    if (isAiSpeaking) {
+      if (geminiAudioRef.current) {
+        try { geminiAudioRef.current.pause(); } catch (e) {}
+        geminiAudioRef.current = null;
+      }
+      setIsAiSpeaking(false);
+      startListening();
       return;
     }
 
-    if (recognitionRef.current) {
-      try { 
-        recognitionRef.current.onresult = null;
-        recognitionRef.current.onend = null;
-        recognitionRef.current.onerror = null;
-        recognitionRef.current.abort(); 
-      } catch (e) {}
-      recognitionRef.current = null;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = speechLang;
-
-      // On Android Chrome (Samsung Galaxy S25), continuous=true causes speech engine freeze.
-      // Using continuous=false on mobile with auto-restart on end gives 100% reliable voice recognition.
-      const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      recognition.continuous = !isMobile;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        isListeningRef.current = true;
-        setIsListening(true);
-      };
-
-      recognition.onresult = (event: any) => {
-        if (isAiSpeakingRef.current || isThinkingRef.current) return;
-
-        let interimText = '';
-        let finalText = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const item = event.results[i];
-          if (item.isFinal) {
-            finalText += item[0].transcript + ' ';
-          } else {
-            interimText += item[0].transcript + ' ';
-          }
-        }
-
-        const spoken = (finalText || interimText).trim();
-        if (spoken) {
-          setCurrentTranscript(spoken);
-          currentTranscriptRef.current = spoken;
-
-          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-
-          // On mobile Android, if final result arrived, send immediately; otherwise wait briefly for pause
-          const delay = finalText.trim() ? 600 : 900;
-          silenceTimerRef.current = setTimeout(() => {
-            const toSend = currentTranscriptRef.current.trim();
-            if (toSend) {
-              handleUserMessageRef.current(toSend);
-            }
-          }, delay);
-        }
-      };
-
-      recognition.onerror = (event: any) => {
-        const errType = event?.error;
-        // 'no-speech' is non-fatal: user simply didn't speak during the listening window
-        if (errType === 'no-speech') {
-          return;
-        }
-        if (errType !== 'aborted') {
-          console.log('SpeechRecognition notice:', errType);
-          isListeningRef.current = false;
-          setIsListening(false);
-        }
-      };
-
-      recognition.onend = () => {
-        // If user finished speaking and text is waiting, send it right away
-        if (currentTranscriptRef.current && currentTranscriptRef.current.trim()) {
-          const pending = currentTranscriptRef.current.trim();
-          currentTranscriptRef.current = '';
-          handleUserMessageRef.current(pending);
-          isListeningRef.current = false;
-          setIsListening(false);
-          return;
-        }
-
-        // On mobile Chrome, recognition fires onend on pauses. If listening is still desired, seamlessly reconnect
-        if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
-          setTimeout(() => {
-            if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
-              try {
-                recognition.start();
-              } catch (restartErr) {
-                startRecognitionRef.current();
-              }
-            }
-          }, 120);
-        } else {
-          isListeningRef.current = false;
-          setIsListening(false);
-        }
-      };
-
-      recognition.start();
-      recognitionRef.current = recognition;
-      isListeningRef.current = true;
-      setIsListening(true);
-    } catch (e) {
-      console.warn('Speech recognition start error:', e);
-      isListeningRef.current = false;
-      setIsListening(false);
-    }
-  }, [speechLang]);
-
-  startRecognitionRef.current = startRecognition;
-
-  // Click on central orb: toggle listening directly without locking audio tracks
-  const toggleListening = () => {
     if (isListening) {
-      stopRecognition();
+      stopListening();
       if (currentTranscriptRef.current.trim()) {
         const text = currentTranscriptRef.current.trim();
         currentTranscriptRef.current = '';
-        handleUserMessage(text);
+        submitTextMessage(text);
       }
     } else {
-      startRecognition();
+      startListening();
     }
   };
 
-  // 1-CLICK DIRECT STARTUP: As soon as the AI Coach opens, display & speak greeting in natural female voice and immediately begin listening
+  // 1-CLICK DIRECT STARTUP: Request Gemini greeting with real female voice and immediately begin listening
   useEffect(() => {
     if (!isVisible) {
       cleanupAudioHardware();
       return;
     }
-    
+
     setCurrentTranscript('');
     currentTranscriptRef.current = '';
     accumulatedContextRef.current = '';
 
-    const greetingText = COACH_GREETINGS[language] || COACH_GREETINGS[Language.EN];
-    setMessages([{ role: 'assistant', text: greetingText }]);
+    // Directly load the genuine Gemini greeting (voice Kore)
+    getVoiceCoachResponse({ msg: '__GREETING__' }, language).then(res => {
+      if (!isVisibleRef.current) return;
+      setMessages([{ role: 'assistant', text: res.text }]);
 
-    // Trigger greeting speech and transition immediately to listening
-    if (!isMutedRef.current) {
-      speakVoice(greetingText, () => {
-        if (isVisibleRef.current && !isAiSpeakingRef.current) {
-          startRecognition();
-        }
-      });
-    } else {
-      startRecognition();
-    }
+      if (res.audio && !isMutedRef.current) {
+        playGeminiAudio(res.audio, () => {
+          if (isVisibleRef.current && !isAiSpeakingRef.current) {
+            startListening();
+          }
+        });
+      } else {
+        startListening();
+      }
+    }).catch(() => {
+      if (isVisibleRef.current) {
+        startListening();
+      }
+    });
 
     return () => {
       cleanupAudioHardware();
     };
-  }, [isVisible, language, speakVoice, startRecognition, cleanupAudioHardware]);
+  }, [isVisible, language, playGeminiAudio, startListening, cleanupAudioHardware]);
 
   if (!isVisible) return null;
 
@@ -873,7 +926,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
             <button
               key={i}
               type="button"
-              onClick={() => handleUserMessage(opt)}
+              onClick={() => handleUserMessageRef.current(opt)}
               className="px-3.5 py-1.5 rounded-full bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-700 hover:border-cyan-500/50 text-[10px] sm:text-xs font-bold text-gray-300 hover:text-white transition-all active:scale-95 shadow-md"
             >
               {opt}
