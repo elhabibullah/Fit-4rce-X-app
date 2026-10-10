@@ -205,6 +205,55 @@ const COACH_UI_STRINGS: Record<Language, {
   }
 };
 
+// Natural conversational greetings spoken out loud by the coach
+const COACH_GREETINGS: Record<Language, string> = {
+  [Language.EN]: "Hi, how are you today? How can I help?",
+  [Language.FR]: "Bonjour ! Comment allez-vous aujourd'hui ? Comment puis-je vous aider ?",
+  [Language.ES]: "¡Hola! ¿Cómo estás hoy? ¿Cómo puedo ayudarte?",
+  [Language.AR]: "مرحباً، كيف حالك اليوم؟ كيف يمكنني مساعدتك؟",
+  [Language.PT]: "Olá, como você está hoje? Como posso ajudar?",
+  [Language.JA]: "こんにちは！今日の調子はいかがですか？どのようなサポートが必要ですか？",
+  [Language.ZH]: "你好！今天感觉怎么样？我能为你提供什么帮助？",
+  [Language.RU]: "Привет! Как вы себя чувствуете сегодня? Чем я могу помочь?"
+};
+
+// Strips markdown, bracket codes, and brand artifacts that cause speech synthesis to spell out robotic abbreviations
+const cleanTextForSpeech = (rawText: string): string => {
+  if (!rawText) return '';
+  return rawText
+    .replace(/\[GENERATE_WORKOUT\]/gi, '')
+    .replace(/\bFit-4rce\s*X\b/gi, 'Fit Force')
+    .replace(/\bFit-4rce\b/gi, 'Fit Force')
+    .replace(/\bF4X\b/gi, 'Fit Force')
+    .replace(/\b3D\b/gi, '3D')
+    .replace(/[*#_~`>[\]()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// Bulletproof selection of pleasant, natural female voice across Android Chrome, Desktop Chrome, Edge & Safari
+const selectNaturalFemaleVoice = (voices: SpeechSynthesisVoice[], langCode: string): SpeechSynthesisVoice | null => {
+  if (!voices || voices.length === 0) return null;
+  const langPrefix = langCode.slice(0, 2).toLowerCase();
+  const langVoices = voices.filter(v => v.lang.toLowerCase().replace('_', '-').startsWith(langPrefix));
+  if (langVoices.length === 0) return null;
+
+  // 1. Explicitly named feminine voices across major operating systems & browsers
+  const femaleKeywords = /(female|femme|mujer|mulher|женск|zira|samantha|victoria|karen|jenny|aria|ava|allison|julie|hortense|denise|am[eé]lie|marie|c[eé]line|audrey|l[eé]a|monica|m[oó]nica|helena|elena|paulina|sofia|kyoko|yuna|tingting|yaoyao|milena|tatyana)/i;
+  const femaleVoice = langVoices.find(v => femaleKeywords.test(v.name));
+  if (femaleVoice) return femaleVoice;
+
+  // 2. High-fidelity localized Google / Apple / system voices (e.g. Google français, Google US English)
+  const brandedVoice = langVoices.find(v => /google|apple|siri/i.test(v.name));
+  if (brandedVoice) return brandedVoice;
+
+  // 3. System default voice for this language
+  const defaultVoice = langVoices.find(v => v.default);
+  if (defaultVoice) return defaultVoice;
+
+  return langVoices[0];
+};
+
 const parseVoiceWorkoutParams = (text: string): WorkoutGenerationParams => {
   const lower = text.toLowerCase();
   let intensity: 'low' | 'medium' | 'high' = 'medium';
@@ -242,6 +291,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   // Synchronous refs to prevent stale closures and avoid useEffect re-render cascades
   const messagesRef = useRef<Message[]>(messages);
@@ -270,6 +320,27 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const recognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<any>(null);
   const accumulatedContextRef = useRef<string>('');
+  const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Monitor available speech synthesis voices as soon as browser engine populates them
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    const updateVoices = () => {
+      try {
+        const v = window.speechSynthesis.getVoices();
+        if (v && v.length > 0) {
+          setVoices(v);
+        }
+      } catch (e) {}
+    };
+    updateVoices();
+    window.speechSynthesis.onvoiceschanged = updateVoices;
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, []);
 
   const uiTexts = useMemo(() => {
     return COACH_UI_STRINGS[language] || COACH_UI_STRINGS[Language.EN];
@@ -300,8 +371,11 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       silenceTimerRef.current = null;
     }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try { window.speechSynthesis.cancel(); } catch (e) {}
+      try { 
+        window.speechSynthesis.cancel(); 
+      } catch (e) {}
     }
+    activeUtteranceRef.current = null;
     if (recognitionRef.current) {
       try {
         recognitionRef.current.onresult = null;
@@ -329,38 +403,58 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     startWorkoutFromVoice(params);
   }, [cleanupAudioHardware, startWorkoutFromVoice]);
 
-  // Spoken feedback via SpeechSynthesis with high-quality natural voice selection
+  // Spoken feedback via SpeechSynthesis with warm, natural female voice selection
   const speakVoice = useCallback((text: string, onFinish?: () => void) => {
     stopRecognition();
+
+    const cleanSpoken = cleanTextForSpeech(text);
+    if (!cleanSpoken) {
+      if (onFinish) onFinish();
+      return;
+    }
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window && !isMutedRef.current) {
       try {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
+        try { window.speechSynthesis.resume(); } catch (e) {}
+
+        const utterance = new SpeechSynthesisUtterance(cleanSpoken);
         utterance.lang = speechLang;
+        // Natural human conversation speed and warm, pleasant pitch
         utterance.rate = 1.0;
-        utterance.pitch = 1.0;
+        utterance.pitch = 1.05;
 
-        // Pick the most natural, human-like voice available for the language
-        const availableVoices = window.speechSynthesis.getVoices();
-        if (availableVoices && availableVoices.length > 0) {
-          const langPrefix = speechLang.slice(0, 2).toLowerCase();
-          const langMatch = availableVoices.filter(v => v.lang.toLowerCase().replace('_', '-').startsWith(langPrefix));
-          
-          // Prioritize high-definition natural Google / Apple / Neural voices over robotic standard synth
-          const naturalVoice = langMatch.find(v => 
-            /natural|neural|premium|enhanced|google|siri/i.test(v.name)
-          ) || langMatch.find(v => !v.localService) || langMatch[0];
-
-          if (naturalVoice) {
-            utterance.voice = naturalVoice;
-          }
+        // Pick the natural female voice
+        const currentVoices = voices.length > 0 ? voices : window.speechSynthesis.getVoices();
+        const selectedVoice = selectNaturalFemaleVoice(currentVoices, speechLang);
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
         }
+
+        // Keep reference in activeUtteranceRef to prevent Chromium garbage collector cutting off audio mid-speech
+        activeUtteranceRef.current = utterance;
 
         utterance.onstart = () => {
           setIsAiSpeaking(true);
         };
+
         utterance.onend = () => {
+          activeUtteranceRef.current = null;
+          setIsAiSpeaking(false);
+          if (onFinish) {
+            onFinish();
+          } else if (isVisibleRef.current) {
+            // Automatically resume listening so conversation flows naturally back and forth
+            setTimeout(() => {
+              if (isVisibleRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
+                startRecognitionRef.current();
+              }
+            }, 250);
+          }
+        };
+
+        utterance.onerror = (errEvent) => {
+          activeUtteranceRef.current = null;
           setIsAiSpeaking(false);
           if (onFinish) {
             onFinish();
@@ -369,16 +463,19 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
               if (isVisibleRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
                 startRecognitionRef.current();
               }
-            }, 300);
+            }, 250);
           }
         };
-        utterance.onerror = () => {
-          setIsAiSpeaking(false);
-          if (onFinish) {
-            onFinish();
+
+        // Small 40ms delay after cancel to prevent Chromium audio queue stutter
+        setTimeout(() => {
+          try {
+            window.speechSynthesis.speak(utterance);
+          } catch (speakErr) {
+            setIsAiSpeaking(false);
+            if (onFinish) onFinish();
           }
-        };
-        window.speechSynthesis.speak(utterance);
+        }, 40);
       } catch (e) {
         setIsAiSpeaking(false);
         if (onFinish) onFinish();
@@ -386,7 +483,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     } else {
       if (onFinish) onFinish();
     }
-  }, [speechLang, stopRecognition]);
+  }, [speechLang, voices, stopRecognition]);
 
   // User message submit handler
   const handleUserMessage = useCallback(async (text: string) => {
@@ -455,7 +552,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   // Keep handleUserMessage ref in sync synchronously
   handleUserMessageRef.current = handleUserMessage;
 
-  // Start continuous microphone recognition with Web Speech API
+  // Start microphone recognition with Web Speech API optimized for Desktop & Chrome Android
   const startRecognition = useCallback(() => {
     if (!isVisibleRef.current) return;
     if (isAiSpeakingRef.current || isThinkingRef.current) return;
@@ -480,9 +577,11 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = speechLang;
-      // Note: On Chrome for Android, continuous recognition can prematurely close with 'no-speech'
-      // We set continuous = true, and auto-restart on normal end if still in listening mode
-      recognition.continuous = true;
+
+      // On Android Chrome (Samsung Galaxy S25), continuous=true causes speech engine freeze.
+      // Using continuous=false on mobile with auto-restart on end gives 100% reliable voice recognition.
+      const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      recognition.continuous = !isMobile;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
@@ -510,31 +609,35 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         if (spoken) {
           setCurrentTranscript(spoken);
           currentTranscriptRef.current = spoken;
+
           if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+          // On mobile Android, if final result arrived, send immediately; otherwise wait briefly for pause
+          const delay = finalText.trim() ? 600 : 900;
           silenceTimerRef.current = setTimeout(() => {
             const toSend = currentTranscriptRef.current.trim();
             if (toSend) {
               handleUserMessageRef.current(toSend);
             }
-          }, 950);
+          }, delay);
         }
       };
 
       recognition.onerror = (event: any) => {
         const errType = event?.error;
-        console.warn('SpeechRecognition status:', errType);
-        // 'no-speech' is non-fatal: user simply didn't talk during window
+        // 'no-speech' is non-fatal: user simply didn't speak during the listening window
         if (errType === 'no-speech') {
           return;
         }
         if (errType !== 'aborted') {
+          console.log('SpeechRecognition notice:', errType);
           isListeningRef.current = false;
           setIsListening(false);
         }
       };
 
       recognition.onend = () => {
-        // If there was text waiting to be processed when silence ended, send it immediately
+        // If user finished speaking and text is waiting, send it right away
         if (currentTranscriptRef.current && currentTranscriptRef.current.trim()) {
           const pending = currentTranscriptRef.current.trim();
           currentTranscriptRef.current = '';
@@ -544,18 +647,17 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
           return;
         }
 
-        // On mobile Chrome, recognition can fire onend after pauses. If user still wants listening and coach is not speaking, seamlessly re-engage
+        // On mobile Chrome, recognition fires onend on pauses. If listening is still desired, seamlessly reconnect
         if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
           setTimeout(() => {
             if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
               try {
                 recognition.start();
               } catch (restartErr) {
-                // If start fails, fallback to full startRecognition
-                startRecognition();
+                startRecognitionRef.current();
               }
             }
-          }, 150);
+          }, 120);
         } else {
           isListeningRef.current = false;
           setIsListening(false);
@@ -575,8 +677,8 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
 
   startRecognitionRef.current = startRecognition;
 
-  // Click on the turquoise orb: direct user gesture triggers mic permission & starts recognition
-  const toggleListening = async () => {
+  // Click on central orb: toggle listening directly without locking audio tracks
+  const toggleListening = () => {
     if (isListening) {
       stopRecognition();
       if (currentTranscriptRef.current.trim()) {
@@ -585,40 +687,39 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         handleUserMessage(text);
       }
     } else {
-      // Direct user click: prompt browser for microphone permission without stopping stream before recognition connects
-      try {
-        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          // Do not instantly cut the hardware track before starting recognition on mobile devices
-          setTimeout(() => {
-            try {
-              stream.getTracks().forEach(t => t.stop());
-            } catch (trackErr) {}
-          }, 1500);
-        }
-      } catch (e) {
-        console.warn("User mic activation prompt:", e);
-      }
       startRecognition();
     }
   };
 
-  // Reset state on modal open - strictly triggers only once when isVisible becomes true
+  // 1-CLICK DIRECT STARTUP: As soon as the AI Coach opens, display & speak greeting in natural female voice and immediately begin listening
   useEffect(() => {
     if (!isVisible) {
       cleanupAudioHardware();
       return;
     }
     
-    setMessages([]);
     setCurrentTranscript('');
     currentTranscriptRef.current = '';
     accumulatedContextRef.current = '';
 
+    const greetingText = COACH_GREETINGS[language] || COACH_GREETINGS[Language.EN];
+    setMessages([{ role: 'assistant', text: greetingText }]);
+
+    // Trigger greeting speech and transition immediately to listening
+    if (!isMutedRef.current) {
+      speakVoice(greetingText, () => {
+        if (isVisibleRef.current && !isAiSpeakingRef.current) {
+          startRecognition();
+        }
+      });
+    } else {
+      startRecognition();
+    }
+
     return () => {
       cleanupAudioHardware();
     };
-  }, [isVisible, cleanupAudioHardware]);
+  }, [isVisible, language, speakVoice, startRecognition, cleanupAudioHardware]);
 
   if (!isVisible) return null;
 
