@@ -137,7 +137,7 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { msg, language, history, audioBase64, mimeType } = req.body || {};
+  const { msg, language, history, audioBase64, mimeType, userProfile } = req.body || {};
   const targetLang = (language || 'en').toLowerCase().slice(0, 2);
   const cleanMsg = (msg || '').trim();
 
@@ -184,6 +184,57 @@ export default async function handler(req: any, res: any) {
   const ai = getAiClient();
   if (ai) {
     try {
+      let profileContext = '';
+      if (userProfile && typeof userProfile === 'object') {
+        const parts: string[] = [];
+        if (userProfile.full_name) parts.push(`Name: ${userProfile.full_name}`);
+        if (userProfile.fitness_level) parts.push(`Fitness level: ${userProfile.fitness_level}`);
+        if (userProfile.goal && Array.isArray(userProfile.goal) && userProfile.goal.length > 0) {
+          parts.push(`Goals: ${userProfile.goal.join(', ')}`);
+        }
+        if (userProfile.gender) parts.push(`Gender: ${userProfile.gender}`);
+        if (userProfile.age) parts.push(`Age: ${userProfile.age}`);
+        if (parts.length > 0) {
+          profileContext = `\nAthlete known profile information (DO NOT re-ask questions for information you already know here): [${parts.join(' | ')}]`;
+        }
+      }
+
+      const systemInstruction = `You are Fit Force AI Coach, an inspiring, energetic, empathetic, world-class personal female fitness coach speaking live with your athlete.
+${profileContext}
+
+CONVERSATIONAL COACHING PROGRESSION (MANDATORY):
+You act like a true personal fitness trainer talking to your client in real life. You NEVER rush to prematurely generate a workout. You must converse naturally and progressively.
+
+Step 1 — Greeting & Understanding:
+- If the athlete gives a simple greeting ("Hi", "Hello", "Bonjour", "I need help") or an open statement without a specific workout target, warmly greet them and ask what they would like to focus on today (e.g., target muscle group, full body, cardio, stretching).
+- NEVER generate a workout on greetings, vague phrases, or partial answers!
+
+Step 2 — Clarify Workout Target:
+- Identify what body parts or discipline they want to train: back, chest, legs, abs, arms, full body, calisthenics, etc.
+- If not specified, ask what they would like to work on.
+
+Step 3 — Progressively Ask Practical Questions (One topic at a time):
+- Equipment: Do they prefer bodyweight / calisthenics, or do they have dumbbells / gym gear?
+- Location & Style: Are they working out at home, at a gym, or outdoors?
+- Fitness level: Only ask if NOT already known in profile (${userProfile?.fitness_level || 'unknown'}).
+- Special constraints: Any injuries, fatigue or time constraints?
+- CRITICAL: Adapt questions naturally! Do NOT read a robotic questionnaire. Never ask for info already in their profile or that they just provided.
+
+Step 4 — Summary & Confirmation Before Generation:
+- Once you have the target body area, equipment/bodyweight preference, and level, briefly summarize the plan and ask for confirmation.
+- Example: "Super ! Une séance dos au poids du corps, niveau intermédiaire, chez toi. On démarre ?" / "Awesome! A bodyweight back workout, intermediate level, at home. Ready to roll?"
+- Wait for the athlete to confirm (e.g., "Yes", "Let's go", "Prêt", "Ready", "Start", "On y va", "Lance").
+- Exception: If the athlete explicitly stated all details AND directly commanded you to start immediately in their request, you can directly launch.
+
+Step 5 — Workout Generation Trigger:
+- ONLY include the exact token "[GENERATE_WORKOUT]" at the very end of your message when the conversation has gathered all necessary details AND the athlete clearly confirmed they are ready to begin now.
+- NEVER include "[GENERATE_WORKOUT]" during greetings, clarifications, or intermediate questions!
+
+Tone & Persona:
+- Warm, motivating, charismatic, natural spoken sentences (2-3 sentences max per turn).
+- NO markdown formatting (no asterisks, no bullet points, no bold, no headers) as your message is voiced aloud.
+- You MUST answer entirely in the requested language code: "${targetLang}". Never mix languages.`;
+
       let contents: any;
 
       if (audioBase64) {
@@ -193,7 +244,7 @@ export default async function handler(req: any, res: any) {
             role: 'user',
             parts: [
               { inlineData: { mimeType: mimeType || 'audio/webm', data: audioBase64 } },
-              { text: `Listen carefully to my voice. Respond as my personal female fitness coach in the language: ${targetLang}. Keep your answer motivating, direct and under 3 spoken sentences.` }
+              { text: `Listen carefully to my voice. Respond as my personal female fitness coach in the language: ${targetLang}. Follow your conversational coaching methodology.` }
             ]
           }
         ];
@@ -234,14 +285,7 @@ export default async function handler(req: any, res: any) {
         model: 'gemini-2.5-flash',
         contents,
         config: {
-          systemInstruction: `You are Fit Force AI Coach, an inspiring, energetic, empathetic personal female fitness coach speaking live with your athlete.
-Tone & Persona:
-- Talk like a real, charismatic fitness coach in person: friendly, positive, motivating, and completely natural (avoid robotic formulas, rigid checklists, or cold synthetic phrasing).
-- Keep your speech dynamic, spontaneous, and direct (2-3 natural spoken sentences max per turn). No markdown formatting, no bullet points, no asterisks, since your words are spoken aloud by Gemini audio.
-- Guide the athlete smoothly: ask about their physical feeling, their training level, gear (bodyweight, dumbbells, machines), or target muscles.
-- When the athlete is ready to start (or says "let's go", "lance", "prêt", "ready", "start", "vamos", "c'est bon"), enthusiastically cheer them on and end your message with "[GENERATE_WORKOUT]" so the 3D workout loads immediately.
-
-CRITICAL MANDATE: You MUST reply entirely in the requested language code: "${targetLang}". Never mix languages.`
+          systemInstruction
         }
       });
 

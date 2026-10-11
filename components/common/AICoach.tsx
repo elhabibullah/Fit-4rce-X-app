@@ -235,7 +235,7 @@ const parseVoiceWorkoutParams = (text: string): WorkoutGenerationParams => {
 };
 
 const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
-  const { language, startWorkoutFromVoice, translate } = useApp();
+  const { language, startWorkoutFromVoice, translate, profile } = useApp();
   const [isListening, setIsListening] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -246,6 +246,9 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   // Synchronous refs to prevent stale closures
   const messagesRef = useRef<Message[]>(messages);
   messagesRef.current = messages;
+
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
 
   const isVisibleRef = useRef(isVisible);
   isVisibleRef.current = isVisible;

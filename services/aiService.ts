@@ -217,12 +217,11 @@ export const buildFallbackWorkoutPlan = (language: Language = Language.EN, optio
 export const generateWorkoutWithGemini = generateWorkout;
 export const generateWorkoutWithOpenAI = generateWorkout;
 export const generateWorkoutWithAnthropic = generateWorkout;
-export const generateWorkoutWithPerplexity = generateWorkout;
-
 export const getVoiceCoachResponse = async (
     query: { msg?: string; audioBase64?: string; mimeType?: string },
     language: string = 'en',
-    history?: Array<{ role: string; text: string }>
+    history?: Array<{ role: string; text: string }>,
+    userProfile?: any
 ): Promise<{ text: string; audio: string | null }> => {
     try {
         const response = await fetch('/api/chatbot-response', {
@@ -233,7 +232,8 @@ export const getVoiceCoachResponse = async (
                 audioBase64: query.audioBase64,
                 mimeType: query.mimeType,
                 language,
-                history
+                history,
+                userProfile
             })
         });
         const contentType = response.headers.get('content-type') || '';
