@@ -679,15 +679,16 @@ app.post('/api/chatbot-response', async (req: express.Request, res: express.Resp
 
     // Special initial greeting
     if (cleanMsg === '__GREETING__') {
+      const name = userProfile?.full_name ? userProfile.full_name.trim().split(' ')[0] : '';
       const greetings: Record<string, string> = {
-        fr: "Bonjour ! Comment allez-vous aujourd'hui ? Comment puis-je vous aider ?",
-        en: "Hi, how are you today? How can I help?",
-        es: "¡Hola! ¿Cómo estás hoy? ¿Cómo puedo ayudarte?",
-        ar: "مرحباً، كيف حالك اليوم؟ كيف يمكنني مساعدتك؟",
-        pt: "Olá, como você está hoje? Como posso ajudar?",
-        ja: "こんにちは！今日の調子はいかがですか？どのようなサポートが必要ですか？",
-        zh: "你好！今天感觉怎么样？我能为你提供什么帮助？",
-        ru: "Привет! Как вы себя чувствуете сегодня? Чем я могу помочь?"
+        fr: name ? `Bonjour ${name} ! Comment vas-tu aujourd'hui ? Comment puis-je t'aider ?` : "Bonjour ! Comment vas-tu aujourd'hui ? Comment puis-je t'aider ?",
+        en: name ? `Hi ${name}, how are you today? How can I help?` : "Hi, how are you today? How can I help?",
+        es: name ? `¡Hola ${name}! ¿Cómo estás hoy? ¿Cómo puedo ayudarte?` : "¡Hola! ¿Cómo estás hoy? ¿Cómo puedo ayudarte?",
+        ar: name ? `مرحباً ${name}، كيف حالك اليوم؟ كيف يمكنني مساعدتك؟` : "مرحباً، كيف حالك اليوم؟ كيف يمكنني مساعدتك؟",
+        pt: name ? `Olá ${name}, como você está hoje? Como posso ajudar?` : "Olá, como você está hoje? Como posso ajudar?",
+        ja: name ? `こんにちは、${name}さん！今日の調子はいかがですか？どのようなサポートが必要ですか？` : "こんにちは！今日の調子はいかがですか？どのようなサポートが必要ですか？",
+        zh: name ? `你好，${name}！今天感觉怎么样？我能为你提供什么帮助？` : "你好！今天感觉怎么样？我能为你提供什么帮助？",
+        ru: name ? `Привет, ${name}! Как вы себя чувствуете сегодня? Чем я могу помочь?` : "Привет! Как вы себя чувствуете сегодня? Чем я могу помочь?"
       };
       const greetText = greetings[targetLang] || greetings.en;
 

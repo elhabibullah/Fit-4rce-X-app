@@ -274,6 +274,8 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const vadIntervalRef = useRef<any>(null);
   const silenceTimerRef = useRef<any>(null);
   const accumulatedContextRef = useRef<string>('');
   const geminiAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -307,6 +309,18 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
+    }
+
+    if (vadIntervalRef.current) {
+      clearInterval(vadIntervalRef.current);
+      vadIntervalRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close();
+      } catch (e) {}
+      audioContextRef.current = null;
     }
 
     if (geminiAudioRef.current) {
@@ -346,6 +360,16 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
     setIsListening(false);
+
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+
+    if (vadIntervalRef.current) {
+      clearInterval(vadIntervalRef.current);
+      vadIntervalRef.current = null;
+    }
 
     if (recognitionRef.current) {
       try {
@@ -426,7 +450,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     }
   }, [stopListening]);
 
-  // Dual-engine microphone: MediaRecorder fallback for Android WebView (WebIntoApp)
+  // Robust MediaRecorder listening with Web Audio VAD for Android installed app (PWABuilder / WebView)
   const startMediaRecorderListening = useCallback(async () => {
     if (!isVisibleRef.current || isAiSpeakingRef.current || isThinkingRef.current) return;
     try {
@@ -435,17 +459,31 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         return;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Request stream with echo cancellation and noise suppression
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
       mediaStreamRef.current = stream;
       audioChunksRef.current = [];
 
-      const mimeType = typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/mp4')
-        ? 'audio/mp4'
-        : 'audio/wav';
+      let mimeType = 'audio/webm';
+      if (typeof MediaRecorder !== 'undefined') {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = 'audio/webm';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+          mimeType = 'audio/aac';
+        }
+      }
 
-      const recorder = new MediaRecorder(stream, { mimeType: mimeType as any });
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (e) => {
@@ -455,24 +493,110 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       };
 
       recorder.onstop = async () => {
-        if (audioChunksRef.current.length > 0) {
-          const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
-          audioChunksRef.current = [];
+        if (vadIntervalRef.current) {
+          clearInterval(vadIntervalRef.current);
+          vadIntervalRef.current = null;
+        }
+        if (audioContextRef.current) {
+          try { audioContextRef.current.close(); } catch (e) {}
+          audioContextRef.current = null;
+        }
+
+        const chunks = [...audioChunksRef.current];
+        audioChunksRef.current = [];
+
+        if (chunks.length > 0) {
+          const blob = new Blob(chunks, { type: recorder.mimeType || mimeType });
           if (blob.size > 800) {
-            submitAudioBlob(blob, recorder.mimeType || 'audio/webm');
+            submitAudioBlob(blob, recorder.mimeType || mimeType);
+          } else if (isVisibleRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
+            startListeningRef.current();
           }
         }
+
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach(t => t.stop());
           mediaStreamRef.current = null;
         }
       };
 
-      recorder.start(250);
+      // Real-time Voice Activity Detection (VAD) via Web Audio API
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          const audioCtx = new AudioContextClass();
+          audioContextRef.current = audioCtx;
+          if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+          }
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256;
+          source.connect(analyser);
+
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          let hasSpoken = false;
+          let silenceStartTime = 0;
+          const recordingStartTime = Date.now();
+
+          if (vadIntervalRef.current) clearInterval(vadIntervalRef.current);
+          vadIntervalRef.current = setInterval(() => {
+            if (!isListeningRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') {
+              if (vadIntervalRef.current) {
+                clearInterval(vadIntervalRef.current);
+                vadIntervalRef.current = null;
+              }
+              return;
+            }
+
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              sum += dataArray[i];
+            }
+            const avgVolume = sum / dataArray.length;
+
+            // Speech detection threshold
+            if (avgVolume > 14) {
+              hasSpoken = true;
+              silenceStartTime = 0;
+            } else if (hasSpoken) {
+              // User has spoken and is now silent
+              if (silenceStartTime === 0) {
+                silenceStartTime = Date.now();
+              } else if (Date.now() - silenceStartTime > 1300) {
+                // 1.3s silence: automatically stop and process!
+                if (vadIntervalRef.current) {
+                  clearInterval(vadIntervalRef.current);
+                  vadIntervalRef.current = null;
+                }
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                  mediaRecorderRef.current.stop();
+                }
+              }
+            }
+
+            // Safety limit: if user has spoken and 8s passed, stop and process
+            if (Date.now() - recordingStartTime > 8000 && hasSpoken) {
+              if (vadIntervalRef.current) {
+                clearInterval(vadIntervalRef.current);
+                vadIntervalRef.current = null;
+              }
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                mediaRecorderRef.current.stop();
+              }
+            }
+          }, 100);
+        }
+      } catch (vadError) {
+        console.warn('VAD setup notice:', vadError);
+      }
+
+      recorder.start(200);
       isListeningRef.current = true;
       setIsListening(true);
     } catch (micErr) {
-      console.warn('MediaRecorder permission or hardware notice:', micErr);
+      console.warn('MediaRecorder error or mic permission denied:', micErr);
       isListeningRef.current = false;
       setIsListening(false);
     }
@@ -491,6 +615,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         const base64data = resultStr ? resultStr.split(',')[1] : null;
         if (!base64data) {
           setIsThinking(false);
+          if (isVisibleRef.current) startListeningRef.current();
           return;
         }
 
@@ -502,14 +627,14 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         const res = await getVoiceCoachResponse({
           audioBase64: base64data,
           mimeType
-        }, language, historyList);
+        }, language, historyList, profileRef.current);
 
         setIsThinking(false);
-        setMessages(prev => [...prev, { role: 'assistant', text: res.text }]);
-        accumulatedContextRef.current += ' ' + res.text;
+        const shouldLaunch = res.text.includes('[GENERATE_WORKOUT]');
+        const displayText = res.text.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
 
-        const shouldLaunch = res.text.includes('[GENERATE_WORKOUT]') ||
-          /lance (ta|votre) s[eé]ance|g[eé]n[eè]re ta s[eé]ance/i.test(res.text);
+        setMessages(prev => [...prev, { role: 'assistant', text: displayText }]);
+        accumulatedContextRef.current = (accumulatedContextRef.current ? accumulatedContextRef.current + ' ' : '') + displayText;
 
         if (res.audio) {
           playGeminiAudio(res.audio, () => {
@@ -525,7 +650,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     } catch (err) {
       console.error('Audio submit error:', err);
       setIsThinking(false);
-      startListeningRef.current();
+      if (isVisibleRef.current) startListeningRef.current();
     }
   };
 
@@ -541,41 +666,13 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     setMessages(prev => [...prev, { role: 'user', text: cleanText }]);
     accumulatedContextRef.current = (accumulatedContextRef.current ? accumulatedContextRef.current + ' ' : '') + cleanText;
 
-    const lower = cleanText.toLowerCase();
-    const isReadyTrigger = (
-      lower.includes('prêt') || lower.includes('pret') || lower.includes('lance') ||
-      lower.includes('start') || lower.includes("let's go") ||
-      lower.includes('جاهز') || lower.includes('ابدأ') || lower.includes('يلا') ||
-      lower.includes('listo') || lower.includes('vamos') || lower.includes('empezar') ||
-      lower.includes('pronto') || lower.includes('começar') || lower.includes('iniciar') ||
-      lower.includes('準備') || lower.includes('開始') || lower.includes('スタート') ||
-      lower.includes('开始') || lower.includes('准备好了') ||
-      lower.includes('готов') || lower.includes('старт') || lower.includes('поехали')
-    );
-
-    if (isReadyTrigger) {
-      const confirmText = translate('workout.loading.calculating') || "C'est parti ! Je génère votre séance avec le coach 3D.";
-      setMessages(prev => [...prev, { role: 'assistant', text: confirmText }]);
-      const res = await getVoiceCoachResponse({ msg: confirmText }, language);
-      if (res.audio) {
-        playGeminiAudio(res.audio, () => {
-          executeWorkoutLaunch(accumulatedContextRef.current);
-        });
-      } else {
-        executeWorkoutLaunch(accumulatedContextRef.current);
-      }
-      return;
-    }
-
     setIsThinking(true);
     try {
       const historyList = messagesRef.current.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
-      const res = await getVoiceCoachResponse({ msg: cleanText }, language, historyList);
+      const res = await getVoiceCoachResponse({ msg: cleanText }, language, historyList, profileRef.current);
       
-      const shouldLaunch = res.text.includes('[GENERATE_WORKOUT]') ||
-        /lance (ta|votre) s[eé]ance|g[eé]n[eè]re ta s[eé]ance|generating your|preparing your custom/i.test(res.text);
-
-      const displayText = res.text.replace(/\[GENERATE_WORKOUT\]/g, '').trim();
+      const shouldLaunch = res.text.includes('[GENERATE_WORKOUT]');
+      const displayText = res.text.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
       setMessages(prev => [...prev, { role: 'assistant', text: displayText }]);
 
       if (res.audio) {
@@ -596,122 +693,131 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     } catch (err) {
       console.warn("AI Coach response error:", err);
       const fallbackMsg = language === Language.FR 
-        ? "Bien reçu ! Quel type d'exercices souhaitez-vous cibler aujourd'hui ?"
+        ? "Bien reçu ! Quel muscle ou discipline souhaites-tu travailler aujourd'hui ?"
         : "Got it! Which muscle group or exercise style would you like to target today?";
       setMessages(prev => [...prev, { role: 'assistant', text: fallbackMsg }]);
-      startListeningRef.current();
+      if (isVisibleRef.current) startListeningRef.current();
     } finally {
       setIsThinking(false);
     }
-  }, [language, translate, playGeminiAudio, stopListening, executeWorkoutLaunch]);
+  }, [language, playGeminiAudio, stopListening, executeWorkoutLaunch]);
 
   handleUserMessageRef.current = submitTextMessage;
 
-  // Dual-Engine Listening Startup: Web Speech API on Chrome PC/Mobile with automatic MediaRecorder fallback for Android WebView
+  // Dual-Engine Listening Startup:
+  // - On Android installed apps (PWABuilder / TWA / WebView): Direct native MediaRecorder with real-time VAD
+  // - On Standard Browsers: Web Speech API with seamless MediaRecorder fallback on error
   const startListening = useCallback(() => {
     if (!isVisibleRef.current) return;
     if (isAiSpeakingRef.current || isThinkingRef.current) return;
 
+    const isStandaloneOrWebView = typeof window !== 'undefined' && (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true ||
+      (/android/i.test(navigator.userAgent) && /wv|WebView|WebIntoApp|Version\/[0-9.]+/i.test(navigator.userAgent))
+    );
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-    if (SpeechRecognition) {
-      try {
-        if (recognitionRef.current) {
-          try {
-            recognitionRef.current.onresult = null;
-            recognitionRef.current.onend = null;
-            recognitionRef.current.onerror = null;
-            recognitionRef.current.abort();
-          } catch (e) {}
-          recognitionRef.current = null;
-        }
-
-        const recognition = new SpeechRecognition();
-        recognition.lang = speechLang;
-
-        const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        recognition.continuous = !isMobile;
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 1;
-
-        recognition.onstart = () => {
-          isListeningRef.current = true;
-          setIsListening(true);
-        };
-
-        recognition.onresult = (event: any) => {
-          if (isAiSpeakingRef.current || isThinkingRef.current) return;
-
-          let interimText = '';
-          let finalText = '';
-
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            const item = event.results[i];
-            if (item.isFinal) finalText += item[0].transcript + ' ';
-            else interimText += item[0].transcript + ' ';
-          }
-
-          const spoken = (finalText || interimText).trim();
-          if (spoken) {
-            setCurrentTranscript(spoken);
-            currentTranscriptRef.current = spoken;
-
-            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-            const delay = finalText.trim() ? 600 : 900;
-            silenceTimerRef.current = setTimeout(() => {
-              const toSend = currentTranscriptRef.current.trim();
-              if (toSend) {
-                submitTextMessage(toSend);
-              }
-            }, delay);
-          }
-        };
-
-        recognition.onerror = (event: any) => {
-          const errType = event?.error;
-          if (errType === 'no-speech') return;
-          console.warn('SpeechRecognition notice:', errType);
-          // On mobile Android WebView, if speech service is not available, switch to MediaRecorder
-          if (errType === 'not-allowed' || errType === 'service-not-allowed') {
-            startMediaRecorderListening();
-          }
-        };
-
-        recognition.onend = () => {
-          if (currentTranscriptRef.current && currentTranscriptRef.current.trim()) {
-            const pending = currentTranscriptRef.current.trim();
-            currentTranscriptRef.current = '';
-            submitTextMessage(pending);
-            return;
-          }
-
-          if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
-            setTimeout(() => {
-              if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
-                try {
-                  recognition.start();
-                } catch (e) {
-                  startListening();
-                }
-              }
-            }, 120);
-          } else {
-            setIsListening(false);
-          }
-        };
-
-        recognition.start();
-        recognitionRef.current = recognition;
-        isListeningRef.current = true;
-        setIsListening(true);
-        return;
-      } catch (speechErr) {
-        console.warn('SpeechRecognition start failed, using MediaRecorder:', speechErr);
-      }
+    // In Android installed standalone PWA / WebView apps, Web Speech API Google service is unavailable.
+    // Use the native MediaRecorder + Gemini Multimodal Audio engine with real-time VAD directly!
+    if (isStandaloneOrWebView || !SpeechRecognition) {
+      startMediaRecorderListening();
+      return;
     }
 
-    // Direct MediaRecorder fallback for WebIntoApp APK & browsers without Web Speech API
-    startMediaRecorderListening();
+    try {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.onresult = null;
+          recognitionRef.current.onend = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current.abort();
+        } catch (e) {}
+        recognitionRef.current = null;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = speechLang;
+
+      const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      recognition.continuous = !isMobile;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        isListeningRef.current = true;
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        if (isAiSpeakingRef.current || isThinkingRef.current) return;
+
+        let interimText = '';
+        let finalText = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const item = event.results[i];
+          if (item.isFinal) finalText += item[0].transcript + ' ';
+          else interimText += item[0].transcript + ' ';
+        }
+
+        const spoken = (finalText || interimText).trim();
+        if (spoken) {
+          setCurrentTranscript(spoken);
+          currentTranscriptRef.current = spoken;
+
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+          const delay = finalText.trim() ? 600 : 900;
+          silenceTimerRef.current = setTimeout(() => {
+            const toSend = currentTranscriptRef.current.trim();
+            if (toSend) {
+              submitTextMessage(toSend);
+            }
+          }, delay);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        const errType = event?.error;
+        if (errType === 'no-speech') return;
+        console.warn('SpeechRecognition notice:', errType);
+        // On ANY error (network, not-allowed, audio-capture, service-not-allowed), switch seamlessly to MediaRecorder
+        startMediaRecorderListening();
+      };
+
+      recognition.onend = () => {
+        if (currentTranscriptRef.current && currentTranscriptRef.current.trim()) {
+          const pending = currentTranscriptRef.current.trim();
+          currentTranscriptRef.current = '';
+          submitTextMessage(pending);
+          return;
+        }
+
+        if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
+          setTimeout(() => {
+            if (isVisibleRef.current && isListeningRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
+              try {
+                recognition.start();
+              } catch (e) {
+                startMediaRecorderListening();
+              }
+            }
+          }, 120);
+        } else {
+          setIsListening(false);
+        }
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
+      isListeningRef.current = true;
+      setIsListening(true);
+      return;
+    } catch (speechErr) {
+      console.warn('SpeechRecognition start failed, using MediaRecorder:', speechErr);
+      startMediaRecorderListening();
+    }
   }, [speechLang, submitTextMessage, startMediaRecorderListening]);
 
   startListeningRef.current = startListening;
@@ -753,7 +859,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     accumulatedContextRef.current = '';
 
     // Directly load the genuine Gemini greeting (voice Kore)
-    getVoiceCoachResponse({ msg: '__GREETING__' }, language).then(res => {
+    getVoiceCoachResponse({ msg: '__GREETING__' }, language, undefined, profileRef.current).then(res => {
       if (!isVisibleRef.current) return;
       setMessages([{ role: 'assistant', text: res.text }]);
 
