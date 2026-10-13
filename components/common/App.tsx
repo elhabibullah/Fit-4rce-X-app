@@ -106,13 +106,13 @@ const App: React.FC = () => {
         {expertToBook && <ExpertAdviceScreen trainer={expertToBook} onClose={closeBookingScreen} />}
         
         {isGeneratingWorkout && (
-          <div className="fixed inset-0 z-[10001] bg-black flex flex-col items-center justify-center p-8 text-center animate-fadeIn">
-              <div className="relative mb-8">
-                  <div className="scale-125">
+          <div className="fixed inset-0 z-[10001] bg-black/60 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center animate-fadeIn pointer-events-none">
+              <div className="relative mb-6">
+                  <div className="scale-110">
                       <Loader />
                   </div>
               </div>
-              <h2 className="text-xs sm:text-sm font-black text-purple-400 uppercase tracking-[0.35em] animate-pulse max-w-xs sm:max-w-sm">
+              <h2 className="text-xs sm:text-sm font-black text-purple-300 uppercase tracking-[0.35em] animate-pulse max-w-xs sm:max-w-sm px-4 py-2 rounded-full bg-purple-950/70 border border-purple-500/30">
                 {translate('workout.loading.calculating')}
               </h2>
           </div>

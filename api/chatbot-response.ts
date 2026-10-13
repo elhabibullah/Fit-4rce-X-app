@@ -203,82 +203,94 @@ export default async function handler(req: any, res: any) {
       const systemInstruction = `You are Fit Force AI Coach, an inspiring, energetic, empathetic, world-class personal female fitness coach speaking live with your athlete.
 ${profileContext}
 
-CONVERSATIONAL COACHING PROGRESSION (MANDATORY):
-You act like a true personal fitness trainer talking to your client in real life. You NEVER rush to prematurely generate a workout. You must converse naturally and progressively.
+STRICT CONVERSATIONAL COACHING RULES (MANDATORY & ENFORCED):
+You act like a true personal fitness trainer talking to your client in real life. You NEVER rush to generate a workout. You converse step by step.
 
-Step 1 — Greeting & Understanding:
-- If the athlete gives a simple greeting ("Hi", "Hello", "Bonjour", "I need help") or an open statement without a specific workout target, warmly greet them and ask what they would like to focus on today (e.g., target muscle group, full body, cardio, stretching).
-- NEVER generate a workout on greetings, vague phrases, or partial answers!
+Step 1 — Greeting:
+- Greet warmly, acknowledge their profile name if known, and ask what they would like to focus on today.
+- NEVER generate a workout here.
 
-Step 2 — Clarify Workout Target:
-- Identify what body parts or discipline they want to train: back, chest, legs, abs, arms, full body, calisthenics, etc.
-- If not specified, ask what they would like to work on.
+Step 2 — Identification of Objective (Muscle group or discipline):
+- When the athlete states what they want to train (e.g. "I want exercises for my legs", "I want to train my legs", "legs", "back", "abs", "chest", "arms", "full body", etc.):
+  1. Validate enthusiastically ("Awesome choice! Legs it is!").
+  2. Ask ONLY ONE question about equipment: "Do you want to do bodyweight / calisthenics, or do you have weights and dumbbells?"
+  3. ABSOLUTE PROHIBITION: You MUST NOT output [GENERATE_WORKOUT] here! The athlete has only stated their target area, NOT confirmed a workout!
 
-Step 3 — Progressively Ask Practical Questions (One topic at a time):
-- Equipment: Do they prefer bodyweight / calisthenics, or do they have dumbbells / gym gear?
-- Location & Style: Are they working out at home, at a gym, or outdoors?
-- Fitness level: Only ask if NOT already known in profile (${userProfile?.fitness_level || 'unknown'}).
-- Special constraints: Any injuries, fatigue or time constraints?
-- CRITICAL: Adapt questions naturally! Do NOT read a robotic questionnaire. Never ask for info already in their profile or that they just provided.
+Step 3 — Follow-up Questions (One topic at a time):
+- When they answer about equipment:
+  1. Acknowledge and ask about location and any constraints: "Got it! Are you working out at home, at a gym, or outdoors? And any injuries or aches I should be aware of today?"
+  2. ABSOLUTE PROHIBITION: You MUST NOT output [GENERATE_WORKOUT] here!
 
-Step 4 — Summary & Confirmation Before Generation:
-- Once you have the target body area, equipment/bodyweight preference, and level, briefly summarize the plan and ask for confirmation.
-- Example: "Super ! Une séance dos au poids du corps, niveau intermédiaire, chez toi. On démarre ?" / "Awesome! A bodyweight back workout, intermediate level, at home. Ready to roll?"
-- Wait for the athlete to confirm (e.g., "Yes", "Let's go", "Prêt", "Ready", "Start", "On y va", "Lance").
-- Exception: If the athlete explicitly stated all details AND directly commanded you to start immediately in their request, you can directly launch.
+Step 4 — Summary & Confirmation Request:
+- When you have (1) target muscle/area, (2) equipment (bodyweight or weights), and (3) location:
+  1. Briefly summarize the proposed session in 1 inspiring sentence.
+  2. Ask if they are ready to start: "Super ! Une séance jambes au poids du corps à la maison, niveau intermédiaire. Es-tu prêt à démarrer ?" / "Awesome! A bodyweight leg session at home, intermediate level. Ready to crush it?"
+  3. ABSOLUTE PROHIBITION: You MUST NOT output [GENERATE_WORKOUT] here! You MUST wait for their confirmation!
 
-Step 5 — Workout Generation Trigger:
-- ONLY include the exact token "[GENERATE_WORKOUT]" at the very end of your message when the conversation has gathered all necessary details AND the athlete clearly confirmed they are ready to begin now.
-- NEVER include "[GENERATE_WORKOUT]" during greetings, clarifications, or intermediate questions!
+Step 5 — Final Confirmation & Launch:
+- ONLY WHEN the athlete explicitly confirms that they are ready to begin (e.g. "Yes", "Oui", "Let's go", "Ready", "Prêt", "C'est parti", "Go", "On y va", "Lance"):
+  1. Give an energetic, motivating launch phrase (e.g. "C'est parti Habib, on donne tout !").
+  2. Append the exact token "[GENERATE_WORKOUT]" at the very end of your response!
 
 Tone & Persona:
 - Warm, motivating, charismatic, natural spoken sentences (2-3 sentences max per turn).
-- NO markdown formatting (no asterisks, no bullet points, no bold, no headers) as your message is voiced aloud.
+- NEVER use markdown formatting (no asterisks, no bullet points, no bold, no headers) as your message is voiced aloud.
 - You MUST answer entirely in the requested language code: "${targetLang}". Never mix languages.`;
 
       let contents: any;
 
       if (audioBase64) {
-        // Direct audio input from MediaRecorder (for Android WebView & mobile fallback)
-        contents = [
-          {
-            role: 'user',
-            parts: [
-              { inlineData: { mimeType: mimeType || 'audio/webm', data: audioBase64 } },
-              { text: `Listen carefully to my voice. Respond as my personal female fitness coach in the language: ${targetLang}. Follow your conversational coaching methodology.` }
-            ]
-          }
-        ];
-      } else {
-        contents = cleanMsg;
+        const audioPart = { inlineData: { mimeType: mimeType || 'audio/webm', data: audioBase64 } };
+        const promptPart = { text: `Listen carefully to my voice. Respond as my personal female fitness coach in language: ${targetLang}. Follow the step-by-step coaching protocol.` };
+
         if (Array.isArray(history) && history.length > 0) {
-          const rawTurns = history.map((h: any) => ({
-            role: (h.role === 'user' ? 'user' : 'model') as 'user' | 'model',
-            parts: [{ text: String(h.text || '') }]
-          }));
-
-          // Gemini multi-turn conversation must start with a 'user' turn
-          const firstUserIdx = rawTurns.findIndex(t => t.role === 'user');
-          const validHistory = firstUserIdx !== -1 ? rawTurns.slice(firstUserIdx) : [];
-
-          // Collapse consecutive turns of same role into single turns
           const alternating: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
-          for (const turn of validHistory) {
-            if (alternating.length > 0 && alternating[alternating.length - 1].role === turn.role) {
-              alternating[alternating.length - 1].parts[0].text += '\n' + turn.parts[0].text;
+          for (const h of history) {
+            const role = h.role === 'user' ? 'user' : 'model';
+            const text = String(h.text || '').trim();
+            if (!text) continue;
+            if (alternating.length > 0 && alternating[alternating.length - 1].role === role) {
+              alternating[alternating.length - 1].parts[0].text += '\n' + text;
             } else {
-              alternating.push(turn);
+              alternating.push({ role, parts: [{ text }] });
             }
           }
-
-          // Append latest clean user message
-          if (alternating.length > 0 && alternating[alternating.length - 1].role === 'user') {
-            alternating[alternating.length - 1].parts[0].text += '\n' + cleanMsg;
-          } else {
-            alternating.push({ role: 'user', parts: [{ text: cleanMsg }] });
+          if (alternating.length > 0 && alternating[0].role !== 'user') {
+            alternating.unshift({ role: 'user', parts: [{ text: 'Hello coach' }] });
           }
-
+          alternating.push({
+            role: 'user',
+            parts: [audioPart, promptPart] as any
+          });
           contents = alternating;
+        } else {
+          contents = [
+            {
+              role: 'user',
+              parts: [audioPart, promptPart]
+            }
+          ];
+        }
+      } else {
+        if (Array.isArray(history) && history.length > 0) {
+          const alternating: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+          for (const h of history) {
+            const role = h.role === 'user' ? 'user' : 'model';
+            const text = String(h.text || '').trim();
+            if (!text) continue;
+            if (alternating.length > 0 && alternating[alternating.length - 1].role === role) {
+              alternating[alternating.length - 1].parts[0].text += '\n' + text;
+            } else {
+              alternating.push({ role, parts: [{ text }] });
+            }
+          }
+          if (alternating.length > 0 && alternating[0].role !== 'user') {
+            alternating.unshift({ role: 'user', parts: [{ text: 'Hello coach' }] });
+          }
+          alternating.push({ role: 'user', parts: [{ text: cleanMsg }] });
+          contents = alternating;
+        } else {
+          contents = cleanMsg;
         }
       }
 
@@ -290,7 +302,15 @@ Tone & Persona:
         }
       });
 
-      const replyText = response.text || getSmartFallbackReply(cleanMsg || 'hello', targetLang);
+      let replyText = (response.text || getSmartFallbackReply(cleanMsg || 'hello', targetLang)).trim();
+
+      // Guard: Prevent premature [GENERATE_WORKOUT] if user hasn't explicitly confirmed
+      const isConfirmation = /^(oui|yes|ouais|yep|yeah|let's go|lets go|c'est parti|cest parti|je suis pr[eê]t|im ready|i am ready|go|on y va|lance|start|d[eé]marre|en route|pret|prête|ready)\b/i.test(cleanMsg) ||
+        /\b(let's go|c'est parti|lance la s[eé]ance|d[eé]marre la s[eé]ance|on commence|je suis prêt|ready to start)\b/i.test(cleanMsg);
+      const userTurnCount = Array.isArray(history) ? history.filter((h: any) => h.role === 'user').length : 0;
+      if (replyText.includes('[GENERATE_WORKOUT]') && !isConfirmation && userTurnCount < 2) {
+        replyText = replyText.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
+      }
 
       // Generate natural, ultra-realistic human female voice audio via Gemini TTS
       let audio: string | null = null;

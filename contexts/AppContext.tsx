@@ -258,7 +258,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [updateUserProfile]);
 
   const startWorkoutFromVoice = useCallback(async (params: WorkoutGenerationParams) => {
-    setIsCoachOpen(false);
     setIsGeneratingWorkout(true); 
     const intent = `High intensity ${params.intensity || 'medium'} ${params.workoutType || 'fitness'} session. Equipment: ${params.equipment?.join(', ') || 'bodyweight'}. Focus: ${params.targetArea?.join(', ') || 'full body'}. ${params.customPrompt || ''}`;
     try {
@@ -283,6 +282,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         setSelectedPlan(plan);
         setScreen(Screen.Workout);
+        setIsCoachOpen(false);
     } catch (e) {
         console.error("Voice workout startup fallback:", e);
         const fallbackPlan = buildFallbackWorkoutPlan(language, { 
@@ -292,10 +292,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         setSelectedPlan(fallbackPlan);
         setScreen(Screen.Workout);
+        setIsCoachOpen(false);
     } finally {
         setIsGeneratingWorkout(false);
     }
-  }, [language, setScreen, setSelectedPlan, setIsGeneratingWorkout]);
+  }, [language, setScreen, setSelectedPlan, setIsGeneratingWorkout, setIsCoachOpen]);
 
   // ON MOUNT: LOADING STATUS & FRESH JOURNEY RESET
   useEffect(() => {
