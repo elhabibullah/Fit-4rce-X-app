@@ -208,11 +208,14 @@ export class HumanoidMotionEngine {
       this.lastSolveResult = solveResult;
 
       // 3. Keep hips solidly anchored to calibrated pose height
-      // Apply exact world elevation compensation so feet/hands stay planted on the podium
+      // Apply world elevation compensation directly without accumulating across frames
       if (solveResult.hipsElevationAdjust !== 0) {
         const currentHips = this.retargeter.hipsBone;
-        if (currentHips) {
-          currentHips.position.y += solveResult.hipsElevationAdjust * this.retargeter.worldToLocalScale;
+        const calibratedHips = this.retargeter.bones.get('Hips');
+        if (currentHips && calibratedHips) {
+          const clampedAdjust = Math.max(-0.15, Math.min(0.15, solveResult.hipsElevationAdjust));
+          // Apply clampedAdjust relative to calibrated baseline rather than compounding +=
+          currentHips.position.y = calibratedHips.bone.position.y + clampedAdjust * this.retargeter.worldToLocalScale;
           currentHips.updateMatrixWorld(true);
         }
       }

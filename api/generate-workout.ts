@@ -57,32 +57,51 @@ Generate an authentic, professional 5-exercise workout plan in the exact target 
 
 CRITICAL LANGUAGE RULE:
 - All exercise names, descriptions, title, and instructions MUST BE IN ${targetLang}. If ${targetLang} is "en", DO NOT use French names.
-- NO INVENTED OR WEIRD NAMES. Use ONLY standard, real exercises known by certified personal trainers (e.g. in English: Push-ups, Squats, Lunges, Plank, Burpees, Crunches, Glute Bridge, Jumping Jacks, High Knees, Inverted Rows).
-- Every exercise must include a valid "canonicalId" from: "push_up", "squat", "lunge", "reverse_lunge", "plank", "burpee", "crunch", "glute_bridge", "jumping_jack", "high_knees", "bent_over_row", "bicep_curl", "overhead_press", "deadlift".
+- NO INVENTED OR WEIRD NAMES. Use ONLY standard, real exercises known by certified personal trainers.
+- Every exercise must include a valid "canonicalId" from:
+  "archer_push_up", "diamond_push_ups", "jumping_squats", "bear_crawl_forward_backward",
+  "hollow_body_hold", "forearm_to_pushup_plank", "plank_hop_to_squat", "plank_knee_to_elbow_advanced",
+  "plank_walk_back_and_forth", "plank_walk_left_right", "plank_variations_buzzsaw",
+  "alternative_arm_plank_hold", "alternative_leg_plank_hold", "alternative_superman_plank_advanced",
+  "push_up", "squat", "lunge", "reverse_lunge", "plank", "burpee", "crunch", "glute_bridge", "jumping_jack", "high_knees", "bent_over_row", "bicep_curl", "overhead_press", "deadlift".
+
+CRITICAL BODYWEIGHT / CALISTHENICS RULE:
+When Equipment Mode is "bodyweight" (no machines, no weights) or workout discipline is "calisthenics" / "corps" / "core":
+You MUST PRIORITIZE the 14 movements with built-in authentic 3D Android animations:
+1. archer_push_up (Archer Push-ups / Pompes Archer / تمرين ضغط القوس)
+2. diamond_push_ups (Diamond Push-ups / Pompes diamant / تمرين ضغط الماس)
+3. jumping_squats (Jumping Squats / Squats sautés / قرفصاء مع القفز الانفجاري)
+4. bear_crawl_forward_backward (Bear Crawl / Marche de l'ours / زحف الدب للأمام والخلف)
+5. hollow_body_hold (Hollow Body Hold / Maintien Hollow Body / تثبيت وضعية التجويف)
+6. forearm_to_pushup_plank (Commandos / Planche commando / بلانك كوماندوز)
+7. plank_hop_to_squat (Plank Hop to Squat / Saut de planche vers squat / القفز من البلانك إلى القرفصاء)
+8. plank_knee_to_elbow_advanced (Spider Plank Knee to Elbow / Planche genou-coude / بلانك متقدم ركبة إلى الكوع)
+9. plank_walk_back_and_forth (Plank Walk Back & Forth / Planche avant-arrière / مشي البلانك للأمام والخلف)
+10. plank_walk_left_right (Lateral Plank Walk / Planche latérale / مشي البلانك الجانبي)
+11. plank_variations_buzzsaw (Buzzsaw Plank / Planche scie va-et-vient / بلانك المنشار المتأرجح)
+12. alternative_arm_plank_hold (Arm Plank Hold / Planche levée de bras / بلانك مع رفع الذراع بالتناوب)
+13. alternative_leg_plank_hold (Leg Plank Hold / Planche levée de jambe / بلانك مع رفع الساق بالتناوب)
+14. alternative_superman_plank_advanced (Advanced Superman Plank / Planche Superman avancée / بلانك سوبرمان المتقدم بالتناوب)
+
+CRITICAL ARABIC ATHLETIC TRANSLATION MANDATE:
+When target language is "ar" (Arabic):
+Provide natural, high-level sports translations in Arabic for all titles, names, and descriptions (e.g. use terms like تمرين ضغط القوس, بلانك كوماندوز, زحف الدب للأمام والخلف, etc.).
 
 Workout Discipline: ${workoutType}
 Fitness Level: ${fitnessLevel}
 Equipment Mode: ${equipment}
 Specific User Instructions: ${combinedPrompt}
-Specific User Instructions: ${combinedPrompt}
 
 CRITICAL DIVERSITY & ANATOMICAL MANDATE:
 - DO NOT RESTRICT YOURSELF to a narrow, repetitive set of 2-4 standard exercises!
-- Tap into the vast encyclopedic repertoire of hundreds of authentic movements in this discipline:
-  * For Calisthenics: Variations of pull-ups (pronated, supinated, wide, archer, typewriter, commando, inverted rows), dips (parallel, straight bar, rings), push-ups (diamond, decline, pseudo-planche, pike, handstand, archer, hindu), levers & core holds (L-sit, dragon flag, hollow body), and bodyweight leg mastery (pistol, shrimp, sissy, cossack, Nordic curls).
-  * For Core, Abdominals & Planks: Over 500 movement variations exist! Forearm planks, RKC planks, Copenhagen planks, dynamic side planks with hip drop or leg lift, hollow body holds/rocks, ab wheel rollouts, hanging leg raises, deadbugs, bird dogs, Russian twists, reverse crunches, bear crawl holds, etc.
-  * For Pilates: Full classical & contemporary repertoire (The Hundred, Roll Up, Roll Over, Single/Double Leg Stretch, Criss-cross, Spine Stretch, Saw, Swan Dive, Single/Double Leg Kick, Scissors, Bicycle, Shoulder Bridge, Side Kick series, Teasers, Swimming, Leg Pulls, Boomerang, Seal, etc.).
-  * For Yoga: Vast classical asana repertoire (Surya Namaskar, Virabhadrasana I/II/III, Trikonasana, Bakasana, Sirsasana, Urdhva Dhanurasana, Matsyasana, Bhujangasana, Gomukhasana, Paschimottanasana, Ardha Matsyendrasana, Baddha Konasana, etc.).
-  * For Powerlifting: Squats (low bar, high bar, paused, pin, box, front), Bench Press (competition, close-grip, spoto, floor press), Deadlifts (conventional, sumo, Romanian, deficit, block pull), Military press, Pendlay/Yates rows, good mornings, hip thrusts.
-  * For Hypertrophy / Bodybuilding: Incline/decline presses, dumbbell flyes, Arnold presses, lateral raises, Romanian deadlifts, Bulgarian split squats, hammer curls, skull crushers.
-  * For Conditioning / HIIT: Burpees, mountain climbers, skater jumps, tuck jumps, box jumps, kettlebell swings, bear crawls.
+- Tap into the vast encyclopedic repertoire of hundreds of authentic movements in this discipline.
 
 The session protocol requires exactly ${targetSets} sets of ${targetReps} reps per exercise with ${restBetweenSets}s rest pause.
 Return a JSON object with:
-- "title": string (engaging, sport-accurate title)
-- "description": string (clear summary of the session benefits)
+- "title": string (engaging, sport-accurate title in ${targetLang})
+- "description": string (clear summary of the session benefits in ${targetLang})
 - "exercises": array of 5 distinct, well-balanced objects, each having:
-  { "name": string, "description": string, "equipment": string, "sets": ${targetSets}, "reps": ${targetReps}, "restSeconds": ${restBetweenSets} }`,
+  { "canonicalId": string, "name": string, "description": string, "equipment": string, "sets": ${targetSets}, "reps": ${targetReps}, "restSeconds": ${restBetweenSets} }`,
         config: {
           responseMimeType: 'application/json'
         }

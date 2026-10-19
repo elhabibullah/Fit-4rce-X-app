@@ -1,6 +1,7 @@
 import React, { Suspense, useMemo, useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, useFBX, OrbitControls } from '@react-three/drei';
+import { useGLTF, useFBX } from '@react-three/drei';
+import { StudioOrbitControls } from './StudioOrbitControls.tsx';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { Sun, Moon, Sparkles } from 'lucide-react';
@@ -205,78 +206,131 @@ const MatrixStudioLoader: React.FC<{ isDark?: boolean }> = ({ isDark }) => {
   );
 };
 
-// High-End 3D Fitness Studio Stage / Podium
-// Prevents the coach from floating in "open air" ("en plein air") by anchoring him on a high-tech training circular stage
-const StudioStage: React.FC<{ isDark: boolean }> = ({ isDark }) => {
-  const shadowTexture = useMemo(() => {
+// Professional Gym Shock-Absorbing Rubber Floor (Sol noir mousseux amortissant pour poids & haltères)
+const GymRubberFloor: React.FC<{ isDark: boolean }> = ({ isDark }) => {
+  // Procedural gym rubber texture with subtle modular tile seams and fine EPDM flecks
+  const gymMatTexture = useMemo(() => {
+    if (typeof document === 'undefined') return null;
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
+    canvas.width = 512;
+    canvas.height = 512;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
-    const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-    grad.addColorStop(0, isDark ? 'rgba(0, 0, 0, 0.70)' : 'rgba(0, 0, 0, 0.25)');
-    grad.addColorStop(0.38, isDark ? 'rgba(0, 0, 0, 0.40)' : 'rgba(0, 0, 0, 0.10)');
-    grad.addColorStop(0.75, isDark ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.02)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 256, 256);
+
+    // Base high-density shock-absorbing rubber - dark matte charcoal
+    ctx.fillStyle = isDark ? '#111116' : '#18181f';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Subtle 4-quadrant tile seams (representing 1m x 1m modular gym rubber tiles)
+    ctx.strokeStyle = isDark ? '#09090c' : '#0f0f14';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(256, 0);
+    ctx.lineTo(256, 512);
+    ctx.moveTo(0, 256);
+    ctx.lineTo(512, 256);
+    ctx.stroke();
+
+    // Subtle border seam
+    ctx.strokeStyle = isDark ? '#07070a' : '#0a0a0e';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(2, 2, 508, 508);
+
+    // Fine subtle EPDM rubber speckles for realistic matte gym grip look
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+    for (let i = 0; i < 350; i++) {
+      const rx = Math.random() * 512;
+      const ry = Math.random() * 512;
+      ctx.fillRect(rx, ry, 1.5, 1.5);
+    }
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    for (let i = 0; i < 250; i++) {
+      const rx = Math.random() * 512;
+      const ry = Math.random() * 512;
+      ctx.fillRect(rx, ry, 2, 2);
+    }
+
     const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2.5, 2.5);
     texture.needsUpdate = true;
     return texture;
   }, [isDark]);
 
   return (
-    <group position={[0, -0.92, 0]}>
-      {/* 1. Feathered soft contact shadow beneath the training platform */}
-      {shadowTexture && (
-        <mesh position={[0, -0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[4.5, 4.5]} />
-          <meshBasicMaterial map={shadowTexture} transparent opacity={0.9} depthWrite={false} />
-        </mesh>
-      )}
-
-      {/* 2. Elevated Training Podium */}
-      <mesh position={[0, 0.015, 0]}>
-        <cylinderGeometry args={[1.75, 1.78, 0.03, 64]} />
+    <group position={[0, -0.890, 0]}>
+      {/* 1. Main High-Density Shock-Absorbing Rubber Gym Floor (4.8m x 4.8m) */}
+      <mesh position={[0, -0.015, 0]}>
+        <boxGeometry args={[4.8, 0.03, 4.8]} />
         <meshStandardMaterial
-          color={isDark ? '#141419' : '#f8fafc'}
-          roughness={isDark ? 0.35 : 0.25}
-          metalness={isDark ? 0.4 : 0.1}
+          color={isDark ? '#111115' : '#18181e'}
+          roughness={0.92}
+          metalness={0.02}
+          map={gymMatTexture || undefined}
         />
       </mesh>
 
-      {/* 3. Satin Architectural Rim */}
-      <mesh position={[0, 0.0302, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.70, 1.75, 64]} />
+      {/* 2. Beveled safety transition perimeter edge */}
+      <mesh position={[0, -0.022, 0]}>
+        <boxGeometry args={[5.0, 0.02, 5.0]} />
         <meshStandardMaterial
-          color={isDark ? '#272732' : '#e2e8f0'}
-          roughness={0.2}
-          metalness={isDark ? 0.8 : 0.4}
+          color={isDark ? '#08080b' : '#0e0e13'}
+          roughness={0.96}
+          metalness={0.01}
         />
       </mesh>
 
-      {/* 4. Illuminated Energy Halo Ring */}
-      <mesh position={[0, 0.031, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.63, 1.67, 64]} />
-        <meshBasicMaterial
-          color={isDark ? '#a855f7' : '#9333ea'}
-          transparent
-          opacity={isDark ? 0.85 : 0.55}
-          toneMapped={false}
-        />
-      </mesh>
-
-      {/* 5. Inner Mat Center */}
-      <mesh position={[0, 0.0305, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.62, 64]} />
+      {/* 3. Expansive Studio Gym Floor (Surrounding floor so horizon never cuts off into void) */}
+      <mesh position={[0, -0.035, 0]}>
+        <boxGeometry args={[32, 0.02, 32]} />
         <meshStandardMaterial
-          color={isDark ? '#0b0b10' : '#ffffff'}
-          roughness={0.5}
-          metalness={0.05}
+          color={isDark ? '#09090d' : '#e2e8f0'}
+          roughness={0.88}
+          metalness={0.03}
         />
       </mesh>
     </group>
+  );
+};
+
+// Realistic Soft Studio Contact Shadow beneath athlete onto gym floor
+const StudioContactShadow: React.FC<{ isDark: boolean }> = ({ isDark }) => {
+  const shadowTexture = useMemo(() => {
+    if (typeof document === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    grad.addColorStop(0.0, isDark ? 'rgba(0, 0, 0, 0.95)' : 'rgba(15, 23, 42, 0.75)');
+    grad.addColorStop(0.25, isDark ? 'rgba(0, 0, 0, 0.70)' : 'rgba(15, 23, 42, 0.50)');
+    grad.addColorStop(0.55, isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(15, 23, 42, 0.22)');
+    grad.addColorStop(0.85, isDark ? 'rgba(0, 0, 0, 0.10)' : 'rgba(15, 23, 42, 0.06)');
+    grad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 256);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }, [isDark]);
+
+  if (!shadowTexture) return null;
+
+  return (
+    <mesh position={[0, -0.888, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[3.6, 2.6]} />
+      <meshBasicMaterial
+        map={shadowTexture}
+        transparent
+        opacity={isDark ? 0.90 : 0.70}
+        depthWrite={false}
+      />
+    </mesh>
   );
 };
 
@@ -307,12 +361,12 @@ const HunyuanRiggedCoach: React.FC<{
     const center = box.getCenter(new THREE.Vector3());
 
     // Adaptive unified human height:
-    // For spinning coach on bike: targetHeight = 1.05m so entire bike, wheels, and rider fit comfortably with generous headroom
-    // For android cyborg & martial arts: targetHeight = 1.35m (calibrated with ample headspace and full body visible)
+    // For spinning coach on bike: targetHeight = 1.35m so entire bike, wheels, and rider fit comfortably with generous headroom
+    // For android cyborg & martial arts: targetHeight = 1.95m (calibrated with ample headspace and heroic full body visible)
     const isSpinning = (exerciseId && exerciseId.toLowerCase().includes('spin')) ||
                        (exerciseName && exerciseName.toLowerCase().includes('spin')) ||
                        scene.name.toLowerCase().includes('spin');
-    const targetHeight = isSpinning ? 1.05 : 1.35;
+    const targetHeight = isSpinning ? 1.35 : 1.95;
     const rawH = size.y > 0.5 ? size.y : 5.7;
     const scale = targetHeight / rawH;
 
@@ -380,6 +434,126 @@ const HunyuanRiggedCoach: React.FC<{
   );
 };
 
+// Player for 3D Models with authentic embedded animations (e.g. user's calisthenics Android GLBs)
+const EmbeddedAnimationCoach: React.FC<{
+  scene: THREE.Object3D;
+  animations: THREE.AnimationClip[];
+  isPaused?: boolean;
+  speed?: number;
+  isPrep?: boolean;
+  timelineProgress?: number;
+  exerciseId?: string;
+  exerciseName?: string;
+  onLoaded?: () => void;
+}> = ({ scene, animations, isPaused, speed = 1.0, isPrep, timelineProgress, exerciseId, exerciseName, onLoaded }) => {
+  const groupRef = useRef<THREE.Group>(null);
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const actionRef = useRef<THREE.AnimationAction | null>(null);
+  const onLoadedRef = useRef(onLoaded);
+
+  useEffect(() => {
+    onLoadedRef.current = onLoaded;
+  }, [onLoaded]);
+
+  // Unified athletic scale (2.25) & calibrated physical positioning on gym rubber mat
+  const { modelScale, rootY, innerRotationX, innerOffsetY, innerOffsetZ } = useMemo(() => {
+    const scale = 2.25;
+    const gymFloorY = -0.890;
+    const query = (exerciseId || exerciseName || '').toLowerCase();
+
+    // 1. Diamond push-ups: mixamo animation has an upward tilt on the torso/legs.
+    // Calibrated -17° compensation brings both hands and toes flush to the gym floor!
+    if (query.includes('diamond') || query.includes('diamant')) {
+      return {
+        modelScale: scale,
+        rootY: gymFloorY,
+        innerRotationX: -17 * (Math.PI / 180),
+        innerOffsetY: -0.10,
+        innerOffsetZ: -0.10,
+      };
+    }
+
+    // 2. Hollow body hold: lying supine on mat with hips/sacrum grounded, arms & legs elevated
+    if (query.includes('hollow') || query.includes('banan')) {
+      return {
+        modelScale: scale,
+        rootY: gymFloorY,
+        innerRotationX: 0,
+        innerOffsetY: -0.02,
+        innerOffsetZ: 0,
+      };
+    }
+
+    // 3. Standing / Jumping Squats & All other 12 calisthenics exercises:
+    // (Archer push-up, bear crawl, forearm plank, plank knee to elbow, buzzsaw, plank walk, etc.)
+    // In all these GLBs, the contact extremities (toes/palms) are authored at local Y = 0.00.
+    // Setting rootY = gymFloorY (-0.890) places contact flush on the gym rubber floor!
+    // For jumping squats: the athlete naturally takes off 25cm into the air and lands back down on the mat!
+    return {
+      modelScale: scale,
+      rootY: gymFloorY,
+      innerRotationX: 0,
+      innerOffsetY: 0,
+      innerOffsetZ: 0,
+    };
+  }, [exerciseId, exerciseName]);
+
+  // Initialize AnimationMixer on the model
+  useEffect(() => {
+    if (!scene || !animations || animations.length === 0) return;
+
+    const mixer = new THREE.AnimationMixer(scene);
+    mixerRef.current = mixer;
+
+    const clip = animations[0];
+    const action = mixer.clipAction(clip);
+    actionRef.current = action;
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    action.play();
+
+    // Signal model ready
+    if (onLoadedRef.current) {
+      onLoadedRef.current();
+    }
+
+    return () => {
+      mixer.stopAllAction();
+      action.stop();
+    };
+  }, [scene, animations]);
+
+  useFrame((_, delta) => {
+    if (!mixerRef.current || !groupRef.current) return;
+
+    if (isPrep) {
+      mixerRef.current.setTime(0);
+    } else if (timelineProgress !== undefined && actionRef.current) {
+      const clip = animations[0];
+      if (clip && clip.duration > 0) {
+        mixerRef.current.setTime(timelineProgress * clip.duration);
+      }
+    } else if (!isPaused) {
+      const effectiveDelta = Math.min(delta, 0.05);
+      mixerRef.current.update(effectiveDelta * speed);
+    }
+  });
+
+  return (
+    <group
+      ref={groupRef}
+      scale={[modelScale, modelScale, modelScale]}
+      position={[0, rootY, 0]}
+    >
+      <group
+        rotation={[innerRotationX, 0, 0]}
+        position={[0, innerOffsetY, innerOffsetZ]}
+      >
+        <primitive object={scene} />
+      </group>
+    </group>
+  );
+};
+
 // Universal Model Loader (GLTF & FBX with SkeletonUtils)
 const UniversalModel: React.FC<{
   url: string;
@@ -391,12 +565,16 @@ const UniversalModel: React.FC<{
   timelineProgress?: number;
   puppeteerEngine?: HunyuanPuppeteerEngine | null;
   isPuppeteerActive?: boolean;
-}> = ({ url, isPaused, exerciseName, exerciseId, isPrep, speed, timelineProgress, puppeteerEngine, isPuppeteerActive }) => {
+  onLoaded?: () => void;
+}> = ({ url, isPaused, exerciseName, exerciseId, isPrep, speed, timelineProgress, puppeteerEngine, isPuppeteerActive, onLoaded }) => {
   const isFBX = url.toLowerCase().includes('.fbx') || url.includes('format=fbx');
 
   if (isFBX) {
     const fbx = useFBX(url);
     const cloned = useMemo(() => (fbx ? SkeletonUtils.clone(fbx) : null), [fbx]);
+    useEffect(() => {
+      if (cloned && onLoaded) onLoaded();
+    }, [cloned, onLoaded]);
     if (!cloned) return null;
     return (
       <HunyuanRiggedCoach
@@ -415,7 +593,32 @@ const UniversalModel: React.FC<{
 
   const gltf = useGLTF(url, '/draco/');
   const cloned = useMemo(() => (gltf?.scene ? SkeletonUtils.clone(gltf.scene) : null), [gltf]);
+
+  useEffect(() => {
+    if (cloned && onLoaded) {
+      onLoaded();
+    }
+  }, [cloned, onLoaded]);
+
   if (!cloned) return null;
+
+  const hasEmbeddedAnim = Boolean(gltf?.animations && gltf.animations.length > 0);
+  if (hasEmbeddedAnim && !isPuppeteerActive) {
+    return (
+      <EmbeddedAnimationCoach
+        scene={cloned}
+        animations={gltf.animations}
+        isPaused={isPaused}
+        speed={speed}
+        isPrep={isPrep}
+        exerciseId={exerciseId}
+        exerciseName={exerciseName}
+        timelineProgress={timelineProgress}
+        onLoaded={onLoaded}
+      />
+    );
+  }
+
   return (
     <HunyuanRiggedCoach
       scene={cloned}
@@ -450,15 +653,15 @@ const CameraPresetHandler: React.FC<{
 
     if (prevPresetRef.current !== preset) {
       if (preset === 'face') {
-        camera.position.set(0, 0.08, 3.4);
+        camera.position.set(0, 0.75, 3.2);
         if (controlsRef.current) {
-          controlsRef.current.target.set(0, -0.08, 0);
+          controlsRef.current.target.set(0, -0.45, 0);
           controlsRef.current.update();
         }
       } else if (preset === 'profile') {
-        camera.position.set(3.4, 0.08, 0);
+        camera.position.set(3.2, 0.75, 0);
         if (controlsRef.current) {
-          controlsRef.current.target.set(0, -0.08, 0);
+          controlsRef.current.target.set(0, -0.45, 0);
           controlsRef.current.update();
         }
       }
@@ -472,7 +675,7 @@ const CameraPresetHandler: React.FC<{
 const CameraHipsTracker: React.FC<{
   controlsRef: React.RefObject<any>;
 }> = ({ controlsRef }) => {
-  const { scene, camera } = useThree();
+  const { scene } = useThree();
   const hipsBoneRef = useRef<THREE.Bone | null>(null);
   const tempPos = useRef(new THREE.Vector3());
 
@@ -488,19 +691,15 @@ const CameraHipsTracker: React.FC<{
       });
     }
 
-    if (hipsBoneRef.current) {
+    if (hipsBoneRef.current && controlsRef.current) {
       hipsBoneRef.current.getWorldPosition(tempPos.current);
-      if (controlsRef.current) {
-        const target = controlsRef.current.target;
-        // Smoothly adapt target to follow hips vertical height while keeping generous vertical headroom
-        const safeTargetY = Math.max(-0.45, Math.min(0.15, tempPos.current.y - 0.08));
-        target.y = THREE.MathUtils.lerp(target.y, safeTargetY, 0.08);
-        target.x = THREE.MathUtils.lerp(target.x, 0, 0.1);
-        target.z = THREE.MathUtils.lerp(target.z, 0, 0.1);
-        controlsRef.current.update();
-      } else {
-        camera.lookAt(0, tempPos.current.y - 0.08, 0);
-      }
+      const target = controlsRef.current.target;
+      // Focus target smoothly on the center of the athlete (slightly below hips for ground contact visibility)
+      const safeTargetY = Math.max(-0.65, Math.min(0.20, tempPos.current.y - 0.15));
+      target.y = THREE.MathUtils.lerp(target.y, safeTargetY, 0.08);
+      target.x = THREE.MathUtils.lerp(target.x, 0, 0.1);
+      target.z = THREE.MathUtils.lerp(target.z, 0, 0.1);
+      controlsRef.current.update();
     }
   });
 
@@ -521,20 +720,21 @@ const CoachCanvas: React.FC<{
   cameraPreset?: 'face' | 'profile' | 'free';
   puppeteerEngine?: HunyuanPuppeteerEngine | null;
   isPuppeteerActive?: boolean;
-}> = ({ finalUrl, isPaused, exerciseName, exerciseId, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset, puppeteerEngine, isPuppeteerActive }) => {
+  onLoaded?: () => void;
+}> = ({ finalUrl, isPaused, exerciseName, exerciseId, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset, puppeteerEngine, isPuppeteerActive, onLoaded }) => {
   const controlsRef = useRef<any>(null);
 
   const initialCameraPos = useMemo<[number, number, number]>(() => {
     const isSpinning = finalUrl.toLowerCase().includes('spin') || (exerciseId && exerciseId.toLowerCase().includes('spin'));
-    const dist = isSpinning ? 3.5 : 3.3;
-    if (cameraPreset === 'profile') return [dist, 0.08, 0];
-    return [0, 0.08, dist];
+    const dist = isSpinning ? 3.4 : 3.2;
+    if (cameraPreset === 'profile') return [dist, 0.75, 0];
+    return [0, 0.75, dist];
   }, [cameraPreset, finalUrl, exerciseId]);
 
   return (
     <Canvas
       gl={{ antialias: true, alpha: isTransparent, powerPreference: 'high-performance' }}
-      camera={{ position: initialCameraPos, fov: 38 }}
+      camera={{ position: initialCameraPos, fov: 40 }}
       dpr={[1, 2]}
     >
       <CameraPresetHandler preset={cameraPreset} controlsRef={controlsRef} />
@@ -561,8 +761,11 @@ const CoachCanvas: React.FC<{
         </>
       )}
 
-      {/* Architectural Workout Podium */}
-      {!isTransparent && <StudioStage isDark={isDark} />}
+      {/* Shock-Absorbing Black Rubber Gym Floor (Sol carré noir mousseux) */}
+      {!isTransparent && <GymRubberFloor isDark={isDark} />}
+
+      {/* Realistic contact shadow beneath model onto gym rubber floor */}
+      {!isTransparent && <StudioContactShadow isDark={isDark} />}
 
       {/* 3D Coach Model */}
       <Suspense fallback={<MatrixStudioLoader isDark={isDark} />}>
@@ -576,15 +779,15 @@ const CoachCanvas: React.FC<{
           timelineProgress={timelineProgress}
           puppeteerEngine={puppeteerEngine}
           isPuppeteerActive={isPuppeteerActive}
+          onLoaded={onLoaded}
         />
       </Suspense>
 
       {/* Fluid 360-degree Orbit Controls with zoom support */}
-      <OrbitControls
-        ref={controlsRef}
+      <StudioOrbitControls
+        controlsRef={controlsRef}
         enableZoom={true}
         enablePan={false}
-        makeDefault
         target={[0, -0.12, 0]}
         minDistance={1.2}
         maxDistance={5.5}
@@ -613,6 +816,7 @@ export interface HolographicCoachProps {
   puppeteerEngine?: HunyuanPuppeteerEngine | null;
   isPuppeteerActive?: boolean;
   disableWheelForward?: boolean;
+  onLoaded?: () => void;
 }
 
 // HolographicCoach Main Component
@@ -634,6 +838,7 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
   puppeteerEngine,
   isPuppeteerActive,
   disableWheelForward = false,
+  onLoaded,
 }) => {
   const { translate } = useApp();
   const [internalStudioTheme, setInternalStudioTheme] = useState<'white' | 'dark'>(() => {
@@ -772,6 +977,7 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
               cameraPreset={cameraPreset}
               puppeteerEngine={puppeteerEngine}
               isPuppeteerActive={isPuppeteerActive}
+              onLoaded={onLoaded}
             />
           </div>
         </Suspense>

@@ -8,7 +8,8 @@ import {
   Loader2, RefreshCw
 } from 'lucide-react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useFBX } from '@react-three/drei';
+import { useGLTF, useFBX } from '@react-three/drei';
+import { StudioOrbitControls } from './StudioOrbitControls.tsx';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { COACH_MODEL_URL } from '../../lib/constants.ts';
@@ -227,22 +228,32 @@ const ARModelRig: React.FC<{
     return SkeletonUtils.clone(rawScene);
   }, [rawScene]);
 
+  const animations = gltf?.animations || [];
+  const hasEmbeddedAnim = !isFBX && animations.length > 0;
+
   // Compute exact center and scale to guarantee dead-center positioning
   const { baseScale, offsetPos, floorY } = React.useMemo(() => {
     if (!scene) return { baseScale: 1, offsetPos: [0, 0, 0] as [number, number, number], floorY: -0.725 };
     scene.updateMatrixWorld(true);
+
+    if (hasEmbeddedAnim) {
+      const floorY = -0.725;
+      return {
+        baseScale: 2.25,
+        offsetPos: [0, floorY, 0] as [number, number, number],
+        floorY,
+      };
+    }
+
     const box = new THREE.Box3().setFromObject(scene);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
     const rawH = size.y > 0.5 ? size.y : 5.7;
 
-    // Adaptive unified height in meters:
-    // For spinning coach: 1.05m so the entire bike and rider fit comfortably without being cut off
-    // For humanoid coaches: 1.35m provides generous full-body framing with ample headspace
     const isSpinning = (url && url.toLowerCase().includes('spin')) ||
                        (exerciseId && exerciseId.toLowerCase().includes('spin')) ||
                        (exerciseName && exerciseName.toLowerCase().includes('spin'));
-    const targetHeight = isSpinning ? 1.05 : 1.35;
+    const targetHeight = isSpinning ? 1.35 : 1.95;
     const scale = targetHeight / rawH;
 
     // Symmetric vertical centering:
@@ -257,11 +268,28 @@ const ARModelRig: React.FC<{
       offsetPos: [posX, posY, posZ] as [number, number, number],
       floorY,
     };
-  }, [scene]);
+  }, [scene, hasEmbeddedAnim, url, exerciseId, exerciseName]);
 
-  // Initialize Motion Engine with calibrated floor at floorY (-0.725)
+  // Initialize AnimationMixer if model has embedded animations, else Motion Engine
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const actionRef = useRef<THREE.AnimationAction | null>(null);
+
   useEffect(() => {
-    if (!scene) return;
+    if (!scene || !hasEmbeddedAnim || animations.length === 0) return;
+    const mixer = new THREE.AnimationMixer(scene);
+    mixerRef.current = mixer;
+    const action = mixer.clipAction(animations[0]);
+    actionRef.current = action;
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    action.play();
+    return () => {
+      mixer.stopAllAction();
+      action.stop();
+    };
+  }, [scene, hasEmbeddedAnim, animations]);
+
+  useEffect(() => {
+    if (!scene || hasEmbeddedAnim) return;
     const query = exerciseId || exerciseName || 'idle';
     if (!engineRef.current) {
       if (groupRef.current) {
@@ -276,10 +304,21 @@ const ARModelRig: React.FC<{
       engineRef.current.disableGroundSolver = !showFloorReticle;
       engineRef.current.setExercise(query, 0.25, false);
     }
-  }, [scene, exerciseId, exerciseName, baseScale, offsetPos, floorY, showFloorReticle]);
+  }, [scene, hasEmbeddedAnim, exerciseId, exerciseName, baseScale, offsetPos, floorY, showFloorReticle]);
 
   useFrame((_, delta) => {
-    if (!scene || !engineRef.current) return;
+    if (!scene) return;
+    if (hasEmbeddedAnim && mixerRef.current) {
+      if (timelineProgress !== undefined && actionRef.current && animations[0]?.duration) {
+        mixerRef.current.setTime(timelineProgress * animations[0].duration);
+      } else if (!isPaused) {
+        const effectiveDelta = Math.min(delta, 0.05);
+        mixerRef.current.update(effectiveDelta * speed);
+      }
+      return;
+    }
+
+    if (!engineRef.current) return;
     engineRef.current.disableGroundSolver = !showFloorReticle;
     const effectiveDelta = isPaused ? 0 : Math.min(delta, 0.05);
     engineRef.current.update(effectiveDelta, speed, timelineProgress, false);
@@ -971,7 +1010,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
                 />
               </Suspense>
 
-              <OrbitControls
+              <StudioOrbitControls
                 enableZoom={false}
                 enablePan={false}
                 target={[0, 0, 0]}
@@ -1038,7 +1077,7 @@ export const HolographicARModal: React.FC<HolographicARModalProps> = ({
               />
             </Suspense>
 
-            <OrbitControls
+            <StudioOrbitControls
               enableZoom={true}
               enablePan={false}
               target={[0, -0.05, 0]}

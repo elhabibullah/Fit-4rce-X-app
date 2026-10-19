@@ -13,6 +13,8 @@ export const MODEL_LIBRARY: Record<string, string> = {
     'spinning': SPINNING_COACH_MODEL_URL,
 };
 
+export { CALISTHENICS_BODYWEIGHT_MODELS, resolveCalisthenicsModel } from './calisthenicsModels.ts';
+
 export const VIDEO_LIBRARY: Record<string, string> = {
     'squat': 'https://videos.pexels.com/video-files/4365116/4365116-hd_1080_1920_25fps.mp4',
     'deadlift': 'https://videos.pexels.com/video-files/4754025/4754025-hd_1080_1920_25fps.mp4',

@@ -5,6 +5,7 @@ import { WebSocketServer } from 'ws';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { generateSmartWorkout, getCanonicalIdForExercise } from './lib/workoutPools.ts';
+import { resolveCalisthenicsModel, CALISTHENICS_BODYWEIGHT_MODELS } from './lib/calisthenicsModels.ts';
 
 const app = express();
 const server = http.createServer(app);
@@ -592,29 +593,24 @@ Equipment Mode: ${equipment} (bodyweight, home dumbbells/mat, or gym full equipm
 User Specifics & Request: "${prompt || combinedPrompt}"
 
 CRITICAL MANDATES:
-1. STRICT LANGUAGE ENFORCEMENT: If ${language || 'en'} is "en", ALL exercise names, descriptions, title, and guidance MUST be in standard English. Absolutely NO French when English is chosen.
+1. STRICT LANGUAGE ENFORCEMENT: If ${language || 'en'} is "ar" (Arabic), write all titles, exercise names, and descriptions in natural, accurate Arabic athletic terminology (e.g. تمرين ضغط القوس, بلانك كوماندوز, زحف الدب للأمام والخلف, etc.). If "en", use standard English. If "fr", use French.
 2. NO INVENTED OR WEIRD NAMES. Use ONLY authentic, real exercises known by certified personal trainers and coaches.
-3. For each exercise, you MUST provide an exact "canonicalId" from this supported 3D motion library list:
-   - "push_up": standard pushups, incline/decline pushups
-   - "squat": bodyweight squats, air squats, sumo squats
-   - "lunge": forward lunges, reverse lunges
-   - "plank": standard forearm plank, active straight-arm plank
-   - "burpee": full burpees with jump
-   - "jumping_jack": jumping jacks
-   - "high_knees": high knees running in place
-   - "crunch": abdominal crunches, situps
-   - "glute_bridge": glute bridge, hip thrust
-   - "superman": back extension superman
-   - "bent_over_row": inverted row, dumbbell row
-   - "bicep_curl": dumbbell or resistance bicep curl
-   - "overhead_press": shoulder military press
-   - "deadlift": conventional or Romanian deadlift
-   - "martial_mabu": horse stance (Ma Bu)
-   - "martial_punch": martial punches
-   - "martial_palm": defensive palm deflections
-   - "martial_kick": martial kicks
-   - "martial_taichi": Tai Chi fluid movements
-4. The display "name" MUST be translated naturally into ${language || 'en'} (e.g. in English: "Standard Push-Ups", "Bodyweight Squats", "Forward Lunges", "Plank", "Burpees", "Abdominal Crunches", "Glute Bridge").
+3. BODYWEIGHT / CALISTHENICS RULE: If Equipment Mode is "bodyweight" or user asks for calisthenics / bodyweight floor exercises, PRIORITIZE the 14 movements with built-in authentic 3D Android animations:
+   - "archer_push_up": Archer Push-ups / Pompes Archer / تمرين ضغط القوس
+   - "diamond_push_ups": Diamond Push-ups / Pompes diamant / تمرين ضغط الماس
+   - "jumping_squats": Jumping Squats / Squats sautés / قرفصاء مع القفز الانفجاري
+   - "bear_crawl_forward_backward": Bear Crawl / Marche de l'ours / زحف الدب للأمام والخلف
+   - "hollow_body_hold": Hollow Body Hold / Maintien Hollow Body / تثبيت وضعية التجويف
+   - "forearm_to_pushup_plank": Commandos / Planche commando / بلانك كوماندوز
+   - "plank_hop_to_squat": Plank Hop to Squat / Saut de planche vers squat / القفز من البلانك إلى القرفصاء
+   - "plank_knee_to_elbow_advanced": Spider Plank Knee to Elbow / Planche genou-coude / بلانك متقدم ركبة إلى الكوع
+   - "plank_walk_back_and_forth": Plank Walk Back & Forth / Planche avant-arrière / مشي البلانك للأمام والخلف
+   - "plank_walk_left_right": Lateral Plank Walk / Planche latérale / مشي البلانك الجانبي
+   - "plank_variations_buzzsaw": Buzzsaw Plank / Planche scie / بلانك المنشار المتأرجح
+   - "alternative_arm_plank_hold": Arm Plank Hold / Planche levée de bras / بلانك مع رفع الذراع بالتناوب
+   - "alternative_leg_plank_hold": Leg Plank Hold / Planche levée de jambe / بلانك مع رفع الساق بالتناوب
+   - "alternative_superman_plank_advanced": Advanced Superman Plank / Planche Superman avancée / بلانك سوبرمان المتقدم بالتناوب
+4. Standard gym & barbell exercises also supported: "push_up", "squat", "lunge", "plank", "burpee", "jumping_jack", "crunch", "glute_bridge", "deadlift", "bent_over_row", "overhead_press", "bicep_curl".
 
 The session protocol requires exactly ${targetSets} sets of ${targetReps} reps per exercise with ${restBetweenSets}s rest pause between sets.
 Return a JSON object with:
@@ -634,13 +630,18 @@ Return a JSON object with:
             targetSets,
             targetReps,
             restBetweenSets,
-            exercises: parsed.exercises.map((e: any) => ({
-              ...e,
-              canonicalId: e.canonicalId || getCanonicalIdForExercise(e.name),
-              sets: e.sets || targetSets,
-              reps: e.reps || targetReps,
-              restSeconds: e.restSeconds || restBetweenSets
-            }))
+            exercises: parsed.exercises.map((e: any) => {
+              const cId = e.canonicalId || getCanonicalIdForExercise(e.name);
+              const customModel = resolveCalisthenicsModel(cId) || resolveCalisthenicsModel(e.name) || CALISTHENICS_BODYWEIGHT_MODELS[cId];
+              return {
+                ...e,
+                canonicalId: cId,
+                modelUrl: customModel || '',
+                sets: e.sets || targetSets,
+                reps: e.reps || targetReps,
+                restSeconds: e.restSeconds || restBetweenSets
+              };
+            })
           };
         }
       } catch (geminiErr) {

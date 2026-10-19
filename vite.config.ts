@@ -5,6 +5,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    dedupe: ['react', 'react-dom', 'three', '@react-three/fiber'],
     alias: {
       'three/tsl': path.resolve(__dirname, 'src/lib/three-tsl-shim.ts')
     }

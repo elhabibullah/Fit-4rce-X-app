@@ -12,9 +12,13 @@ import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
 import { HolographicARModal } from '../components/common/HolographicARModal.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
 import CastButton from '../components/common/CastButton.tsx';
+import { preloadWorkoutModels } from '../lib/modelCache.ts';
+import { getLocalizedExerciseName } from '../lib/calisthenicsModels.ts';
 
 type WorkoutView = 'setup' | 'loading' | 'active' | 'finished';
 type WorkoutPhase = 'prep' | 'work' | 'rest';
+
+const PREP_COUNTDOWN_SECONDS = 10;
 
 const CoachOption: React.FC<{ provider: AIProvider; label: string; isSelected: boolean; onSelect: (p: AIProvider) => void }> = ({ provider, label, isSelected, onSelect }) => (
     <div className={`glow-container w-full h-20 ${isSelected ? 'active' : ''}`}>
@@ -77,7 +81,9 @@ const WorkoutScreen: React.FC = () => {
     // Timers
     const [timer, setTimer] = useState(45); // Work set pacing countdown
     const [restTimer, setRestTimer] = useState(30); // Rest pause countdown
-    const [prepTimer, setPrepTimer] = useState(8); // Preparation countdown
+    const [prepTimer, setPrepTimer] = useState(PREP_COUNTDOWN_SECONDS); // Preparation countdown
+    const [isModelLoaded, setIsModelLoaded] = useState(false);
+    const [isNextExerciseTransition, setIsNextExerciseTransition] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     
     // Statistics counters
@@ -144,11 +150,14 @@ const WorkoutScreen: React.FC = () => {
     useEffect(() => {
         if (selectedPlan) {
             setPlan(selectedPlan);
+            preloadWorkoutModels(selectedPlan.exercises.map(e => e.modelUrl));
             setView('active');
             setIdx(0);
             setCurrentSet(1);
+            setIsModelLoaded(false);
+            setIsNextExerciseTransition(false);
             setPhase('prep');
-            setPrepTimer(8);
+            setPrepTimer(PREP_COUNTDOWN_SECONDS);
             setTimer(45);
             setRestTimer(selectedPlan.restBetweenSets || 30);
             setIsPaused(false);
@@ -180,11 +189,14 @@ const WorkoutScreen: React.FC = () => {
         } else {
             // All sets for current exercise completed!
             if (idx < plan.exercises.length - 1) {
-                // Next exercise -> Inter-exercise transition
+                // Next exercise -> Start dedicated 10-second preparation countdown with 3D demonstration
                 setIdx(prev => prev + 1);
                 setCurrentSet(1);
-                setPhase('rest');
-                setRestTimer(restBetweenSets);
+                setIsModelLoaded(false);
+                setIsNextExerciseTransition(false);
+                setPhase('prep');
+                setPrepTimer(PREP_COUNTDOWN_SECONDS);
+                setTimer(45);
             } else {
                 // Entire workout completed!
                 handleFinish();
@@ -192,33 +204,40 @@ const WorkoutScreen: React.FC = () => {
         }
     }, [plan, currentSet, targetSets, targetReps, idx, restBetweenSets, handleFinish]);
 
-    // Action: Skip the rest pause and immediately start the next set
+    // Action: Skip the rest pause and immediately start the next set or 10s prep for next exercise
     const handleSkipRest = useCallback(() => {
-        playSoundEffect('start');
         if (currentSet < targetSets) {
+            playSoundEffect('start');
             setCurrentSet(prev => prev + 1);
             setPhase('work');
             setTimer(45);
-        } else {
-            // Was resting between exercises
-            setPhase('work');
+        } else if (idx < (plan?.exercises.length ?? 0) - 1) {
+            setIdx(prev => prev + 1);
+            setCurrentSet(1);
+            setIsModelLoaded(false);
+            setPhase('prep');
+            setPrepTimer(PREP_COUNTDOWN_SECONDS);
             setTimer(45);
+        } else {
+            handleFinish();
         }
-    }, [currentSet, targetSets]);
+    }, [currentSet, targetSets, idx, plan, handleFinish]);
 
     // Action: Add 10 seconds of rest
     const handleAddRestTime = () => {
         setRestTimer(prev => prev + 10);
     };
 
-    // Action: Skip to next exercise
+    // Action: Skip to next exercise (always enters dedicated 10s prep phase)
     const skipExercise = useCallback(() => {
         if (!plan) return;
         if (idx < plan.exercises.length - 1) {
             setIdx(prev => prev + 1);
             setCurrentSet(1);
+            setIsModelLoaded(false);
+            setIsNextExerciseTransition(false);
             setPhase('prep');
-            setPrepTimer(6);
+            setPrepTimer(PREP_COUNTDOWN_SECONDS);
             setTimer(45);
             setIsPaused(false);
         } else {
@@ -238,12 +257,25 @@ const WorkoutScreen: React.FC = () => {
         setView('setup');
     };
 
-    // Main Timer Engine
+    const handleModelLoaded = useCallback(() => {
+        setIsModelLoaded(true);
+    }, []);
+
+    // Proactively preload the upcoming exercise model so transitions are instant with zero wait
+    useEffect(() => {
+        if (plan && idx + 1 < plan.exercises.length) {
+            const nextUrl = plan.exercises[idx + 1]?.modelUrl;
+            if (nextUrl) {
+                preloadWorkoutModels([nextUrl]);
+            }
+        }
+    }, [plan, idx]);
+
+    // Main Timer Engine (Clean 1-second cadence, exactly 10s countdown between exercises)
     useEffect(() => {
         if (view !== 'active' || isPaused || !plan) return;
 
         const interval = setInterval(() => {
-            // Track total session duration
             setSessionDurationSeconds(prev => prev + 1);
 
             if (phase === 'prep') {
@@ -287,7 +319,7 @@ const WorkoutScreen: React.FC = () => {
             playSoundEffect('start');
             setPhase('work');
             setTimer(45);
-            setPrepTimer(8);
+            setPrepTimer(PREP_COUNTDOWN_SECONDS);
         } else if (phase === 'work' && timer === 0) {
             setTimer(45);
             handleCompleteSet();
@@ -320,12 +352,13 @@ const WorkoutScreen: React.FC = () => {
 
             if (generated) {
                 setPlan(generated);
+                preloadWorkoutModels(generated.exercises.map(e => e.modelUrl));
                 setSelectedPlan(generated);
                 setView('active');
                 setIdx(0);
                 setCurrentSet(1);
                 setPhase('prep');
-                setPrepTimer(8);
+                setPrepTimer(PREP_COUNTDOWN_SECONDS);
                 setTimer(45);
                 setRestTimer(restSeconds);
                 setIsPaused(false);
@@ -356,6 +389,7 @@ const WorkoutScreen: React.FC = () => {
     if (view === 'active' && plan) {
         const ex = plan.exercises[idx];
         if (!ex) return null;
+        const exerciseDisplayName = getLocalizedExerciseName(ex.name || (ex as any).canonicalId, language);
         
         const workProgress = ((45 - timer) / 45) * 100;
         const restProgress = ((restBetweenSets - restTimer) / restBetweenSets) * 100;
@@ -370,7 +404,6 @@ const WorkoutScreen: React.FC = () => {
                     {/* MAIN MEDIA STAGE: 3D ANDROID COACH */}
                     <div className={`absolute inset-0 z-10 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'}`}>
                         <HolographicCoach 
-                            key="workout-holographic-coach"
                             modelUrl={ex.modelUrl} 
                             isPaused={isPaused || phase === 'rest'} 
                             exerciseName={ex.name}
@@ -384,6 +417,7 @@ const WorkoutScreen: React.FC = () => {
                             hideThemeToggle={true}
                             hideARButton={true}
                             hideBadge={true}
+                            onLoaded={handleModelLoaded}
                         />
                     </div>
 
@@ -434,8 +468,8 @@ const WorkoutScreen: React.FC = () => {
                                         ? 'bg-neutral-900/90 text-amber-400 border-neutral-700 hover:bg-neutral-800'
                                         : 'bg-white/90 text-purple-600 border-zinc-200 hover:bg-zinc-100'
                                     }`}
-                                title={studioTheme === 'dark' ? "Passer au Studio Blanc" : "Passer en Mode Nuit (Studio Noir)"}
-                                aria-label="Basculer Mode Studio Nuit/Jour"
+                                title={studioTheme === 'dark' ? "Switch to White Studio" : "Switch to Dark Studio"}
+                                aria-label="Toggle Studio Theme"
                             >
                                 {studioTheme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-purple-600" />}
                             </button>
@@ -462,24 +496,24 @@ const WorkoutScreen: React.FC = () => {
                                         : 'bg-neutral-900/90 border-neutral-700 text-white hover:bg-neutral-800'
                                 }`}
                                 title={isPaused ? translate('workout.action.resume') : translate('workout.action.pause')}
-                                aria-label={isPaused ? "Reprendre l'entraînement" : "Mettre en pause"}
+                                aria-label={isPaused ? translate('workout.action.resume') : translate('workout.action.pause')}
                             >
                                 {isPaused ? <Play size={18} fill="currentColor" className="ml-0.5 text-black" /> : <Pause size={18} fill="currentColor" className="text-white" />}
                             </button>
                         </div>
                     </div>
 
-                    {/* PREP COUNTDOWN OVERLAY */}
+                    {/* PREP COUNTDOWN OVERLAY - HIGH CONTRAST YELLOW/WHITE, ZERO MAUVE */}
                     {phase === 'prep' && (
-                        <div className={`absolute inset-0 z-[200] ${studioTheme === 'dark' ? 'bg-zinc-950/70 backdrop-blur-sm' : 'bg-white/70 backdrop-blur-sm'} flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4 text-center`}>
-                            <div className="px-3.5 py-1 bg-black/80 border border-purple-500/50 rounded-full text-[#8A2BE2] text-[11px] font-semibold tracking-wider uppercase mb-2">
+                        <div className="absolute inset-0 z-[200] bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4 text-center">
+                            <div className="px-4 py-1.5 bg-black/90 border border-yellow-400/80 rounded-full text-yellow-400 text-xs font-bold tracking-widest uppercase mb-3 shadow-[0_0_20px_rgba(250,204,21,0.35)]">
                                 {translate('workout.active.prep')}
                             </div>
-                            <div className={`text-6xl sm:text-8xl font-bold font-mono ${studioTheme === 'dark' ? 'text-white drop-shadow-[0_0_30px_rgba(138,43,226,0.6)]' : 'text-purple-600 drop-shadow-[0_0_30px_rgba(138,43,226,0.3)]'} leading-none tabular-nums animate-pulse`}>
+                            <div className="text-7xl sm:text-9xl font-black font-mono text-yellow-400 drop-shadow-[0_0_40px_rgba(250,204,21,0.7)] leading-none tabular-nums animate-pulse">
                                 {prepTimer}
                             </div>
-                            <div className="px-4 py-2 bg-[#8A2BE2] text-white rounded-full font-medium text-xs sm:text-sm mt-4 shadow-[0_0_20px_rgba(138,43,226,0.5)] text-center max-w-[90%] break-words">
-                                {ex.name} • {translate('workout.active.set')} {currentSet}/{targetSets} ({targetReps} reps)
+                            <div className="px-4 py-2 bg-neutral-900/90 border border-neutral-700 text-white rounded-full font-semibold text-xs sm:text-sm mt-4 shadow-xl text-center max-w-[90%] break-words">
+                                <span className="text-yellow-400 font-bold">{exerciseDisplayName}</span> • {translate('workout.active.set')} {currentSet}/{targetSets} ({targetReps} {translate('workout.active.reps')})
                             </div>
                         </div>
                     )}
@@ -554,9 +588,9 @@ const WorkoutScreen: React.FC = () => {
                                     </span>
                                     <h3 className="text-xs sm:text-sm font-medium text-zinc-200 leading-snug break-words">
                                         {currentSet < targetSets ? (
-                                            <>{translate('workout.active.set')} {currentSet + 1} / {targetSets} <span className="text-purple-400">({targetReps} reps)</span> • {ex.name}</>
+                                            <>{translate('workout.active.set')} {currentSet + 1} / {targetSets} <span className="text-purple-400">({targetReps} {translate('workout.active.reps')})</span> • {exerciseDisplayName}</>
                                         ) : (
-                                            <>{translate('workout.active.next_exercise')} : {plan.exercises[idx + 1]?.name || translate('workout.active.end_session')}</>
+                                            <>{translate('workout.active.next_exercise')} : {plan.exercises[idx + 1] ? getLocalizedExerciseName(plan.exercises[idx + 1].name || (plan.exercises[idx + 1] as any).canonicalId, language) : translate('workout.active.end_session')}</>
                                         )}
                                     </h3>
                                 </div>
@@ -622,12 +656,12 @@ const WorkoutScreen: React.FC = () => {
 
                                 {/* REPS BADGE */}
                                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-medium uppercase tracking-wider">
-                                    {targetReps} Reps
+                                    {targetReps} {translate('workout.active.reps')}
                                 </span>
                             </div>
 
                             <h2 className="text-sm sm:text-base font-semibold text-zinc-100 leading-snug break-words max-w-full">
-                                {ex.name}
+                                {exerciseDisplayName}
                             </h2>
 
                             {/* SETS PROGRESS CHIPS */}

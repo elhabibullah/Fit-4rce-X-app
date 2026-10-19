@@ -5,12 +5,15 @@
  * All exercises have guaranteed 1:1 mapped 3D canonical animation clips.
  */
 
+import { CALISTHENICS_EXERCISE_DEFINITIONS, resolveCalisthenicsModel, CALISTHENICS_BODYWEIGHT_MODELS } from './calisthenicsModels.ts';
+
 export interface ExerciseItem {
   canonicalId: string;
   category: 'push' | 'pull' | 'core' | 'legs' | 'posture' | 'power' | 'cardio';
   equipment: 'bodyweight' | 'mat' | 'pullup_bar' | 'dip_bars' | 'dumbbells' | 'barbell';
   names: Record<string, string>;
   descriptions: Record<string, string>;
+  modelUrl?: string;
 }
 
 /**
@@ -23,6 +26,13 @@ export function getCanonicalIdForExercise(name: string, category?: string): stri
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
+
+  // Check 14 authentic custom calisthenics exercises first
+  const calisModel = resolveCalisthenicsModel(clean);
+  if (calisModel) {
+    const found = CALISTHENICS_EXERCISE_DEFINITIONS.find(c => c.modelUrl === calisModel);
+    if (found) return found.canonicalId;
+  }
 
   // 1. Burpee
   if (clean.includes('burpee') || clean.includes('burpe') || clean.includes('берпи')) {
@@ -144,6 +154,7 @@ export function getCanonicalIdForExercise(name: string, category?: string): stri
 // -----------------------------------------------------------------------------
 
 export const MASTER_EXERCISE_CATALOG: ExerciseItem[] = [
+  ...CALISTHENICS_EXERCISE_DEFINITIONS,
   // PUSH
   {
     canonicalId: 'push_up',
@@ -521,8 +532,13 @@ export function generateSmartWorkout(
   const norm = (workoutType || '').toLowerCase();
 
   // Filter catalog according to workout focus
+  const isCalisthenicsOrBodyweight = equipment === 'bodyweight' || norm.includes('calisthenic') || norm.includes('corps');
   let pool = MASTER_EXERCISE_CATALOG;
-  if (norm.includes('cardio') || norm.includes('hiit')) {
+
+  if (isCalisthenicsOrBodyweight) {
+    // 100% authentic animated Android bodyweight exercises with built-in .glb animations
+    pool = [...CALISTHENICS_EXERCISE_DEFINITIONS];
+  } else if (norm.includes('cardio') || norm.includes('hiit')) {
     pool = MASTER_EXERCISE_CATALOG.filter(e => e.category === 'cardio' || e.category === 'core' || e.category === 'legs');
   } else if (norm.includes('core') || norm.includes('abdo') || norm.includes('plank')) {
     pool = MASTER_EXERCISE_CATALOG.filter(e => e.category === 'core' || e.canonicalId === 'crunch' || e.canonicalId === 'plank');
@@ -584,10 +600,11 @@ export function generateSmartWorkout(
     title,
     description,
     exercises: selected.map(ex => ({
-      name: ex.names[langKey] || ex.names['en'] || ex.names['fr'],
-      description: ex.descriptions[langKey] || ex.descriptions['en'] || ex.descriptions['fr'],
+      name: ex.names[langKey] || ex.names['ar'] || ex.names['en'] || ex.names['fr'],
+      description: ex.descriptions[langKey] || ex.descriptions['ar'] || ex.descriptions['en'] || ex.descriptions['fr'],
       equipment: ex.equipment,
       canonicalId: ex.canonicalId,
+      modelUrl: (ex as any).modelUrl || CALISTHENICS_BODYWEIGHT_MODELS[ex.canonicalId] || resolveCalisthenicsModel(ex.canonicalId),
       sets: targetSets,
       reps: targetReps,
       restSeconds: restBetweenSets,

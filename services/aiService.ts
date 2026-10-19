@@ -25,7 +25,11 @@ const mapToVideoUrl = (name: string): string => {
     return VIDEO_LIBRARY[selectedKey];
 };
 
-const mapToModel = (eq: string): string => {
+import { resolveCalisthenicsModel } from '../lib/calisthenicsModels.ts';
+
+const mapToModel = (canonicalId?: string, name?: string): string => {
+    const custom = resolveCalisthenicsModel(canonicalId) || resolveCalisthenicsModel(name);
+    if (custom) return custom;
     return MODEL_LIBRARY.bodyweight;
 };
 
@@ -153,7 +157,7 @@ export const generateWorkout = async (
             canonicalId: ex.canonicalId,
             name: ex.name,
             description: ex.description,
-            modelUrl: mapToModel(ex.equipment),
+            modelUrl: (ex as any).modelUrl || mapToModel(ex.canonicalId || ex.id, ex.name),
             videoUrl: mapToVideoUrl(ex.name),
             difficulty: 'intermediate' as any,
             muscleGroups: [],
@@ -198,7 +202,7 @@ export const buildFallbackWorkoutPlan = (language: Language = Language.EN, optio
             canonicalId: ex.canonicalId,
             name: ex.name,
             description: ex.description,
-            modelUrl: mapToModel(ex.equipment),
+            modelUrl: ex.modelUrl || mapToModel(ex.canonicalId, ex.name),
             videoUrl: mapToVideoUrl(ex.name),
             difficulty: 'intermediate' as any,
             muscleGroups: [],
