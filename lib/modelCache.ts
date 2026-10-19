@@ -15,7 +15,7 @@ const preloadedUrls = new Set<string>();
 export function preloadWorkoutModels(urls: (string | undefined)[]): void {
   if (typeof window === 'undefined') return;
 
-  const validUrls = urls.filter((u): u is string => Boolean(u && u.trim().startsWith('http')));
+  const validUrls = urls.filter((u): u is string => Boolean(u && (u.trim().startsWith('http') || u.trim().startsWith('/'))));
   if (validUrls.length === 0) return;
 
   const schedulePreload = () => {

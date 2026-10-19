@@ -10,6 +10,9 @@ import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
 import { HolographicARModal } from '../components/common/HolographicARModal.tsx';
 import Button from '../components/common/Button.tsx';
 
+import { useGLTF } from '@react-three/drei';
+import { preloadWorkoutModels } from '../lib/modelCache.ts';
+
 type SpinningView = 'mode_select' | 'setup' | 'active';
 
 const SPINNING_VIDEO_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_spinning-video.mp4";
@@ -29,6 +32,16 @@ export const SpinningScreen: React.FC = () => {
   const [isARModalOpen, setIsARModalOpen] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Preload spinning coach 3D model immediately when entering screen
+  useEffect(() => {
+    preloadWorkoutModels([SPINNING_COACH_MODEL_URL]);
+    try {
+      useGLTF.preload(SPINNING_COACH_MODEL_URL, '/draco/');
+    } catch (e) {
+      // Ignore
+    }
+  }, []);
 
   useEffect(() => {
     let interval: number;
@@ -184,7 +197,7 @@ export const SpinningScreen: React.FC = () => {
                     {/* Start Action Button - Guaranteed Visible, Never Offscreen */}
                     <div className="pt-2">
                         <Button 
-                            onClick={() => { setView('active'); setIsActive(true); setIsPrepPhase(true); }} 
+                            onClick={() => { setView('active'); setIsActive(true); setIsPrepPhase(true); setCountdown(10); }} 
                             className="w-full py-4 text-xs sm:text-sm font-black uppercase tracking-[0.25em] shadow-[0_0_25px_rgba(138,43,226,0.4)] active:scale-[0.98]"
                         >
                             {translate('start_session')}

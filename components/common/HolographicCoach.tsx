@@ -934,14 +934,16 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
       <div className="flex-grow w-full relative z-10 flex items-center justify-center">
         <Suspense
           fallback={
-            <div className={`absolute inset-0 flex flex-col items-center justify-center ${
-              isDark ? 'bg-[#08080c]/80' : 'bg-white/80'
-            } backdrop-blur-sm z-50`}>
-              <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-3" />
-              <p className="text-[10px] font-black text-purple-700 uppercase tracking-[0.3em] animate-pulse">
-                INITIALISATION DU COACH CYBORG...
-              </p>
-            </div>
+            isTransparent ? null : (
+              <div className={`absolute inset-0 flex flex-col items-center justify-center ${
+                isDark ? 'bg-[#08080c]/80' : 'bg-white/80'
+              } backdrop-blur-sm z-50`}>
+                <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-3" />
+                <p className="text-[10px] font-black text-purple-700 uppercase tracking-[0.3em] animate-pulse">
+                  INITIALISATION DU COACH CYBORG...
+                </p>
+              </div>
+            )
           }
         >
           <div 
