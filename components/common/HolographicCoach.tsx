@@ -183,28 +183,8 @@ const WORLD_X = new THREE.Vector3(1, 0, 0); // Sagittal axis (pitch: lean forwar
 const WORLD_Y = new THREE.Vector3(0, 1, 0); // Vertical axis (yaw: head turn, torso twist)
 const WORLD_Z = new THREE.Vector3(0, 0, 1); // Coronal axis (roll: arm abduction, leg abduction)
 
-// Loading Holographic Ring
-const MatrixStudioLoader: React.FC<{ isDark?: boolean }> = ({ isDark }) => {
-  const ringRef = useRef<THREE.Mesh>(null);
-  useFrame((state) => {
-    if (ringRef.current) {
-      ringRef.current.rotation.z = state.clock.getElapsedTime() * 1.5;
-    }
-  });
-
-  return (
-    <group position={[0, -0.92, 0]}>
-      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.5, 0.55, 48]} />
-        <meshBasicMaterial color={isDark ? '#c084fc' : '#a855f7'} transparent opacity={0.7} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.48, 32]} />
-        <meshBasicMaterial color="#ec4899" transparent opacity={0.15} side={THREE.DoubleSide} />
-      </mesh>
-    </group>
-  );
-};
+// Loading fallback (null - no purple/mauve circle)
+const MatrixStudioLoader: React.FC<{ isDark?: boolean }> = () => null;
 
 // Professional Gym Shock-Absorbing Rubber Floor (Sol noir mousseux amortissant pour poids & haltères)
 const GymRubberFloor: React.FC<{ isDark: boolean }> = ({ isDark }) => {
@@ -366,7 +346,7 @@ const HunyuanRiggedCoach: React.FC<{
     const isSpinning = (exerciseId && exerciseId.toLowerCase().includes('spin')) ||
                        (exerciseName && exerciseName.toLowerCase().includes('spin')) ||
                        scene.name.toLowerCase().includes('spin');
-    const targetHeight = isSpinning ? 1.35 : 1.95;
+    const targetHeight = isSpinning ? 1.55 : 1.95;
     const rawH = size.y > 0.5 ? size.y : 5.7;
     const scale = targetHeight / rawH;
 
@@ -736,6 +716,13 @@ const CoachCanvas: React.FC<{
       gl={{ antialias: true, alpha: isTransparent, powerPreference: 'high-performance' }}
       camera={{ position: initialCameraPos, fov: 40 }}
       dpr={[1, 2]}
+      style={{ background: 'transparent' }}
+      onCreated={({ gl, scene }) => {
+        if (isTransparent) {
+          gl.setClearColor(0x000000, 0);
+          scene.background = null;
+        }
+      }}
     >
       <CameraPresetHandler preset={cameraPreset} controlsRef={controlsRef} />
       <CameraHipsTracker controlsRef={controlsRef} />
@@ -768,7 +755,7 @@ const CoachCanvas: React.FC<{
       {!isTransparent && <StudioContactShadow isDark={isDark} />}
 
       {/* 3D Coach Model */}
-      <Suspense fallback={<MatrixStudioLoader isDark={isDark} />}>
+      <Suspense fallback={null}>
         <UniversalModel
           url={finalUrl}
           isPaused={isPaused}
@@ -931,23 +918,10 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
       )}
 
       {/* 3D CANVAS VIEWPORT */}
-      <div className="flex-grow w-full relative z-10 flex items-center justify-center">
-        <Suspense
-          fallback={
-            isTransparent ? null : (
-              <div className={`absolute inset-0 flex flex-col items-center justify-center ${
-                isDark ? 'bg-[#08080c]/80' : 'bg-white/80'
-              } backdrop-blur-sm z-50`}>
-                <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-3" />
-                <p className="text-[10px] font-black text-purple-700 uppercase tracking-[0.3em] animate-pulse">
-                  INITIALISATION DU COACH CYBORG...
-                </p>
-              </div>
-            )
-          }
-        >
+      <div className={`flex-grow w-full relative z-10 flex items-center justify-center ${isTransparent ? 'bg-transparent' : ''}`}>
+        <Suspense fallback={null}>
           <div 
-            className="w-full h-full"
+            className={`w-full h-full ${isTransparent ? 'bg-transparent' : ''}`}
             style={{ touchAction: 'pan-y' }}
             onWheel={(e) => {
               if (disableWheelForward) {
