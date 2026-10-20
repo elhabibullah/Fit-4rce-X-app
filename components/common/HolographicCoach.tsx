@@ -332,7 +332,7 @@ const HunyuanRiggedCoach: React.FC<{
   const engineRef = useRef<HumanoidMotionEngine | null>(null);
 
   // Adaptive model scale normalization and physical grounding for both Cyborg and Sifu Abdelwahid
-  const { modelScale, offsetPos } = useMemo(() => {
+  const { modelScale, offsetPos, isSpinning } = useMemo(() => {
     scene.updateMatrixWorld(true);
 
     // Compute bounding box of the mesh in its rest pose
@@ -361,8 +361,9 @@ const HunyuanRiggedCoach: React.FC<{
     return {
       modelScale: scale,
       offsetPos: [posX, posY, posZ] as [number, number, number],
+      isSpinning,
     };
-  }, [scene]);
+  }, [scene, exerciseId, exerciseName]);
 
   // Handle Puppeteer binding when live puppet mode is active
   useEffect(() => {
@@ -382,6 +383,11 @@ const HunyuanRiggedCoach: React.FC<{
       if (groupRef.current) {
         groupRef.current.position.set(offsetPos[0], offsetPos[1], offsetPos[2]);
         groupRef.current.scale.set(modelScale, modelScale, modelScale);
+        if (isSpinning) {
+          groupRef.current.rotation.set(0, -Math.PI / 4.2, 0);
+        } else {
+          groupRef.current.rotation.set(0, 0, 0);
+        }
         groupRef.current.updateMatrixWorld(true);
       }
       engineRef.current = new HumanoidMotionEngine(scene, modelScale, -0.889);
@@ -389,7 +395,7 @@ const HunyuanRiggedCoach: React.FC<{
     } else {
       engineRef.current.setExercise(query, 0.35, false);
     }
-  }, [scene, exerciseId, exerciseName, isPuppeteerActive, modelScale, offsetPos]);
+  }, [scene, exerciseId, exerciseName, isPuppeteerActive, modelScale, offsetPos, isSpinning]);
 
   useFrame((_, delta) => {
     if (!scene) return;
@@ -408,7 +414,12 @@ const HunyuanRiggedCoach: React.FC<{
   });
 
   return (
-    <group ref={groupRef} scale={[modelScale, modelScale, modelScale]} position={offsetPos}>
+    <group 
+      ref={groupRef} 
+      scale={[modelScale, modelScale, modelScale]} 
+      position={offsetPos}
+      rotation={[0, isSpinning ? -Math.PI / 4.2 : 0, 0]}
+    >
       <primitive object={scene} />
     </group>
   );
@@ -706,14 +717,14 @@ const CoachCanvas: React.FC<{
 
   const initialCameraPos = useMemo<[number, number, number]>(() => {
     const isSpinning = finalUrl.toLowerCase().includes('spin') || (exerciseId && exerciseId.toLowerCase().includes('spin'));
-    const dist = isSpinning ? 3.4 : 3.2;
-    if (cameraPreset === 'profile') return [dist, 0.75, 0];
-    return [0, 0.75, dist];
+    if (cameraPreset === 'profile') return [isSpinning ? 3.4 : 3.2, 0.75, 0];
+    if (isSpinning) return [-1.2, 0.85, 3.2];
+    return [0, 0.75, 3.2];
   }, [cameraPreset, finalUrl, exerciseId]);
 
   return (
     <Canvas
-      gl={{ antialias: true, alpha: isTransparent, powerPreference: 'high-performance' }}
+      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       camera={{ position: initialCameraPos, fov: 40 }}
       dpr={[1, 2]}
       style={{ background: 'transparent' }}

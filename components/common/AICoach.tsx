@@ -17,51 +17,51 @@ interface AICoachProps {
 // Quick conversational prompts translated across the 8 supported languages
 const QUICK_PROMPTS: Record<Language, string[]> = {
   [Language.FR]: [
-    "Séance Full Body 20 min",
-    "Pompes et Abdominaux",
-    "Cardio Haute Intensité",
+    "Séance Jambes (Poids du corps)",
+    "Haltères & Bandes de résistance",
+    "Pas de blessure, intensité max",
     "Je suis prêt, lance la séance !"
   ],
   [Language.ES]: [
-    "Cuerpo completo 20 min",
-    "Flexiones y Abdominales",
-    "Cardio alta intensidad",
+    "Piernas (Peso corporal)",
+    "Mancuernas y Bandas elásticas",
+    "Sin lesiones, máxima intensidad",
     "¡Estoy listo, comienza!"
   ],
   [Language.AR]: [
-    "تمرين لكامل الجسم 20 دقيقة",
-    "تمارين الضغط والبطن",
-    "كارديو عالي الكثافة",
+    "تمارين الأرجل (بوزن الجسم)",
+    "أثقال وأربطة مقاومة",
+    "لا توجد إصابات، أقصى شدة",
     "أنا جاهز، ابدأ التمرين!"
   ],
   [Language.PT]: [
-    "Treino Corpo Inteiro 20 min",
-    "Flexões e Abdominais",
-    "Cardio Alta Intensidade",
+    "Treino Pernas (Peso do corpo)",
+    "Halteres e Elásticos",
+    "Sem lesões, intensidade máxima",
     "Estou pronto, vamos começar!"
   ],
   [Language.JA]: [
-    "20分 全身ワークアウト",
-    "腕立て伏せと腹筋",
-    "高強度HIITカーディオ",
+    "脚トレ（自重トレーニング）",
+    "ダンベル＆レジスタンスバンド",
+    "怪我なし、高強度希望",
     "準備完了、スタート！"
   ],
   [Language.ZH]: [
-    "20分钟 全身训练",
-    "俯卧撑与腹肌训练",
-    "高强度燃脂有氧",
+    "腿部训练（自重训练）",
+    "哑铃与弹力带",
+    "无伤病，高强度",
     "我准备好了，开始！"
   ],
   [Language.RU]: [
-    "20 минут на всё тело",
-    "Отжимания и пресс",
-    "Высокоинтенсивное кардио",
+    "Тренировка ног (свой вес)",
+    "Гантели и фитнес-резинки",
+    "Без травм, макс. интенсивность",
     "Я готов, начинаем!"
   ],
   [Language.EN]: [
-    "20 min Full Body Session",
-    "Push-ups & Abs Workout",
-    "High Intensity Cardio",
+    "Legs Workout (Bodyweight)",
+    "Dumbbells & Resistance Bands",
+    "No injuries, max intensity",
     "I'm ready, let's start!"
   ]
 };
@@ -602,6 +602,13 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     }
   }, []);
 
+  // Helper: check if a text is an explicit confirmation to start workout
+  const isExplicitUserConfirmation = useCallback((text: string): boolean => {
+    const lower = (text || '').toLowerCase().trim();
+    return /^(oui|yes|ouais|yep|yeah|let's go|lets go|c'est parti|cest parti|je suis pr[eê]t|im ready|i am ready|go|on y va|lance|lance la s[eé]ance|d[eé]marre|start|pret|prête|ready|d'accord|daccord|ok|allons-y)\b/i.test(lower) ||
+      /\b(c'est parti|lance la s[eé]ance|d[eé]marre la s[eé]ance|on commence|je suis prêt|ready to start|let's go|on y va)\b/i.test(lower);
+  }, []);
+
   // Submit audio blob directly to Gemini for speech recognition & response
   const submitAudioBlob = async (blob: Blob, mimeType: string) => {
     isListeningRef.current = false;
@@ -630,10 +637,21 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         }, language, historyList, profileRef.current);
 
         setIsThinking(false);
-        const shouldLaunch = res.text.includes('[GENERATE_WORKOUT]');
+        const hasGenerateToken = res.text.includes('[GENERATE_WORKOUT]');
         const displayText = res.text.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
 
-        setMessages(prev => [...prev, { role: 'assistant', text: displayText }]);
+        // Strict audio confirmation check:
+        // Did the coach actually launch the session AND was there a prior consultation stage?
+        const lastCoachMsg = [...messagesRef.current].reverse().find(m => m.role === 'assistant')?.text || '';
+        const wasAskedReady = /pr[eê]t|ready|d'accord|commencer|d[eé]marrer|on lance/i.test(lastCoachMsg);
+        const soundsLikeLaunch = /c'est parti|on donne tout|je lance|g[eé]n[eè]re|let's go|crush this/i.test(displayText);
+
+        // Strict guard: Never launch if it's the initial turn or if consultation questions haven't happened!
+        const shouldLaunch = hasGenerateToken && soundsLikeLaunch && (wasAskedReady || messagesRef.current.length >= 4);
+
+        const newAssistantMsg: Message = { role: 'assistant', text: displayText };
+        messagesRef.current = [...messagesRef.current, newAssistantMsg];
+        setMessages(messagesRef.current);
         accumulatedContextRef.current = (accumulatedContextRef.current ? accumulatedContextRef.current + ' ' : '') + displayText;
 
         if (res.audio) {
@@ -663,17 +681,32 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     currentTranscriptRef.current = '';
     stopListening();
 
-    setMessages(prev => [...prev, { role: 'user', text: cleanText }]);
+    // Synchronously update messagesRef to prevent stale history
+    const userMsg: Message = { role: 'user', text: cleanText };
+    const updatedMessages = [...messagesRef.current, userMsg];
+    messagesRef.current = updatedMessages;
+    setMessages(updatedMessages);
     accumulatedContextRef.current = (accumulatedContextRef.current ? accumulatedContextRef.current + ' ' : '') + cleanText;
 
     setIsThinking(true);
     try {
-      const historyList = messagesRef.current.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
+      const historyList = updatedMessages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
       const res = await getVoiceCoachResponse({ msg: cleanText }, language, historyList, profileRef.current);
       
-      const shouldLaunch = res.text.includes('[GENERATE_WORKOUT]');
+      const hasGenerateToken = res.text.includes('[GENERATE_WORKOUT]');
       const displayText = res.text.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
-      setMessages(prev => [...prev, { role: 'assistant', text: displayText }]);
+
+      // Check whether launch is truly confirmed by the user
+      const lastCoachMsg = [...messagesRef.current].reverse().find(m => m.role === 'assistant')?.text || '';
+      const wasAskedReady = /pr[eê]t|ready|d'accord|commencer|d[eé]marrer|on lance/i.test(lastCoachMsg);
+      const userConfirmed = isExplicitUserConfirmation(cleanText);
+
+      // Strict Gate: ONLY launch if user explicitly confirmed or agreed after being asked
+      const shouldLaunch = hasGenerateToken && (userConfirmed || (wasAskedReady && updatedMessages.length >= 3));
+
+      const newAssistantMsg: Message = { role: 'assistant', text: displayText };
+      messagesRef.current = [...messagesRef.current, newAssistantMsg];
+      setMessages(messagesRef.current);
 
       if (res.audio) {
         playGeminiAudio(res.audio, () => {
@@ -695,12 +728,14 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       const fallbackMsg = language === Language.FR 
         ? "Bien reçu ! Quel muscle ou discipline souhaites-tu travailler aujourd'hui ?"
         : "Got it! Which muscle group or exercise style would you like to target today?";
-      setMessages(prev => [...prev, { role: 'assistant', text: fallbackMsg }]);
+      const fallbackAssistantMsg: Message = { role: 'assistant', text: fallbackMsg };
+      messagesRef.current = [...messagesRef.current, fallbackAssistantMsg];
+      setMessages(messagesRef.current);
       if (isVisibleRef.current) startListeningRef.current();
     } finally {
       setIsThinking(false);
     }
-  }, [language, playGeminiAudio, stopListening, executeWorkoutLaunch]);
+  }, [language, playGeminiAudio, stopListening, executeWorkoutLaunch, isExplicitUserConfirmation]);
 
   handleUserMessageRef.current = submitTextMessage;
 

@@ -259,101 +259,120 @@ export const getChatbotResponse = async (msg: string, language: string = 'en', h
     return res.text;
 };
 
+const checkIsConfirmationClient = (text: string): boolean => {
+    const lower = (text || '').toLowerCase().trim();
+    return /^(oui|yes|ouais|yep|yeah|let's go|lets go|c'est parti|cest parti|je suis pr[eê]t|im ready|i am ready|go|on y va|lance|lance la s[eé]ance|d[eé]marre|start|pret|prête|ready|d'accord|daccord|ok|allons-y)\b/i.test(lower) ||
+        /\b(c'est parti|lance la s[eé]ance|d[eé]marre la s[eé]ance|on commence|je suis prêt|ready to start|let's go|on y va)\b/i.test(lower);
+};
+
 const getSmartFallbackReply = (msg: string, language: string): string => {
-    // High-level client-side conversational AI intelligence:
     const l = (language || 'en').toLowerCase().slice(0, 2);
-    const lower = (msg || '').toLowerCase();
+    const lower = (msg || '').toLowerCase().trim();
 
-    const isReady = (
-        lower.includes('prêt') || lower.includes('pret') || lower.includes('lance') ||
-        lower.includes('start') || lower.includes('ready') || lower.includes('commencer') ||
-        lower.includes('go') || lower.includes('parti') || lower.includes('vamos') ||
-        lower.includes('listo') || lower.includes('جاهز') || lower.includes('يلا') ||
-        lower.includes('開始') || lower.includes('准备') || lower.includes('готов') || lower.includes('поехали')
-    );
-
+    const isReady = checkIsConfirmationClient(msg);
     const isGreeting = (
         lower.includes('bonjour') || lower.includes('salut') || lower.includes('hello') ||
         lower.includes('hi') || lower.includes('hola') || lower.includes('مرحبا') ||
         lower.includes('olá') || lower.includes('ola') || lower.includes('こんにちは') || lower.includes('你好')
     );
 
+    const isFocus = (
+        lower.includes('bras') || lower.includes('jambe') || lower.includes('cuisse') || lower.includes('squat') ||
+        lower.includes('dos') || lower.includes('pectoraux') || lower.includes('pec') || lower.includes('abdo') ||
+        lower.includes('core') || lower.includes('fessier') || lower.includes('upper') || lower.includes('lower') ||
+        lower.includes('leg') || lower.includes('chest') || lower.includes('full body') || lower.includes('cardio')
+    );
+
     const isEquipment = (
         lower.includes('haltere') || lower.includes('haltère') || lower.includes('dumbbell') ||
         lower.includes('poids') || lower.includes('machine') || lower.includes('corps') ||
+        lower.includes('calisth') || lower.includes('salle') || lower.includes('gym') ||
+        lower.includes('bande') || lower.includes('elastique') || lower.includes('élastique') ||
+        lower.includes('swiss') || lower.includes('ballon') || lower.includes('rien') ||
         lower.includes('mancuerna') || lower.includes('وزن') || lower.includes('自重') || lower.includes('哑铃')
     );
 
-    const isFocus = (
-        lower.includes('bras') || lower.includes('jambe') || lower.includes('dos') ||
-        lower.includes('pectoraux') || lower.includes('abdos') || lower.includes('core') ||
-        lower.includes('upper') || lower.includes('lower') || lower.includes('leg') || lower.includes('chest')
+    const isConstraint = (
+        lower.includes('douleur') || lower.includes('blessure') || lower.includes('mal') ||
+        lower.includes('genou') || lower.includes('dos') || lower.includes('epaule') ||
+        lower.includes('épaule') || lower.includes('fatigu') || lower.includes('forme') ||
+        lower.includes('intense') || lower.includes('doux') || lower.includes('moyen') ||
+        lower.includes('aucune')
     );
 
-    const DIALOGUES: Record<string, { ready: string; greet: string; equip: string; focus: string; generic: string }> = {
+    const DIALOGUES: Record<string, { ready: string; greet: string; focus: string; equip: string; constraint: string; generic: string }> = {
         fr: {
-            ready: "C'est parti ! Je génère ta séance 3D sur mesure. Donne le meilleur de toi-même ! [GENERATE_WORKOUT]",
-            greet: "Bonjour ! Je suis ton coach. Quel est ton objectif aujourd'hui : full body, haut du corps ou bas du corps ?",
-            equip: "Parfait pour l'équipement ! Dis-moi quand tu es prêt et je lance ton entraînement 3D.",
-            focus: "Zone bien ciblée ! Dis-moi 'lance la séance' ou 'je suis prêt' pour démarrer !",
-            generic: "Bien reçu ! Dis-moi 'je suis prêt' dès que tu souhaites commencer ton entraînement. [GENERATE_WORKOUT]"
+            ready: "C'est parti Habib, on donne tout ! Je génère ta séance 3D sur mesure. [GENERATE_WORKOUT]",
+            greet: "Bonjour ! Comment te sens-tu aujourd'hui ? Dis-moi quel groupe musculaire ou quelle discipline tu souhaites travailler !",
+            focus: "Super choix ! Dis-moi, tu souhaites t'entraîner au poids du corps ou as-tu accès à une salle de musculation ? Et as-tu du matériel à disposition comme des haltères, des bandes de résistance ou un ballon Swiss ball ?",
+            equip: "C'est bien noté pour le matériel ! As-tu des douleurs, gênes articulaires ou blessures particulières à prendre en compte aujourd'hui (par exemple aux genoux ou au dos) ? Et quel niveau d'intensité souhaites-tu ?",
+            constraint: "Parfait, je prends tout cela en compte pour sécuriser et optimiser ta séance. Je t'ai préparé un entraînement sur-mesure ! Es-tu prêt et d'accord pour que je lance la séance ?",
+            generic: "Bien reçu ! Quel groupe musculaire ou discipline souhaites-tu travailler aujourd'hui ?"
         },
         en: {
-            ready: "Awesome! Generating your custom 3D workout now. Let's crush this! [GENERATE_WORKOUT]",
-            greet: "Hello! I'm your coach. What's our focus today: full body, upper body, or lower body?",
-            equip: "Great choice! Tell me whenever you're ready and I'll generate your 3D session.",
-            focus: "Target locked! Say 'start' or 'I am ready' whenever you want to begin!",
-            generic: "Understood! Whenever you're ready to start, let me know! [GENERATE_WORKOUT]"
+            ready: "Awesome, let's crush this! Generating your custom 3D workout now. [GENERATE_WORKOUT]",
+            greet: "Hi! How are you feeling today? Tell me what muscle group or workout style you'd like to focus on!",
+            focus: "Great choice! Tell me: are you doing bodyweight training or do you have gym access? And do you have equipment like dumbbells, resistance bands, or a Swiss ball?",
+            equip: "Noted! Do you have any injuries, joint pains, or areas to protect today, and what intensity level would you prefer?",
+            constraint: "Perfect, everything is set! A tailor-made session is prepared for you. Are you ready and excited to start?",
+            generic: "Understood! Which muscle group or discipline would you like to target today?"
         },
         es: {
             ready: "¡Vamos con todo! Preparando tu entrenamiento 3D ahora mismo. [GENERATE_WORKOUT]",
-            greet: "¡Hola! Soy tu entrenadora. ¿Cuál es tu objetivo hoy: cuerpo completo, tren superior o piernas?",
-            equip: "¡Excelente! Dime cuando estés listo para generar tu entrenamiento 3D.",
-            focus: "¡Objetivo fijado! Di 'estoy listo' o 'vamos' para comenzar.",
-            generic: "¡Perfecto! Cuando estés listo para comenzar, ¡avísame! [GENERATE_WORKOUT]"
+            greet: "¡Hola! ¿Cómo te sientes hoy? ¡Dime qué grupo muscular o disciplina te gustaría entrenar!",
+            focus: "¡Excelente elección! Dime: ¿entrenarás con peso corporal o en un gimnasio? ¿Y cuentas con mancuernas, bandas elásticas o balón suizo?",
+            equip: "¡Perfecto! ¿Tienes alguna molestia o lesión articular hoy? ¿Y qué nivel de intensidad buscas?",
+            constraint: "¡Genial! Tengo todo listo para tu sesión personalizada. ¿Estás listo y de acuerdo para comenzar?",
+            generic: "¡Perfecto! ¿Qué grupo muscular o estilo de entrenamiento deseas trabajar hoy?"
         },
         ar: {
-            ready: "هيا بنا! أقوم بتجهيز تمارينك ثلاثية الأبعاد الآن. بالتوفيق! [GENERATE_WORKOUT]",
-            greet: "أهلاً بك! أنا مدربتك الشخصية. ما هو هدفك اليوم: تدريب كامل، الجزء العلوي أم السفلي؟",
-            equip: "ممتاز! أخبرني عندما تكون جاهزاً وسأقوم بتوليد تدريبك ثلاثي الأبعاد.",
-            focus: "تم تحديد الهدف! قل 'أنا جاهز' أو 'ابدأ' للبدء فوراً.",
-            generic: "رائع! أخبرني عندما تكون مستعداً للبدء! [GENERATE_WORKOUT]"
+            ready: "رائع! هيا بنا نبدأ تمرينك المخصص الآن. بالتوفيق! [GENERATE_WORKOUT]",
+            greet: "مرحباً! كيف تشعر اليوم؟ أخبرني ما هي العضلات أو نوع التمارين التي ترغب في تدريبها اليوم!",
+            focus: "اختيار ممتاز! هل تتدرب بوزن الجسم أم في صالة رياضية؟ وهل لديك أثقال دمبل، أربطة مقاومة، أو كرة سويسرية؟",
+            equip: "ممتاز! هل لديك أي إصابات أو آلام في المفاصل اليوم؟ وما هو مستوى الشدة الذي تفضله؟",
+            constraint: "رائع، جهزت لك تدريباً مخصصاً بالكامل. هل أنت جاهز وموافق لنبدأ الآن؟",
+            generic: "أهلاً بك! ما العضلة أو التمرين الذي تريد التركيز عليه اليوم؟"
         },
         pt: {
             ready: "Vamos com tudo! Preparando seu treino 3D personalizado agora. [GENERATE_WORKOUT]",
-            greet: "Olá! Sou sua treinadora. Qual é o foco de hoje: corpo inteiro, superior ou pernas?",
-            equip: "Perfeito! Diga quando estiver pronto para gerar seu treino 3D.",
-            focus: "Foco definido! Diga 'estou pronto' ou 'vamos' para começar.",
-            generic: "Perfeito! Quando estiver pronto para começar, me avise! [GENERATE_WORKOUT]"
+            greet: "Olá! Como você está se sentindo hoje? Me diga qual grupo muscular ou disciplina deseja treinar!",
+            focus: "Ótima escolha! Você vai treinar com peso do corpo ou na academia? Tem halteres, elásticos ou bola suíça?",
+            equip: "Perfeito! Tem alguma dor ou lesão hoje? E qual intensidade você prefere?",
+            constraint: "Excelente! Sessão preparada sob medida para você. Está pronto para começar?",
+            generic: "Perfeito! Qual grupo muscular você gostaria de treinar hoje?"
         },
         ja: {
-            ready: "さあ始めましょう！あなた専用の3Dワークアウトを準備しています。[GENERATE_WORKOUT]",
-            greet: "こんにちは！パーソナルコーチです。本日のターゲットは全身、上半身、それとも下半身ですか？",
-            equip: "素晴らしい！準備ができたら「スタート」と声をかけてください。",
-            focus: "ターゲット設定完了！準備ができたら教えてください。",
-            generic: "了解しました！準備ができたら声をかけてください！[GENERATE_WORKOUT]"
+            ready: "素晴らしい、スタートしましょう！あなた専用の3Dワークアウトを準備しています。[GENERATE_WORKOUT]",
+            greet: "こんにちは！今日の体調はいかがですか？どの部位や種目をトレーニングしたいか教えてください！",
+            focus: "素晴らしいターゲットです！自重トレーニングですか、それともジムですか？ダンベルやレジスタンスバンド、バランスボールはありますか？",
+            equip: "了解しました！怪我や関節の痛みはありますか？また強度はどのくらいが希望ですか？",
+            constraint: "完璧です！あなたに合わせたメニューを準備しました。スタートしてよろしいですか？",
+            generic: "了解しました！本日鍛えたい部位を教えてください。"
         },
         zh: {
             ready: "全力以赴！正在为你准备定制的3D训练动作。[GENERATE_WORKOUT]",
-            greet: "你好！我是你的专属教练。今天想练全身、上半身还是下肢？",
-            equip: "太好了！准备好时告诉我，我将为你生成3D动作序列。",
-            focus: "目标已锁定！准备好了就说‘开始’吧。",
-            generic: "收到！准备好时随时告诉我！[GENERATE_WORKOUT]"
+            greet: "你好！今天状态如何？告诉我你今天想针对哪个肌群或项目进行训练！",
+            focus: "很好的选择！请问你是自重训练还是在健身房？有哑铃、弹力带或瑞士球等器械吗？",
+            equip: "收到！今天有关节疼痛或伤病需要避开吗？想要多大的运动强度？",
+            constraint: "太好了！已为你量身定制好训练计划。你准备好开始了了吗？",
+            generic: "收到！请问今天想练什么部位？"
         },
         ru: {
             ready: "Поехали! Создаю твою персональную 3D тренировку прямо сейчас. [GENERATE_WORKOUT]",
-            greet: "Привет! Я твой личный тренер. Какова цель сегодня: все тело, верхняя часть или ноги?",
-            equip: "Отлично! Скажи, когда будешь готов, и я создам твою 3D тренировку.",
-            focus: "Цель определена! Скажи 'готов' или 'старт', чтобы начать.",
-            generic: "Отлично! Как только будешь готов начать, дай знать! [GENERATE_WORKOUT]"
+            greet: "Привет! Как самочувствие сегодня? Расскажи, какую группу мышц или стиль тренировки ты хочешь проработать!",
+            focus: "Отличный выбор! Ты тренируешься с собственным весом или в зале? Есть ли гантели, резинки или фитбол?",
+            equip: "Понял! Есть ли травмы или боли в суставах сегодня? Какую интенсивность предпочитаешь?",
+            constraint: "Отлично, всё готово для твоей персональной тренировки. Готов начать?",
+            generic: "Понял! Какую группу мышц хочешь потренировать сегодня?"
         }
     };
 
     const d = DIALOGUES[l] || DIALOGUES.en;
     if (isReady) return d.ready;
     if (isGreeting) return d.greet;
-    if (isEquipment) return d.equip;
     if (isFocus) return d.focus;
+    if (isEquipment) return d.equip;
+    if (isConstraint) return d.constraint;
     return d.generic;
 };
 
