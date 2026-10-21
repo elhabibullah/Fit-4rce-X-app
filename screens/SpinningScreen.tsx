@@ -135,7 +135,7 @@ export const SpinningScreen: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[2500] h-screen w-screen flex flex-col bg-black overflow-hidden font-['Poppins']">
+    <div className="fixed inset-0 z-[2500] h-screen h-[100dvh] w-screen flex flex-col bg-black overflow-hidden font-['Poppins']">
       {/* 1. Mode Selection View Overlay */}
       {view === 'mode_select' && (
         <div className="absolute inset-0 z-[600] animate-fadeIn min-h-screen h-full bg-black flex flex-col font-['Poppins']">
@@ -331,17 +331,24 @@ export const SpinningScreen: React.FC = () => {
         </div>
       )}
 
-      <div className="absolute inset-0 z-0"><VirtualEnvironment type={env} isPaused={!isActive} /></div>
+      <div className="absolute inset-0 z-0 pointer-events-none"><VirtualEnvironment type={env} isPaused={!isActive} /></div>
       
-      <header className="absolute top-0 left-0 right-0 p-4 sm:p-6 flex items-center justify-between z-[500] pointer-events-auto">
-        <button onClick={() => setScreen(Screen.Home)} className="p-3 bg-black/60 rounded-full text-white backdrop-blur-xl border border-white/10 shadow-2xl active:scale-90 transition-all"><X size={20} /></button>
-        <div className="flex items-center gap-3">
+      {/* 1. TOP HEADER (flex-none) */}
+      <header className="flex-none h-14 sm:h-16 px-3 sm:px-6 flex items-center justify-between z-30 pointer-events-auto">
+        <button 
+          onClick={() => setScreen(Screen.Home)} 
+          className="p-2.5 sm:p-3 bg-black/70 rounded-full text-white backdrop-blur-xl border border-white/10 shadow-2xl active:scale-90 transition-all"
+        >
+          <X size={18} />
+        </button>
+        <div className="flex items-center gap-2 sm:gap-3">
             <DeviceStatusTrigger showLabel />
             <CastButton isTVMode={isTVMode} onToggleTVMode={() => setIsTVMode(!isTVMode)} />
         </div>
       </header>
 
-      <div className="absolute inset-x-4 sm:inset-x-6 top-20 sm:top-24 bottom-36 sm:bottom-40 z-40 rounded-[2rem] sm:rounded-[3rem] overflow-hidden border border-purple-500/40 bg-black shadow-[0_0_60px_rgba(138,43,226,0.4)]">
+      {/* 2. MAIN MEDIA STAGE (flex-1 min-h-0) - Zero mobile overflow, strictly rectangular rounded-none */}
+      <div className="flex-1 min-h-0 relative mx-2 sm:mx-6 my-1 sm:my-2 rounded-none overflow-hidden border border-purple-500/40 bg-black shadow-[0_0_50px_rgba(138,43,226,0.35)]">
           {env === 'mountains' && activeLandscape ? (
             <>
               {/* Studio plan fallback revealed when duration expires (fade out) */}
@@ -363,10 +370,10 @@ export const SpinningScreen: React.FC = () => {
                 }`}
               />
 
-              {/* Route HUD info badge top-left (No audio controls, strictly visual) */}
-              <div className="absolute top-4 left-4 z-30 pointer-events-none">
-                <div className="px-3 py-1.5 rounded-xl bg-black/70 backdrop-blur-md border border-cyan-500/30 flex items-center gap-2 shadow-lg max-w-[200px] sm:max-w-xs">
-                  <Mountain size={14} className="text-cyan-400 shrink-0" />
+              {/* Route HUD info badge top-left */}
+              <div className="absolute top-3 left-3 z-30 pointer-events-none">
+                <div className="px-2.5 py-1 rounded-none bg-black/70 backdrop-blur-md border border-cyan-500/30 flex items-center gap-2 shadow-lg max-w-[180px] sm:max-w-xs">
+                  <Mountain size={13} className="text-cyan-400 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[10px] font-bold text-white uppercase tracking-wider leading-none truncate">
                       {translate(activeLandscape.nameKey)}
@@ -386,13 +393,15 @@ export const SpinningScreen: React.FC = () => {
             />
           )}
           
-          {/* COACH CONTAINER: Spinning Coach video tightly framed to exact 9:16 rectangle with luminous LED mauve outline */}
+          {/* COACH CONTAINER: Spinning Coach video tightly framed to exact 9:16 rectangle with luminous LED mauve outline, sharp rounded-none */}
           <div className={`absolute z-30 pointer-events-auto transition-all duration-500 flex items-center ${
             env === 'mountains'
-              ? 'right-3 sm:right-6 top-3 sm:top-5 bottom-3 sm:bottom-5 justify-end'
-              : 'inset-3 sm:inset-5 justify-center'
+              ? 'right-2 sm:right-6 top-2 sm:top-4 bottom-2 sm:bottom-4 justify-end'
+              : 'inset-2 sm:inset-4 justify-center'
           }`}>
-              <div className="relative h-full aspect-[9/16] max-h-full max-w-[50vw] rounded-none overflow-hidden border-2 border-purple-400 shadow-[0_0_15px_#c084fc,0_0_30px_#a855f7,0_0_45px_rgba(168,85,247,0.85)] ring-1 ring-purple-300/80 bg-black">
+              <div className={`relative h-full aspect-[9/16] max-h-full rounded-none overflow-hidden border-2 border-purple-400 shadow-[0_0_15px_#c084fc,0_0_30px_#a855f7,0_0_45px_rgba(168,85,247,0.85)] ring-1 ring-purple-300/80 bg-black ${
+                env === 'mountains' ? 'max-w-[48vw]' : 'max-w-[85vw]'
+              }`}>
                 <video
                   ref={coachVideoRef}
                   src={SCENIC_COACH_VIDEO_URL}
@@ -408,33 +417,34 @@ export const SpinningScreen: React.FC = () => {
                  <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.4em] mb-4 drop-shadow-[0_0_10px_#00FFFF]">
                     {translate('spinning.engine_init')}
                  </h4>
-                 <div className="text-8xl sm:text-[12rem] font-black text-white leading-none drop-shadow-[0_0_40px_rgba(0,255,255,0.7)]">{countdown}</div>
+                 <div className="text-7xl sm:text-[10rem] font-black text-white leading-none drop-shadow-[0_0_40px_rgba(0,255,255,0.7)]">{countdown}</div>
              </div>
           )}
       </div>
 
-      <div className="absolute bottom-6 sm:bottom-10 left-0 right-0 z-50 px-4 sm:px-6">
+      {/* 3. BOTTOM CONTROLS (flex-none) - Compact, safe-area padded, ALWAYS fits on any phone/GSM screen */}
+      <div className="flex-none px-3 sm:px-6 py-2 sm:py-3.5 z-30 pointer-events-auto">
           <div className="flex justify-between items-center gap-2 sm:gap-4 max-w-xl mx-auto">
-                <div className="flex-1 bg-black/70 backdrop-blur-2xl border border-white/10 p-3 sm:p-5 rounded-2xl sm:rounded-3xl text-center shadow-2xl">
-                    <p className="text-[8px] sm:text-[9px] text-[#00FFFF] font-normal uppercase tracking-widest mb-0.5 sm:mb-1">
+                <div className="flex-1 bg-black/80 backdrop-blur-2xl border border-white/10 p-2 sm:p-3.5 rounded-xl text-center shadow-2xl">
+                    <p className="text-[8px] sm:text-[9px] text-[#00FFFF] font-normal uppercase tracking-widest mb-0.5">
                         {translate('spinning.elapsed')}
                     </p>
-                    <p className="text-xl sm:text-3xl font-black text-white font-mono tracking-tighter">{formatTime(elapsedTime)}</p>
+                    <p className="text-lg sm:text-2xl font-black text-white font-mono tracking-tighter">{formatTime(elapsedTime)}</p>
                 </div>
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#8A2BE2] rounded-full flex items-center justify-center shadow-[0_0_30px_#8A2BE2] active:scale-90 transition-all shrink-0">
-                    <button onClick={() => setIsActive(!isActive)} className="text-white" aria-label={isActive ? "Pause" : "Play"}>
-                        {isActive ? <Pause className="w-7 h-7 sm:w-9 sm:h-9" fill="white" /> : <Play className="w-7 h-7 sm:w-9 sm:h-9 ml-1" fill="white" />}
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#8A2BE2] rounded-full flex items-center justify-center shadow-[0_0_25px_#8A2BE2] active:scale-90 transition-all shrink-0">
+                    <button onClick={() => setIsActive(!isActive)} className="text-white flex items-center justify-center" aria-label={isActive ? "Pause" : "Play"}>
+                        {isActive ? <Pause className="w-6 h-6 sm:w-8 sm:h-8" fill="white" /> : <Play className="w-6 h-6 sm:w-8 sm:h-8 ml-0.5" fill="white" />}
                     </button>
                 </div>
                 <button 
                     onClick={openDeviceModal}
-                    className="flex-1 bg-black/70 backdrop-blur-2xl border border-white/10 p-3 sm:p-5 rounded-2xl sm:rounded-3xl text-center shadow-2xl transition-all active:scale-95 hover:border-purple-500/50"
+                    className="flex-1 bg-black/80 backdrop-blur-2xl border border-white/10 p-2 sm:p-3.5 rounded-xl text-center shadow-2xl transition-all active:scale-95 hover:border-purple-500/50"
                     title={translate(isDeviceConnected ? 'device.status.connected_tooltip' : 'device.status.connect_tooltip')}
                 >
-                    <p className="text-[8px] sm:text-[9px] text-red-400 font-bold uppercase tracking-widest mb-0.5 sm:mb-1">
+                    <p className="text-[8px] sm:text-[9px] text-red-400 font-bold uppercase tracking-widest mb-0.5">
                         {isDeviceConnected ? translate('spinning.heart_rate') : translate('spinning.ems_band')}
                     </p>
-                    <p className={`text-xl sm:text-3xl font-black font-mono tracking-tighter ${isDeviceConnected ? 'text-white' : 'text-purple-300 text-xs sm:text-sm py-1 font-bold animate-pulse'}`}>
+                    <p className={`text-lg sm:text-2xl font-black font-mono tracking-tighter ${isDeviceConnected ? 'text-white' : 'text-purple-300 text-[10px] sm:text-xs py-0.5 font-bold animate-pulse'}`}>
                         {isDeviceConnected ? deviceMetrics.heartRate : translate('spinning.connect')}
                     </p>
                 </button>
