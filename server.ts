@@ -868,16 +868,10 @@ Tone & Persona:
 
         // STRICT GUARD: Check if the user's message is an explicit confirmation
         const isConfirmation = checkIsConfirmation(cleanMsg);
-        
-        // Check if the previous coach message asked for readiness
-        const lastCoachMessage = Array.isArray(history) 
-          ? [...history].reverse().find((h: any) => h.role === 'model' || h.role === 'assistant')?.text || '' 
-          : '';
-        const wasAskedReadiness = /pr[eê]t|ready|d'accord|commencer|d[eé]marrer|on lance/i.test(lastCoachMessage);
 
         // If reply contains [GENERATE_WORKOUT], but user didn't explicitly confirm readiness, STRIP IT IMMEDIATELY!
         if (replyText.includes('[GENERATE_WORKOUT]')) {
-          if (!isConfirmation && !wasAskedReadiness) {
+          if (!isConfirmation) {
             replyText = replyText.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
           }
         }

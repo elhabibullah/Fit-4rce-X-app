@@ -240,11 +240,11 @@ const GymRubberFloor: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 
   return (
     <group position={[0, -0.890, 0]}>
-      {/* 1. Main High-Density Shock-Absorbing Rubber Gym Floor (4.8m x 4.8m) */}
+      {/* 1. Main High-Density Shock-Absorbing Rubber Gym Floor (Sol carré noir) */}
       <mesh position={[0, -0.015, 0]}>
         <boxGeometry args={[4.8, 0.03, 4.8]} />
         <meshStandardMaterial
-          color={isDark ? '#111115' : '#18181e'}
+          color={isDark ? '#111115' : '#141418'}
           roughness={0.92}
           metalness={0.02}
           map={gymMatTexture || undefined}
@@ -253,21 +253,11 @@ const GymRubberFloor: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 
       {/* 2. Beveled safety transition perimeter edge */}
       <mesh position={[0, -0.022, 0]}>
-        <boxGeometry args={[5.0, 0.02, 5.0]} />
+        <boxGeometry args={[4.95, 0.02, 4.95]} />
         <meshStandardMaterial
-          color={isDark ? '#08080b' : '#0e0e13'}
+          color={isDark ? '#08080b' : '#0c0c10'}
           roughness={0.96}
           metalness={0.01}
-        />
-      </mesh>
-
-      {/* 3. Expansive Studio Gym Floor (Surrounding floor so horizon never cuts off into void) */}
-      <mesh position={[0, -0.035, 0]}>
-        <boxGeometry args={[32, 0.02, 32]} />
-        <meshStandardMaterial
-          color={isDark ? '#09090d' : '#e2e8f0'}
-          roughness={0.88}
-          metalness={0.03}
         />
       </mesh>
     </group>

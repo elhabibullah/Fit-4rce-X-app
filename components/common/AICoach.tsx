@@ -602,11 +602,11 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     }
   }, []);
 
-  // Helper: check if a text is an explicit confirmation to start workout
+  // Helper: check if a text is an explicit confirmation to start workout across all 8 languages
   const isExplicitUserConfirmation = useCallback((text: string): boolean => {
     const lower = (text || '').toLowerCase().trim();
-    return /^(oui|yes|ouais|yep|yeah|let's go|lets go|c'est parti|cest parti|je suis pr[eê]t|im ready|i am ready|go|on y va|lance|lance la s[eé]ance|d[eé]marre|start|pret|prête|ready|d'accord|daccord|ok|allons-y)\b/i.test(lower) ||
-      /\b(c'est parti|lance la s[eé]ance|d[eé]marre la s[eé]ance|on commence|je suis prêt|ready to start|let's go|on y va)\b/i.test(lower);
+    return /^(oui|yes|ouais|yep|yeah|let's go|lets go|c'est parti|cest parti|je suis pr[eê]t|im ready|i am ready|go|on y va|lance|lance la s[eé]ance|d[eé]marre|start|pret|prête|ready|d'accord|daccord|ok|allons-y|parfait|نعم|أجل|يلا|هيا|مستعد|جاهز|تمام|موافق|sí|si|vamos|listo|claro|adelante|empezar|sim|bora|pronto|estou pronto|pode começar|はい|スタート|準備完了|行きましょう|お願いします|好|是的|开始|准备好了|可以|走起|да|поехали|готов|давай|начинай|вперед)\b/i.test(lower) ||
+      /\b(c'est parti|lance la s[eé]ance|d[eé]marre la s[eé]ance|on commence|je suis prêt|ready to start|let's go|on y va|نعم ابدأ|يلا نبدأ|vamos a empezar|estou pronto|準備完了|准备好了)\b/i.test(lower);
   }, []);
 
   // Submit audio blob directly to Gemini for speech recognition & response
@@ -641,13 +641,13 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         const displayText = res.text.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
 
         // Strict audio confirmation check:
-        // Did the coach actually launch the session AND was there a prior consultation stage?
+        // Coach must have appended token, sounded like a launch, and previous message asked for readiness
         const lastCoachMsg = [...messagesRef.current].reverse().find(m => m.role === 'assistant')?.text || '';
         const wasAskedReady = /pr[eê]t|ready|d'accord|commencer|d[eé]marrer|on lance/i.test(lastCoachMsg);
         const soundsLikeLaunch = /c'est parti|on donne tout|je lance|g[eé]n[eè]re|let's go|crush this/i.test(displayText);
 
-        // Strict guard: Never launch if it's the initial turn or if consultation questions haven't happened!
-        const shouldLaunch = hasGenerateToken && soundsLikeLaunch && (wasAskedReady || messagesRef.current.length >= 4);
+        // Strict guard: Never launch unless user was specifically asked for confirmation and coach confirmed launch
+        const shouldLaunch = hasGenerateToken && soundsLikeLaunch && wasAskedReady;
 
         const newAssistantMsg: Message = { role: 'assistant', text: displayText };
         messagesRef.current = [...messagesRef.current, newAssistantMsg];
@@ -697,12 +697,10 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
       const displayText = res.text.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
 
       // Check whether launch is truly confirmed by the user
-      const lastCoachMsg = [...messagesRef.current].reverse().find(m => m.role === 'assistant')?.text || '';
-      const wasAskedReady = /pr[eê]t|ready|d'accord|commencer|d[eé]marrer|on lance/i.test(lastCoachMsg);
       const userConfirmed = isExplicitUserConfirmation(cleanText);
 
-      // Strict Gate: ONLY launch if user explicitly confirmed or agreed after being asked
-      const shouldLaunch = hasGenerateToken && (userConfirmed || (wasAskedReady && updatedMessages.length >= 3));
+      // Strict Gate: ONLY launch if user explicitly confirmed (e.g. "Oui", "Je suis prêt", "Let's go", etc.)!
+      const shouldLaunch = hasGenerateToken && userConfirmed;
 
       const newAssistantMsg: Message = { role: 'assistant', text: displayText };
       messagesRef.current = [...messagesRef.current, newAssistantMsg];

@@ -13,7 +13,7 @@ import { HolographicARModal } from '../components/common/HolographicARModal.tsx'
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
 import CastButton from '../components/common/CastButton.tsx';
 import { preloadWorkoutModels } from '../lib/modelCache.ts';
-import { getLocalizedExerciseName } from '../lib/calisthenicsModels.ts';
+import { getLocalizedExerciseName, resolveCalisthenicsModel, CALISTHENICS_BODYWEIGHT_MODELS } from '../lib/calisthenicsModels.ts';
 
 type WorkoutView = 'setup' | 'loading' | 'active' | 'finished';
 type WorkoutPhase = 'prep' | 'work' | 'rest';
@@ -390,6 +390,7 @@ const WorkoutScreen: React.FC = () => {
         const ex = plan.exercises[idx];
         if (!ex) return null;
         const exerciseDisplayName = getLocalizedExerciseName(ex.name || (ex as any).canonicalId, language);
+        const exerciseModelUrl = ex.modelUrl || resolveCalisthenicsModel((ex as any).canonicalId || ex.name) || CALISTHENICS_BODYWEIGHT_MODELS[(ex as any).canonicalId] || ex.modelUrl;
         
         const workProgress = ((45 - timer) / 45) * 100;
         const restProgress = ((restBetweenSets - restTimer) / restBetweenSets) * 100;
@@ -404,7 +405,7 @@ const WorkoutScreen: React.FC = () => {
                     {/* MAIN MEDIA STAGE: 3D ANDROID COACH */}
                     <div className={`absolute inset-0 z-10 ${studioTheme === 'dark' ? 'bg-[#08080c]' : 'bg-white'}`}>
                         <HolographicCoach 
-                            modelUrl={ex.modelUrl} 
+                            modelUrl={exerciseModelUrl} 
                             isPaused={isPaused || phase === 'rest'} 
                             exerciseName={ex.name}
                             exerciseId={(ex as any).canonicalId || ex.id || (ex as any).canonical_id}
@@ -726,7 +727,7 @@ const WorkoutScreen: React.FC = () => {
                 <HolographicARModal
                     isOpen={isARModalOpen}
                     onClose={() => setIsARModalOpen(false)}
-                    modelUrl={ex.modelUrl}
+                    modelUrl={exerciseModelUrl}
                     exerciseName={ex.name}
                     exerciseId={(ex as any).canonicalId || ex.id || (ex as any).canonical_id}
                     isPaused={isPaused || phase === 'rest'}

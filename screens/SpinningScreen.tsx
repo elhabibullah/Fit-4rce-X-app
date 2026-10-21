@@ -6,8 +6,6 @@ import VirtualEnvironment, { EnvironmentType } from '../components/common/Virtua
 import { SPINNING_COACH_MODEL_URL } from '../lib/constants.ts';
 import CastButton from '../components/common/CastButton.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
-import { HolographicCoach } from '../components/common/HolographicCoach.tsx';
-import { HolographicARModal } from '../components/common/HolographicARModal.tsx';
 import Button from '../components/common/Button.tsx';
 
 import { useGLTF } from '@react-three/drei';
@@ -60,6 +58,7 @@ export const SCENIC_LANDSCAPES: ScenicLandscape[] = [
 ];
 
 const SPINNING_VIDEO_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_spinning-video.mp4";
+const SCENIC_COACH_VIDEO_URL = "https://my-habibullah-pull-zone.b-cdn.net/Test%20for%20Scenic%20spinning%20coach%20sequences%20warm%20up%20phase.mp4";
 
 export const SpinningScreen: React.FC = () => {
   const { setScreen, translate, isDeviceConnected, deviceMetrics, openDeviceModal, language } = useApp();
@@ -74,9 +73,9 @@ export const SpinningScreen: React.FC = () => {
   const [level, setLevel] = useState<string>('intermediate');
   const [duration, setDuration] = useState<string>('50');
   const [isTVMode, setIsTVMode] = useState(false);
-  const [isARModalOpen, setIsARModalOpen] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
+  const coachVideoRef = useRef<HTMLVideoElement>(null);
 
   const activeLandscape = SCENIC_LANDSCAPES.find(l => l.id === selectedLandscapeId) || (env === 'mountains' ? SCENIC_LANDSCAPES[0] : null);
   const targetDurationSeconds = parseInt(duration, 10) * 60;
@@ -117,6 +116,15 @@ export const SpinningScreen: React.FC = () => {
       if (v) {
           if (isActive && !isPrepPhase) v.play().catch(() => {});
           else v.pause();
+      }
+
+      const coachV = coachVideoRef.current;
+      if (coachV) {
+          if (isActive && !isPrepPhase) {
+              coachV.play().catch(() => {});
+          } else {
+              coachV.pause();
+          }
       }
   }, [isActive, isPrepPhase]);
 
@@ -378,36 +386,21 @@ export const SpinningScreen: React.FC = () => {
             />
           )}
           
-          {/* COACH CONTAINER: Centered for Studio mode, positioned on the right and larger for Scenic mode */}
-          <div className={`absolute z-50 pointer-events-none transition-all duration-500 overflow-hidden ${
+          {/* COACH CONTAINER: Spinning Coach video tightly framed to exact 9:16 rectangle with luminous LED mauve outline */}
+          <div className={`absolute z-30 pointer-events-auto transition-all duration-500 flex items-center ${
             env === 'mountains'
-              ? 'right-0 top-0 bottom-0 w-[55%] sm:w-[50%] md:w-[45%] flex items-center justify-center'
-              : 'inset-0 flex items-center justify-center'
+              ? 'right-3 sm:right-6 top-3 sm:top-5 bottom-3 sm:bottom-5 justify-end'
+              : 'inset-3 sm:inset-5 justify-center'
           }`}>
-              <div className={`h-full w-full flex items-center justify-center transition-all duration-500 ${
-                env === 'mountains' ? 'scale-115 sm:scale-120' : ''
-              }`}>
-                <HolographicCoach 
-                  isPaused={!isActive || isPrepPhase} 
-                  modelUrl={SPINNING_COACH_MODEL_URL} 
-                  exerciseId="spinning"
-                  exerciseName="Spinning Studio"
-                  background="transparent" 
+              <div className="relative h-full aspect-[9/16] max-h-full max-w-[50vw] rounded-none overflow-hidden border-2 border-purple-400 shadow-[0_0_15px_#c084fc,0_0_30px_#a855f7,0_0_45px_rgba(168,85,247,0.85)] ring-1 ring-purple-300/80 bg-black">
+                <video
+                  ref={coachVideoRef}
+                  src={SCENIC_COACH_VIDEO_URL}
+                  playsInline
+                  loop
+                  className="w-full h-full object-cover rounded-none block"
                 />
               </div>
-          </div>
-
-          {/* FLOATING HOLOGRAPHIC AR BUTTON AT STAGE BOTTOM */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] pointer-events-auto">
-              <button
-                  onClick={() => setIsARModalOpen(true)}
-                  className="px-4 py-1.5 sm:px-5 sm:py-2 rounded-full shadow-2xl active:scale-95 transition-transform border bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white border-purple-400/60 hover:from-purple-500 hover:to-indigo-500 flex items-center justify-center shadow-purple-900/40 backdrop-blur-md"
-                  title={translate('ar.hologram')}
-              >
-                  <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap">
-                      {translate('ar.hologram')}
-                  </span>
-              </button>
           </div>
 
           {isPrepPhase && (
@@ -447,17 +440,6 @@ export const SpinningScreen: React.FC = () => {
                 </button>
           </div>
       </div>
-
-      {/* HOLOGRAPHIC AR MODAL (PYRAMID 360, TV CAST, WALL CINEMA, AR CAMERA) */}
-      <HolographicARModal
-        isOpen={isARModalOpen}
-        onClose={() => setIsARModalOpen(false)}
-        modelUrl={SPINNING_COACH_MODEL_URL}
-        exerciseName={translate('spinning.menu.title') || 'Spinning Studio'}
-        exerciseId="spinning"
-        isPaused={!isActive || isPrepPhase}
-        timer={elapsedTime}
-      />
     </div>
   );
 };

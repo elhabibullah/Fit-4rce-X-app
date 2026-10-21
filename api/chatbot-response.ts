@@ -275,7 +275,7 @@ Tone & Persona:
 
       // If reply contains [GENERATE_WORKOUT], but user didn't explicitly confirm readiness, STRIP IT IMMEDIATELY!
       if (replyText.includes('[GENERATE_WORKOUT]')) {
-        if (!isConfirmation && !wasAskedReadiness) {
+        if (!isConfirmation) {
           replyText = replyText.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
         }
       }
