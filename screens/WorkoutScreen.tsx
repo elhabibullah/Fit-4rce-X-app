@@ -14,6 +14,7 @@ import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.ts
 import CastButton from '../components/common/CastButton.tsx';
 import { preloadWorkoutModels } from '../lib/modelCache.ts';
 import { getLocalizedExerciseName, resolveCalisthenicsModel, CALISTHENICS_BODYWEIGHT_MODELS } from '../lib/calisthenicsModels.ts';
+import { COACH_MODEL_URL } from '../lib/constants.ts';
 
 type WorkoutView = 'setup' | 'loading' | 'active' | 'finished';
 type WorkoutPhase = 'prep' | 'work' | 'rest';
@@ -150,7 +151,8 @@ const WorkoutScreen: React.FC = () => {
     useEffect(() => {
         if (selectedPlan) {
             setPlan(selectedPlan);
-            preloadWorkoutModels(selectedPlan.exercises.map(e => e.modelUrl));
+            const modelUrls = selectedPlan.exercises.map(e => resolveCalisthenicsModel((e as any).canonicalId || e.name) || e.modelUrl || COACH_MODEL_URL);
+            preloadWorkoutModels(modelUrls);
             setView('active');
             setIdx(0);
             setCurrentSet(1);
@@ -264,12 +266,23 @@ const WorkoutScreen: React.FC = () => {
     // Proactively preload the upcoming exercise model so transitions are instant with zero wait
     useEffect(() => {
         if (plan && idx + 1 < plan.exercises.length) {
-            const nextUrl = plan.exercises[idx + 1]?.modelUrl;
+            const nextEx = plan.exercises[idx + 1];
+            const nextUrl = resolveCalisthenicsModel((nextEx as any).canonicalId || nextEx.name) || nextEx?.modelUrl || COACH_MODEL_URL;
             if (nextUrl) {
                 preloadWorkoutModels([nextUrl]);
             }
         }
     }, [plan, idx]);
+
+    // Safety timeout to ensure prep timer starts even on slower WebGL devices
+    useEffect(() => {
+        if (phase === 'prep' && !isModelLoaded) {
+            const safety = setTimeout(() => {
+                setIsModelLoaded(true);
+            }, 2000);
+            return () => clearTimeout(safety);
+        }
+    }, [phase, isModelLoaded, idx]);
 
     // Main Timer Engine (Clean 1-second cadence, exactly 10s countdown between exercises)
     useEffect(() => {
@@ -279,6 +292,10 @@ const WorkoutScreen: React.FC = () => {
             setSessionDurationSeconds(prev => prev + 1);
 
             if (phase === 'prep') {
+                // Wait until 3D Android model is loaded & visible before starting the countdown!
+                if (!isModelLoaded) {
+                    return;
+                }
                 setPrepTimer((prev) => {
                     if (prev <= 1) {
                         return 0;
@@ -309,7 +326,7 @@ const WorkoutScreen: React.FC = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [view, isPaused, phase, plan]);
+    }, [view, isPaused, phase, plan, isModelLoaded]);
 
     // Handle timer completions safely outside of reducer / setState callbacks
     useEffect(() => {
@@ -390,7 +407,8 @@ const WorkoutScreen: React.FC = () => {
         const ex = plan.exercises[idx];
         if (!ex) return null;
         const exerciseDisplayName = getLocalizedExerciseName(ex.name || (ex as any).canonicalId, language);
-        const exerciseModelUrl = ex.modelUrl || resolveCalisthenicsModel((ex as any).canonicalId || ex.name) || CALISTHENICS_BODYWEIGHT_MODELS[(ex as any).canonicalId] || ex.modelUrl;
+        const calisUrl = ((ex as any).canonicalId && CALISTHENICS_BODYWEIGHT_MODELS[(ex as any).canonicalId]) || resolveCalisthenicsModel((ex as any).canonicalId || ex.name) || ex.modelUrl;
+        const exerciseModelUrl = calisUrl || COACH_MODEL_URL;
         
         const workProgress = ((45 - timer) / 45) * 100;
         const restProgress = ((restBetweenSets - restTimer) / restBetweenSets) * 100;
@@ -504,7 +522,7 @@ const WorkoutScreen: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* PREP COUNTDOWN OVERLAY - HIGH CONTRAST YELLOW/WHITE, ZERO MAUVE */}
+                    {/* PREP COUNTDOWN OVERLAY - RESTORED ORIGINAL STUDIO BLUR */}
                     {phase === 'prep' && (
                         <div className="absolute inset-0 z-[200] bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4 text-center">
                             <div className="px-4 py-1.5 bg-black/90 border border-yellow-400/80 rounded-full text-yellow-400 text-xs font-bold tracking-widest uppercase mb-3 shadow-[0_0_20px_rgba(250,204,21,0.35)]">

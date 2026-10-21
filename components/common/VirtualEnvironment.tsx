@@ -1,22 +1,22 @@
 import React, { useEffect, useRef } from 'react';
 
-// Matching static thumbnails using User's Dropbox Images
+// Matching static thumbnails using cached local assets
 export const ENVIRONMENT_THUMBNAILS: Record<string, string> = {
-    'studio': 'https://www.dropbox.com/scl/fi/jryp732ar5tl7eqydrcee/spinning-room.jpg?rlkey=i18o66uec35kej86ztaxjx7mg&st=8s9umlh6&raw=1',
-    'mountains': 'https://www.dropbox.com/scl/fi/ydubt27r5xshfmhiv6kix/mountains-forest-running-road.jpg?rlkey=n6lv5wiuayer57m28p2kkcajj&st=28wjuh7o&raw=1', 
-    'city': 'https://www.dropbox.com/scl/fi/mnut7qqoy6tya4v5iwj3i/kiyoto-futuristic-neon-city-rain.jpeg?rlkey=vbuq0azqarjen2iy8lao26xfd&st=qqa2n55u&raw=1',
-    'track': 'https://www.dropbox.com/scl/fi/gmr75y8kk9nmw2jax7uh9/POV-athletic-field.jpg?rlkey=oox5xgovp7hqoba3cf2fxvntu&st=d5zyy4fd&raw=1',
-    'field': 'https://www.dropbox.com/scl/fi/gmr75y8kk9nmw2jax7uh9/POV-athletic-field.jpg?rlkey=oox5xgovp7hqoba3cf2fxvntu&st=d5zyy4fd&raw=1',
-    'trail': 'https://www.dropbox.com/scl/fi/2wx174h3pgsq2ydw9fpcm/running-woods.jpg?rlkey=86s5n63drmlw96nm6uggiw5il&st=ey9c11f5&raw=1', 
-    'mountains_run': 'https://www.dropbox.com/scl/fi/ydubt27r5xshfmhiv6kix/mountains-forest-running-road.jpg?rlkey=n6lv5wiuayer57m28p2kkcajj&st=28wjuh7o&raw=1',
+    'studio': '/assets/spinning-room.jpg',
+    'mountains': '/assets/mountains-forest.jpg', 
+    'city': '/assets/kiyoto-city.jpeg',
+    'track': '/assets/athletic-field.jpg',
+    'field': '/assets/athletic-field.jpg',
+    'trail': '/assets/running-woods.jpg', 
+    'mountains_run': '/assets/mountains-forest.jpg',
 };
 
 // Definition of Environment Media
 const ENVIRONMENTS: Record<string, { type: 'image' | 'video', url: string }> = {
-    // Cyber Cycle - Studio Environment (Thumbnail only as the Android is in the little frame)
+    // Cyber Cycle - Studio Environment (Fit-4rce-X Studio)
     'studio': { 
         type: 'image', 
-        url: 'https://www.dropbox.com/scl/fi/jryp732ar5tl7eqydrcee/spinning-room.jpg?rlkey=i18o66uec35kej86ztaxjx7mg&st=8s9umlh6&raw=1'
+        url: '/assets/spinning-room.jpg'
     },
     
     // Alpine Pass (Cycling POV)

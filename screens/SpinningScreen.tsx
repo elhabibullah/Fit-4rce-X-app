@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../hooks/useApp.ts';
 import { Screen } from '../types.ts';
-import { ChevronLeft, Play, Pause, Bike, Mountain, X, Check } from 'lucide-react';
-import VirtualEnvironment, { EnvironmentType } from '../components/common/VirtualEnvironment.tsx';
-import { SPINNING_COACH_MODEL_URL } from '../lib/constants.ts';
+import { ChevronLeft, Play, Pause, Bike, Mountain, X, Check, Volume2, VolumeX } from 'lucide-react';
+import { EnvironmentType } from '../components/common/VirtualEnvironment.tsx';
 import CastButton from '../components/common/CastButton.tsx';
 import { DeviceStatusTrigger } from '../components/common/DeviceStatusTrigger.tsx';
 import Button from '../components/common/Button.tsx';
-
-import { useGLTF } from '@react-three/drei';
-import { preloadWorkoutModels } from '../lib/modelCache.ts';
 
 type SpinningView = 'mode_select' | 'setup' | 'active';
 
@@ -57,11 +53,11 @@ export const SCENIC_LANDSCAPES: ScenicLandscape[] = [
   }
 ];
 
-const SPINNING_VIDEO_URL = "https://fit-4rce-x.s3.eu-north-1.amazonaws.com/Android_spinning-video.mp4";
+const STUDIO_BG_URL = "/assets/spinning-room.jpg";
 const SCENIC_COACH_VIDEO_URL = "https://my-habibullah-pull-zone.b-cdn.net/Test%20for%20Scenic%20spinning%20coach%20sequences%20warm%20up%20phase.mp4";
 
 export const SpinningScreen: React.FC = () => {
-  const { setScreen, translate, isDeviceConnected, deviceMetrics, openDeviceModal, language } = useApp();
+  const { setScreen, translate, isDeviceConnected, deviceMetrics, openDeviceModal } = useApp();
   const [view, setView] = useState<SpinningView>('mode_select');
   
   const [isActive, setIsActive] = useState(false);
@@ -70,9 +66,9 @@ export const SpinningScreen: React.FC = () => {
   const [isPrepPhase, setIsPrepPhase] = useState(false);
   const [env, setEnv] = useState<EnvironmentType>('studio');
   const [selectedLandscapeId, setSelectedLandscapeId] = useState<string>('south-tyrol');
-  const [level, setLevel] = useState<string>('intermediate');
   const [duration, setDuration] = useState<string>('50');
   const [isTVMode, setIsTVMode] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const coachVideoRef = useRef<HTMLVideoElement>(null);
@@ -80,16 +76,6 @@ export const SpinningScreen: React.FC = () => {
   const activeLandscape = SCENIC_LANDSCAPES.find(l => l.id === selectedLandscapeId) || (env === 'mountains' ? SCENIC_LANDSCAPES[0] : null);
   const targetDurationSeconds = parseInt(duration, 10) * 60;
   const isDurationCompleted = elapsedTime >= targetDurationSeconds;
-
-  // Preload spinning coach 3D model immediately when entering screen
-  useEffect(() => {
-    preloadWorkoutModels([SPINNING_COACH_MODEL_URL]);
-    try {
-      useGLTF.preload(SPINNING_COACH_MODEL_URL, '/draco/');
-    } catch (e) {
-      // Ignore
-    }
-  }, []);
 
   useEffect(() => {
     let interval: number;
@@ -114,19 +100,24 @@ export const SpinningScreen: React.FC = () => {
   useEffect(() => {
       const v = videoRef.current;
       if (v) {
-          if (isActive && !isPrepPhase) v.play().catch(() => {});
-          else v.pause();
+          v.muted = isMuted;
+          if (isActive && !isPrepPhase) {
+              v.play().catch(() => {});
+          } else {
+              v.pause();
+          }
       }
 
       const coachV = coachVideoRef.current;
       if (coachV) {
+          coachV.muted = isMuted;
           if (isActive && !isPrepPhase) {
               coachV.play().catch(() => {});
           } else {
               coachV.pause();
           }
       }
-  }, [isActive, isPrepPhase]);
+  }, [isActive, isPrepPhase, isMuted]);
 
   const formatTime = (s: number) => {
       const m = Math.floor(s / 60);
@@ -136,11 +127,25 @@ export const SpinningScreen: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-[2500] h-screen h-[100dvh] w-screen flex flex-col bg-black overflow-hidden font-['Poppins']">
+      
+      {/* BACKGROUND IMAGE: Studio photo in Studio mode, Scenic landscape thumbnail in Mountains mode */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-black">
+        <img 
+          src={env === 'mountains' && activeLandscape ? activeLandscape.thumbnail : STUDIO_BG_URL} 
+          className="w-full h-full object-cover opacity-85 contrast-110" 
+          alt="Spinning Backdrop"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/25 to-black/75 pointer-events-none" />
+      </div>
+
       {/* 1. Mode Selection View Overlay */}
       {view === 'mode_select' && (
-        <div className="absolute inset-0 z-[600] animate-fadeIn min-h-screen h-full bg-black flex flex-col font-['Poppins']">
-          <div className="p-4 flex-none flex items-center justify-between border-b border-gray-900">
-            <button onClick={() => setScreen(Screen.Home)} className="flex items-center text-gray-400 hover:text-white font-normal uppercase text-[10px] tracking-widest transition-colors">
+        <div className="absolute inset-0 z-[600] min-h-screen h-full flex flex-col font-['Poppins']">
+          <div className="p-4 flex-none flex items-center justify-between border-b border-white/10 bg-black/40 backdrop-blur-md">
+            <button 
+              onClick={() => setScreen(Screen.Home)} 
+              className="flex items-center text-gray-300 hover:text-white font-normal uppercase text-[10px] tracking-widest transition-colors"
+            >
               <ChevronLeft size={16} className="mr-1" />{translate('back')}
             </button>
             <div className="flex items-center gap-2">
@@ -148,14 +153,23 @@ export const SpinningScreen: React.FC = () => {
               <CastButton isTVMode={isTVMode} onToggleTVMode={() => setIsTVMode(!isTVMode)} />
             </div>
           </div>
+
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar flex flex-col items-center justify-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-white text-center mb-8 uppercase tracking-widest">{translate('spinning.menu.title')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white text-center mb-8 uppercase tracking-widest drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+              {translate('spinning.menu.title')}
+            </h1>
             <div className="flex flex-col gap-4 max-w-md mx-auto w-full pb-10">
-              <button onClick={() => { setEnv('studio'); setView('setup'); }} className="h-36 sm:h-40 bg-zinc-900/50 border border-gray-800 hover:border-cyan-500/50 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center p-4 text-center transition-all active:scale-95 shadow-lg group">
+              <button 
+                onClick={() => { setEnv('studio'); setView('setup'); }} 
+                className="h-36 sm:h-40 bg-black/65 border border-purple-500/40 hover:border-cyan-400 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center p-4 text-center transition-all active:scale-95 shadow-2xl group backdrop-blur-xl"
+              >
                 <Bike className="w-9 h-9 text-[#00FFFF] mb-2.5 transition-transform group-hover:scale-110" />
                 <h2 className="text-base font-semibold text-white uppercase tracking-wider">{translate('spinning.mode.studio')}</h2>
               </button>
-              <button onClick={() => { setEnv('mountains'); setView('setup'); }} className="h-36 sm:h-40 bg-zinc-900/50 border border-gray-800 hover:border-purple-500/50 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center p-4 text-center transition-all active:scale-95 shadow-lg group">
+              <button 
+                onClick={() => { setEnv('mountains'); setView('setup'); }} 
+                className="h-36 sm:h-40 bg-black/65 border border-purple-500/40 hover:border-purple-400 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center p-4 text-center transition-all active:scale-95 shadow-2xl group backdrop-blur-xl"
+              >
                 <Mountain className="w-9 h-9 text-purple-400 mb-2.5 transition-transform group-hover:scale-110" />
                 <h2 className="text-base font-semibold text-white uppercase tracking-wider">{translate('spinning.mode.scenic')}</h2>
               </button>
@@ -164,13 +178,13 @@ export const SpinningScreen: React.FC = () => {
         </div>
       )}
 
-      {/* 2. Setup View Overlay */}
+      {/* 2. Setup View Overlay (Centered modal, studio/landscape photo visible in background) */}
       {view === 'setup' && (
-        <div className="absolute inset-0 z-[600] animate-fadeIn min-h-screen h-full bg-black flex flex-col font-['Poppins'] p-4 sm:p-6 pb-24 overflow-y-auto custom-scrollbar">
-          <header className="flex-none flex items-center justify-between gap-2 mb-6 pb-3 border-b border-gray-900 px-0.5">
+        <div className="absolute inset-0 z-[600] min-h-screen h-full flex flex-col font-['Poppins'] p-4 sm:p-6 pb-24 overflow-y-auto custom-scrollbar">
+          <header className="flex-none flex items-center justify-between gap-2 mb-6 pb-3 border-b border-white/10 bg-black/40 backdrop-blur-md px-3 py-2 rounded-2xl">
             <button 
               onClick={() => setView('mode_select')} 
-              className="text-gray-400 hover:text-white flex items-center gap-1 uppercase text-[10px] tracking-widest transition-colors shrink-0 py-1"
+              className="text-gray-300 hover:text-white flex items-center gap-1 uppercase text-[10px] tracking-widest transition-colors shrink-0 py-1"
             >
               <ChevronLeft size={18} />
               <span>{translate('back')}</span>
@@ -188,8 +202,8 @@ export const SpinningScreen: React.FC = () => {
             </div>
           </header>
 
-          <div className="max-w-md mx-auto w-full space-y-6 sm:space-y-8 my-auto">
-            {/* Scenic Route Landscape Selector - EXCLUSIVELY FOR SCENIC ROUTE (#scenic) */}
+          <div className="max-w-md mx-auto w-full space-y-6 sm:space-y-8 my-auto bg-black/75 backdrop-blur-xl border border-purple-500/30 p-5 sm:p-6 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.85)]">
+            {/* Scenic Route Landscape Selector - Only for Mountains / Scenic mode */}
             {env === 'mountains' && (
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -201,7 +215,7 @@ export const SpinningScreen: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Horizontal Scrollable Carousel of Landscapes */}
+                {/* Compact Horizontal Scrollable Carousel of Landscapes */}
                 <div className="flex gap-3 overflow-x-auto pb-2 pt-1 custom-scrollbar snap-x">
                   {SCENIC_LANDSCAPES.map(item => {
                     const isSelected = selectedLandscapeId === item.id;
@@ -209,14 +223,13 @@ export const SpinningScreen: React.FC = () => {
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => setSelectedLandscapeId(prev => prev === item.id ? '' : item.id)}
+                        onClick={() => setSelectedLandscapeId(item.id)}
                         className={`flex-none w-44 sm:w-48 text-left rounded-2xl overflow-hidden border transition-all active:scale-95 snap-start group relative ${
                           isSelected
-                            ? 'border-cyan-400 shadow-[0_0_20px_rgba(0,255,255,0.35)] scale-[1.02] ring-1 ring-cyan-400 bg-cyan-950/30'
-                            : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700 opacity-80 hover:opacity-100'
+                            ? 'border-cyan-400 shadow-[0_0_20px_rgba(0,255,255,0.35)] scale-[1.02] ring-1 ring-cyan-400 bg-cyan-950/40'
+                            : 'border-zinc-800 bg-zinc-900/80 hover:border-zinc-700 opacity-80 hover:opacity-100'
                         }`}
                       >
-                        {/* Thumbnail */}
                         <div className="relative h-24 sm:h-28 w-full overflow-hidden">
                           <img
                             src={item.thumbnail}
@@ -225,7 +238,6 @@ export const SpinningScreen: React.FC = () => {
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
                           
-                          {/* Checkbox Badge */}
                           <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
                             isSelected 
                               ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/50' 
@@ -234,13 +246,11 @@ export const SpinningScreen: React.FC = () => {
                             <Check size={14} className={isSelected ? 'stroke-[3]' : 'opacity-0'} />
                           </div>
 
-                          {/* Duration Badge */}
                           <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/75 border border-white/10 text-[9px] font-mono font-semibold text-white">
                             {item.durationHint}
                           </div>
                         </div>
 
-                        {/* Title & Country (Translated in all languages) */}
                         <div className="p-2.5 bg-zinc-950/80">
                           <h4 className="text-xs font-bold text-white truncate leading-tight group-hover:text-cyan-400 transition-colors">
                             {translate(item.nameKey)}
@@ -256,48 +266,9 @@ export const SpinningScreen: React.FC = () => {
               </section>
             )}
 
-            {/* Level / Intensity Selection */}
-            <section>
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em] mb-3 text-center">
-                {translate('spinning.setup.level')}
-              </h3>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <button 
-                  onClick={() => setLevel('beginner')} 
-                  className={`py-3.5 px-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex flex-col items-center justify-center text-center ${
-                    level === 'beginner' 
-                      ? 'text-[#00FFFF] bg-cyan-950/50 border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.25)] scale-[1.02]' 
-                      : 'text-gray-400 bg-zinc-900/60 border border-gray-800 hover:border-gray-700'
-                  }`}
-                >
-                  <span className="truncate w-full">{translate('level.beginner')}</span>
-                </button>
-                <button 
-                  onClick={() => setLevel('intermediate')} 
-                  className={`py-3.5 px-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex flex-col items-center justify-center text-center ${
-                    level === 'intermediate' 
-                      ? 'text-[#FFBF00] bg-amber-950/50 border-2 border-[#FFBF00] shadow-[0_0_15px_rgba(255,191,0,0.25)] scale-[1.02]' 
-                      : 'text-gray-400 bg-zinc-900/60 border border-gray-800 hover:border-gray-700'
-                  }`}
-                >
-                  <span className="truncate w-full">{translate('level.intermediate')}</span>
-                </button>
-                <button 
-                  onClick={() => setLevel('advanced')} 
-                  className={`py-3.5 px-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex flex-col items-center justify-center text-center ${
-                    level === 'advanced' 
-                      ? 'text-[#FF0000] bg-red-950/50 border-2 border-[#FF0000] shadow-[0_0_15px_rgba(255,0,0,0.25)] scale-[1.02]' 
-                      : 'text-gray-400 bg-zinc-900/60 border border-gray-800 hover:border-gray-700'
-                  }`}
-                >
-                  <span className="truncate w-full">{translate('level.advanced')}</span>
-                </button>
-              </div>
-            </section>
-
-            {/* Duration Selection */}
-            <section>
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em] mb-3 text-center">
+            {/* Target Duration Selector (Original rounded-xl buttons) */}
+            <section className="space-y-3">
+              <h3 className="text-[10px] font-bold text-gray-300 uppercase tracking-[0.25em] mb-3 text-center">
                 {translate('spinning.setup.duration')}
               </h3>
               <div className="grid grid-cols-4 gap-2">
@@ -307,8 +278,8 @@ export const SpinningScreen: React.FC = () => {
                     onClick={() => setDuration(d)} 
                     className={`py-3 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex flex-col items-center justify-center ${
                       duration === d 
-                        ? 'text-white bg-purple-900/50 border-2 border-purple-500 shadow-[0_0_15px_rgba(138,43,226,0.3)] scale-[1.02]' 
-                        : 'text-gray-400 bg-zinc-900/60 border border-gray-800 hover:border-gray-700'
+                        ? 'text-white bg-purple-900/60 border-2 border-purple-500 shadow-[0_0_15px_rgba(138,43,226,0.4)] scale-[1.02]' 
+                        : 'text-gray-400 bg-zinc-900/80 border border-gray-800 hover:border-gray-700'
                     }`}
                   >
                     <span className="text-xs sm:text-sm font-mono font-bold text-white">{d}</span>
@@ -321,8 +292,14 @@ export const SpinningScreen: React.FC = () => {
             {/* Start Action Button */}
             <div className="pt-2">
               <Button 
-                onClick={() => { setView('active'); setIsActive(true); setIsPrepPhase(true); setCountdown(10); }} 
-                className="w-full py-4 text-xs sm:text-sm font-black uppercase tracking-[0.25em] shadow-[0_0_25px_rgba(138,43,226,0.4)] active:scale-[0.98]"
+                onClick={() => { 
+                  setView('active'); 
+                  setIsActive(true); 
+                  setIsPrepPhase(true); 
+                  setCountdown(10); 
+                  setIsMuted(false);
+                }} 
+                className="w-full py-4 text-xs sm:text-sm font-black uppercase tracking-[0.25em] rounded-2xl shadow-[0_0_25px_rgba(138,43,226,0.4)] active:scale-[0.98]"
               >
                 {translate('start_session')}
               </Button>
@@ -331,125 +308,154 @@ export const SpinningScreen: React.FC = () => {
         </div>
       )}
 
-      <div className="absolute inset-0 z-0 pointer-events-none"><VirtualEnvironment type={env} isPaused={!isActive} /></div>
-      
-      {/* 1. TOP HEADER (flex-none) */}
-      <header className="flex-none h-14 sm:h-16 px-3 sm:px-6 flex items-center justify-between z-30 pointer-events-auto">
-        <button 
-          onClick={() => setScreen(Screen.Home)} 
-          className="p-2.5 sm:p-3 bg-black/70 rounded-full text-white backdrop-blur-xl border border-white/10 shadow-2xl active:scale-90 transition-all"
-        >
-          <X size={18} />
-        </button>
-        <div className="flex items-center gap-2 sm:gap-3">
-            <DeviceStatusTrigger showLabel />
-            <CastButton isTVMode={isTVMode} onToggleTVMode={() => setIsTVMode(!isTVMode)} />
-        </div>
-      </header>
-
-      {/* 2. MAIN MEDIA STAGE (flex-1 min-h-0) - Zero mobile overflow, strictly rectangular rounded-none */}
-      <div className="flex-1 min-h-0 relative mx-2 sm:mx-6 my-1 sm:my-2 rounded-none overflow-hidden border border-purple-500/40 bg-black shadow-[0_0_50px_rgba(138,43,226,0.35)]">
-          {env === 'mountains' && activeLandscape ? (
-            <>
-              {/* Studio plan fallback revealed when duration expires (fade out) */}
-              <img 
-                src="https://www.dropbox.com/scl/fi/jryp732ar5tl7eqydrcee/spinning-room.jpg?rlkey=i18o66uec35kej86ztaxjx7mg&st=8s9umlh6&raw=1" 
-                className="w-full h-full object-cover opacity-40 contrast-125 absolute inset-0 z-0" 
-                alt="Spinning Studio"
-              />
-
-              {/* Scenic Landscape Video Background */}
-              <video 
-                ref={videoRef}
-                src={activeLandscape.videoUrl} 
-                playsInline 
-                loop 
-                muted
-                className={`w-full h-full object-cover absolute inset-0 z-10 transition-opacity duration-1000 ${
-                  isDurationCompleted ? 'opacity-0' : 'opacity-95 contrast-105'
-                }`}
-              />
-
-              {/* Route HUD info badge top-left */}
-              <div className="absolute top-3 left-3 z-30 pointer-events-none">
-                <div className="px-2.5 py-1 rounded-none bg-black/70 backdrop-blur-md border border-cyan-500/30 flex items-center gap-2 shadow-lg max-w-[180px] sm:max-w-xs">
-                  <Mountain size={13} className="text-cyan-400 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold text-white uppercase tracking-wider leading-none truncate">
-                      {translate(activeLandscape.nameKey)}
-                    </p>
-                    <p className="text-[8px] text-cyan-300 leading-tight truncate">
-                      {translate(activeLandscape.countryKey)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <img 
-              src="https://www.dropbox.com/scl/fi/jryp732ar5tl7eqydrcee/spinning-room.jpg?rlkey=i18o66uec35kej86ztaxjx7mg&st=8s9umlh6&raw=1" 
-              className="w-full h-full object-cover opacity-40 contrast-125" 
-              alt="Spinning Studio"
-            />
-          )}
-          
-          {/* COACH CONTAINER: Spinning Coach video tightly framed to exact 9:16 rectangle with luminous LED mauve outline, sharp rounded-none */}
-          <div className={`absolute z-30 pointer-events-auto transition-all duration-500 flex items-center ${
-            env === 'mountains'
-              ? 'right-2 sm:right-6 top-2 sm:top-4 bottom-2 sm:bottom-4 justify-end'
-              : 'inset-2 sm:inset-4 justify-center'
-          }`}>
-              <div className={`relative h-full aspect-[9/16] max-h-full rounded-none overflow-hidden border-2 border-purple-400 shadow-[0_0_15px_#c084fc,0_0_30px_#a855f7,0_0_45px_rgba(168,85,247,0.85)] ring-1 ring-purple-300/80 bg-black ${
-                env === 'mountains' ? 'max-w-[48vw]' : 'max-w-[85vw]'
-              }`}>
-                <video
-                  ref={coachVideoRef}
-                  src={SCENIC_COACH_VIDEO_URL}
-                  playsInline
-                  loop
-                  className="w-full h-full object-cover rounded-none block"
-                />
-              </div>
-          </div>
-
-          {isPrepPhase && (
-             <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center animate-fadeIn p-4 text-center">
-                 <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.4em] mb-4 drop-shadow-[0_0_10px_#00FFFF]">
-                    {translate('spinning.engine_init')}
-                 </h4>
-                 <div className="text-7xl sm:text-[10rem] font-black text-white leading-none drop-shadow-[0_0_40px_rgba(0,255,255,0.7)]">{countdown}</div>
-             </div>
-          )}
-      </div>
-
-      {/* 3. BOTTOM CONTROLS (flex-none) - Compact, safe-area padded, ALWAYS fits on any phone/GSM screen */}
-      <div className="flex-none px-3 sm:px-6 py-2 sm:py-3.5 z-30 pointer-events-auto">
-          <div className="flex justify-between items-center gap-2 sm:gap-4 max-w-xl mx-auto">
-                <div className="flex-1 bg-black/80 backdrop-blur-2xl border border-white/10 p-2 sm:p-3.5 rounded-xl text-center shadow-2xl">
-                    <p className="text-[8px] sm:text-[9px] text-[#00FFFF] font-normal uppercase tracking-widest mb-0.5">
-                        {translate('spinning.elapsed')}
-                    </p>
-                    <p className="text-lg sm:text-2xl font-black text-white font-mono tracking-tighter">{formatTime(elapsedTime)}</p>
-                </div>
-                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#8A2BE2] rounded-full flex items-center justify-center shadow-[0_0_25px_#8A2BE2] active:scale-90 transition-all shrink-0">
-                    <button onClick={() => setIsActive(!isActive)} className="text-white flex items-center justify-center" aria-label={isActive ? "Pause" : "Play"}>
-                        {isActive ? <Pause className="w-6 h-6 sm:w-8 sm:h-8" fill="white" /> : <Play className="w-6 h-6 sm:w-8 sm:h-8 ml-0.5" fill="white" />}
-                    </button>
-                </div>
-                <button 
-                    onClick={openDeviceModal}
-                    className="flex-1 bg-black/80 backdrop-blur-2xl border border-white/10 p-2 sm:p-3.5 rounded-xl text-center shadow-2xl transition-all active:scale-95 hover:border-purple-500/50"
-                    title={translate(isDeviceConnected ? 'device.status.connected_tooltip' : 'device.status.connect_tooltip')}
+      {/* 3. ACTIVE SESSION VIEW */}
+      {view === 'active' && (
+        <div className="absolute inset-0 z-10 flex flex-col h-full w-full">
+          {/* TOP HEADER */}
+          <header className="flex-none h-14 sm:h-16 px-3 sm:px-6 flex items-center justify-between z-30 pointer-events-auto">
+            <button 
+              onClick={() => { setView('mode_select'); setIsActive(false); }} 
+              className="p-2.5 sm:p-3 bg-black/70 rounded-full text-white backdrop-blur-xl border border-white/10 shadow-2xl active:scale-90 transition-all"
+            >
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsMuted(m => !m)}
+                  className={`p-2.5 sm:p-3 rounded-full backdrop-blur-xl border transition-all active:scale-90 ${
+                    !isMuted 
+                      ? 'bg-purple-900/60 border-purple-500/50 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
+                      : 'bg-black/70 border-white/10 text-gray-400'
+                  }`}
+                  title={isMuted ? "Activer le son" : "Couper le son"}
+                  aria-label={isMuted ? "Activer le son" : "Couper le son"}
                 >
-                    <p className="text-[8px] sm:text-[9px] text-red-400 font-bold uppercase tracking-widest mb-0.5">
-                        {isDeviceConnected ? translate('spinning.heart_rate') : translate('spinning.ems_band')}
-                    </p>
-                    <p className={`text-lg sm:text-2xl font-black font-mono tracking-tighter ${isDeviceConnected ? 'text-white' : 'text-purple-300 text-[10px] sm:text-xs py-0.5 font-bold animate-pulse'}`}>
-                        {isDeviceConnected ? deviceMetrics.heartRate : translate('spinning.connect')}
-                    </p>
+                  {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
                 </button>
+                <DeviceStatusTrigger showLabel />
+                <CastButton isTVMode={isTVMode} onToggleTVMode={() => setIsTVMode(!isTVMode)} />
+            </div>
+          </header>
+
+          {/* MAIN MEDIA STAGE */}
+          <div className="flex-1 min-h-0 relative w-full overflow-hidden flex items-center justify-center p-2">
+              {env === 'mountains' && activeLandscape ? (
+                <>
+                  {/* Backdrop scenic thumbnail: prevents any studio room flash while video connects */}
+                  <img 
+                    src={activeLandscape.thumbnail} 
+                    className="w-full h-full object-cover absolute inset-0 z-0" 
+                    alt={translate(activeLandscape.nameKey)}
+                  />
+
+                  {/* Scenic Landscape Video Background (Fills whole stage with full sound) */}
+                  <video 
+                    ref={videoRef}
+                    src={activeLandscape.videoUrl} 
+                    playsInline 
+                    loop 
+                    muted={isMuted}
+                    className={`w-full h-full object-cover absolute inset-0 z-10 transition-opacity duration-700 ${
+                      isDurationCompleted ? 'opacity-0' : 'opacity-95 contrast-105'
+                    }`}
+                  />
+
+                  {/* Route HUD info badge top-left */}
+                  <div className="absolute top-3 left-3 z-30 pointer-events-none">
+                    <div className="px-2.5 py-1 rounded-none bg-black/80 backdrop-blur-md border border-cyan-500/40 flex items-center gap-2 shadow-lg max-w-[200px] sm:max-w-xs">
+                      <Mountain size={13} className="text-cyan-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-white uppercase tracking-wider leading-none truncate">
+                          {translate(activeLandscape.nameKey)}
+                        </p>
+                        <p className="text-[8px] text-cyan-300 leading-tight truncate">
+                          {translate(activeLandscape.countryKey)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SCENIC COACH: Compact PIP widget anchored on the right - strictly rectangular (no rounded frames), glowing mauve LED outline directly on the video */}
+                  <div className={`absolute right-3 sm:right-6 bottom-3 sm:bottom-4 z-30 pointer-events-auto transition-opacity duration-300 ${isPrepPhase ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                    <div className="relative w-24 sm:w-32 md:w-36 aspect-[9/16] rounded-none overflow-hidden border-2 border-[#b026ff] shadow-[0_0_15px_#b026ff,0_0_25px_rgba(176,38,255,0.4)] ring-1 ring-purple-300/70 bg-black flex items-center justify-center">
+                      <video
+                        ref={coachVideoRef}
+                        src={SCENIC_COACH_VIDEO_URL}
+                        playsInline
+                        loop
+                        muted={isMuted}
+                        className="w-full h-full object-cover rounded-none block"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* STUDIO MODE: Fit-4rce-X Studio Room background */}
+                  <img 
+                    src={STUDIO_BG_URL} 
+                    className="w-full h-full object-cover opacity-90 contrast-110 absolute inset-0 z-0" 
+                    alt="Fit-4rce-X Spinning Studio"
+                  />
+
+                  {/* Centered studio coach video: bounded height so bottom controls never get pushed off, strictly rectangular rounded-none with purple LED border */}
+                  <div className={`relative flex items-center justify-center h-full max-h-full z-30 pointer-events-auto transition-opacity duration-300 ${isPrepPhase ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                    <div className="relative aspect-[9/16] h-full max-h-[calc(100dvh-200px)] max-w-[calc((100dvh-200px)*9/16)] sm:max-w-xs w-auto rounded-none overflow-hidden border-2 border-[#b026ff] shadow-[0_0_18px_#b026ff,0_0_30px_#8a2be2] ring-1 ring-purple-300/80 bg-black flex items-center justify-center">
+                      <video
+                        ref={coachVideoRef}
+                        src={SCENIC_COACH_VIDEO_URL}
+                        playsInline
+                        loop
+                        muted={isMuted}
+                        className="w-full h-full object-cover rounded-none block"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* 10s Prep Countdown Overlay: Solid opaque to prevent any flash of video during prep countdown */}
+              {isPrepPhase && (
+                 <div className="absolute inset-0 z-[60] bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-center p-4 text-center">
+                     <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.4em] mb-4 drop-shadow-[0_0_10px_#00FFFF]">
+                        {translate('spinning.engine_init')}
+                     </h4>
+                     <div className="text-7xl sm:text-[10rem] font-black text-white leading-none drop-shadow-[0_0_40px_rgba(0,255,255,0.7)]">{countdown}</div>
+                 </div>
+              )}
           </div>
-      </div>
+
+          {/* BOTTOM CONTROLS (Original rounded aesthetic: rounded-xl cards, rounded-full play/pause button) */}
+          <div className="flex-none px-3 sm:px-6 py-2 sm:py-3.5 z-30 pointer-events-auto">
+              <div className="flex justify-between items-center gap-2 sm:gap-4 max-w-xl mx-auto">
+                    <div className="flex-1 bg-black/80 backdrop-blur-2xl border border-white/10 p-2 sm:p-3.5 rounded-xl text-center shadow-2xl">
+                        <p className="text-[8px] sm:text-[9px] text-[#00FFFF] font-normal uppercase tracking-widest mb-0.5">
+                            {translate('spinning.elapsed')}
+                        </p>
+                        <p className="text-lg sm:text-2xl font-black text-white font-mono tracking-tighter">{formatTime(elapsedTime)}</p>
+                    </div>
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#8A2BE2] rounded-full flex items-center justify-center shadow-[0_0_25px_#8A2BE2] active:scale-90 transition-all shrink-0">
+                        <button onClick={() => setIsActive(!isActive)} className="text-white flex items-center justify-center" aria-label={isActive ? "Pause" : "Play"}>
+                            {isActive ? <Pause className="w-6 h-6 sm:w-8 sm:h-8" fill="white" /> : <Play className="w-6 h-6 sm:w-8 sm:h-8 ml-0.5" fill="white" />}
+                        </button>
+                    </div>
+                    <button 
+                        onClick={openDeviceModal}
+                        className="flex-1 bg-black/80 backdrop-blur-2xl border border-white/10 p-2 sm:p-3.5 rounded-xl text-center shadow-2xl transition-all active:scale-95 hover:border-purple-500/50"
+                        title={translate(isDeviceConnected ? 'device.status.connected_tooltip' : 'device.status.connect_tooltip')}
+                    >
+                        <p className="text-[8px] sm:text-[9px] text-red-400 font-bold uppercase tracking-widest mb-0.5">
+                            {isDeviceConnected ? translate('spinning.heart_rate') : translate('spinning.ems_band')}
+                        </p>
+                        <p className={`text-lg sm:text-2xl font-black font-mono tracking-tighter ${isDeviceConnected ? 'text-white' : 'text-purple-300 text-[10px] sm:text-xs py-0.5 font-bold animate-pulse'}`}>
+                            {isDeviceConnected ? deviceMetrics.heartRate : translate('spinning.connect')}
+                        </p>
+                    </button>
+              </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

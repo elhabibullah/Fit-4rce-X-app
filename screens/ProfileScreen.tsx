@@ -183,7 +183,7 @@ const ProfileScreen: React.FC = () => {
 
             {/* Navigation Options */}
             <div className="space-y-2 pt-1">
-                <ProfileOption icon={Bot} title="Studio 3D & Miroir Humanoïde" subtitle="Cyborg F4X • Sifu • Biomécanique" onClick={() => setIsModelTesterOpen(true)} />
+                <ProfileOption icon={Bot} title="Studio 3D & Miroir Humanoïde" subtitle="Calisthenics 3D • Cyborg F4X • Biomécanique" onClick={() => setIsModelTesterOpen(true)} />
                 <ProfileOption icon={Watch} title={translate('profile.gear.title')} onClick={openDeviceModal} />
                 <ProfileOption icon={CreditCard} title={translate('profile.subscription.title')} onClick={() => setScreen(Screen.SubscriptionManagement)} />
                 <ProfileOption icon={History} title={translate('profile.history.title')} onClick={() => setScreen(Screen.WorkoutHistory)} />

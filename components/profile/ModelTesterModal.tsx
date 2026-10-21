@@ -6,6 +6,7 @@ import { HolographicCoach } from '../common/HolographicCoach.tsx';
 import { HolographicARModal } from '../common/HolographicARModal.tsx';
 import { useApp } from '../../hooks/useApp.ts';
 import { COACH_MODEL_URL, SIFU_MODEL_URL } from '../../lib/constants.ts';
+import { CALISTHENICS_EXERCISE_DEFINITIONS, CALISTHENICS_BODYWEIGHT_MODELS } from '../../lib/calisthenicsModels.ts';
 import { HunyuanPuppeteerEngine, type PuppeteerTrackingStats } from '../../lib/puppeteer/hunyuanPuppeteer.ts';
 import { loadGithubExercisesJson, getCachedGithubExercises, RawJsonExercise } from '../../lib/animation/githubExercisesLoader.ts';
 
@@ -14,7 +15,15 @@ interface ModelTesterModalProps {
   onClose: () => void;
 }
 
+const CALISTHENICS_STUDIO_ITEMS = CALISTHENICS_EXERCISE_DEFINITIONS.map((def) => ({
+  id: def.canonicalId,
+  label: def.names.fr || def.names.en,
+  badge: 'Calisthenics 3D',
+  modelUrl: def.modelUrl,
+}));
+
 const DEFAULT_MOVEMENTS = [
+  ...CALISTHENICS_STUDIO_ITEMS,
   { id: 'squat', label: 'Bodyweight Squat (GitHub)', badge: 'JSON' },
   { id: 'push_up', label: 'Push-Up (GitHub)', badge: 'JSON' },
   { id: 'lunge', label: 'Forward Lunge (GitHub)', badge: 'JSON' },
@@ -45,9 +54,9 @@ const DEFAULT_MOVEMENTS = [
 
 const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) => {
   const { translate } = useApp();
-  const [selectedModel, setSelectedModel] = useState<string>(SIFU_MODEL_URL);
+  const [selectedModel, setSelectedModel] = useState<string>(CALISTHENICS_BODYWEIGHT_MODELS['archer_push_up'] || COACH_MODEL_URL);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
-  const [exerciseName, setExerciseName] = useState<string>('martial_mabu');
+  const [exerciseName, setExerciseName] = useState<string>('archer_push_up');
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [speed, setSpeed] = useState<number>(1.0);
   const [cameraPreset, setCameraPreset] = useState<'face' | 'profile' | 'free'>('face');
@@ -70,8 +79,9 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
           label: it.name || it.id,
           badge: it.keyframes && it.keyframes.length > 0 ? 'Mocap JSON' : 'Draft',
         }));
-        // Merge with built-in martial motions
+        // Keep calisthenics 3D models at the top, followed by Mocap JSON, martial, and base
         setGithubExercises([
+          ...CALISTHENICS_STUDIO_ITEMS,
           ...mapped,
           { id: 'martial_mabu', label: 'Cavalier (Ma Bu)', badge: 'Sifu' },
           { id: 'martial_punch', label: 'Frappes Directes', badge: 'Sifu' },
@@ -270,10 +280,39 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
         {/* Controls Bar */}
         <div className="py-3 flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 shrink-0">
           {/* Model Selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase text-gray-400">Personnage :</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-black uppercase text-gray-400">Modèle :</span>
             <button
-              onClick={() => setSelectedModel(SIFU_MODEL_URL)}
+              onClick={() => {
+                setSelectedModel(CALISTHENICS_BODYWEIGHT_MODELS['archer_push_up']);
+                setExerciseName('archer_push_up');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                selectedModel === CALISTHENICS_BODYWEIGHT_MODELS['archer_push_up'] || Object.values(CALISTHENICS_BODYWEIGHT_MODELS).includes(selectedModel)
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'bg-neutral-900 text-gray-300 hover:bg-neutral-800'
+              }`}
+            >
+              Calisthenics (14)
+            </button>
+            <button
+              onClick={() => {
+                setSelectedModel(COACH_MODEL_URL);
+                setExerciseName('squat');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                selectedModel === COACH_MODEL_URL
+                  ? 'bg-cyan-500 text-black shadow-md'
+                  : 'bg-neutral-900 text-gray-300 hover:bg-neutral-800'
+              }`}
+            >
+              Cyborg F4X (Android)
+            </button>
+            <button
+              onClick={() => {
+                setSelectedModel(SIFU_MODEL_URL);
+                setExerciseName('martial_mabu');
+              }}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
                 selectedModel === SIFU_MODEL_URL
                   ? 'bg-[#DAA520] text-black shadow-md'
@@ -281,16 +320,6 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
               }`}
             >
               Sifu Abdelwahid
-            </button>
-            <button
-              onClick={() => setSelectedModel(COACH_MODEL_URL)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                selectedModel === COACH_MODEL_URL
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'bg-neutral-900 text-gray-300 hover:bg-neutral-800'
-              }`}
-            >
-              Cyborg F4X
             </button>
             {uploadedUrl && (
               <button
@@ -518,7 +547,17 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
                   return (
                     <button
                       key={mov.id}
-                      onClick={() => setExerciseName(mov.id)}
+                      onClick={() => {
+                        setExerciseName(mov.id);
+                        const calisUrl = (mov as any).modelUrl || CALISTHENICS_BODYWEIGHT_MODELS[mov.id];
+                        if (calisUrl) {
+                          setSelectedModel(calisUrl);
+                        } else if (mov.badge === 'Sifu') {
+                          setSelectedModel(SIFU_MODEL_URL);
+                        } else if (!uploadedUrl && (selectedModel === SIFU_MODEL_URL || Object.values(CALISTHENICS_BODYWEIGHT_MODELS).includes(selectedModel))) {
+                          setSelectedModel(COACH_MODEL_URL);
+                        }
+                      }}
                       className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
                         isActive
                           ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
@@ -528,7 +567,9 @@ const ModelTesterModal: React.FC<ModelTesterModalProps> = ({ isOpen, onClose }) 
                       <span className="truncate pr-1">{mov.label}</span>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono ${
-                          mov.badge === 'Mocap JSON' || mov.badge === 'JSON'
+                          mov.badge === 'Calisthenics 3D'
+                            ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40 font-bold'
+                            : mov.badge === 'Mocap JSON' || mov.badge === 'JSON'
                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             : mov.badge === 'Sifu'
                             ? 'bg-[#DAA520]/20 text-[#DAA520] border border-[#DAA520]/30'
