@@ -450,7 +450,7 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     }
   }, [stopListening]);
 
-  // Robust MediaRecorder listening with Web Audio VAD for Android installed app (PWABuilder / WebView)
+  // Robust MediaRecorder listening with Web Audio VAD for mobile browsers and installed apps
   const startMediaRecorderListening = useCallback(async () => {
     if (!isVisibleRef.current || isAiSpeakingRef.current || isThinkingRef.current) return;
     try {
@@ -459,27 +459,33 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         return;
       }
 
-      // Request stream with echo cancellation and noise suppression
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
+      // Request stream with constraint fallback for mobile hardware compatibility
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+      } catch (constraintErr) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+
       mediaStreamRef.current = stream;
       audioChunksRef.current = [];
 
       let mimeType = 'audio/webm';
       if (typeof MediaRecorder !== 'undefined') {
-        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-          mimeType = 'audio/webm;codecs=opus';
-        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        if (MediaRecorder.isTypeSupported('audio/webm')) {
           mimeType = 'audio/webm';
         } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
           mimeType = 'audio/mp4';
         } else if (MediaRecorder.isTypeSupported('audio/aac')) {
           mimeType = 'audio/aac';
+        } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+          mimeType = 'audio/ogg';
         }
       }
 
@@ -506,9 +512,11 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
         audioChunksRef.current = [];
 
         if (chunks.length > 0) {
-          const blob = new Blob(chunks, { type: recorder.mimeType || mimeType });
-          if (blob.size > 800) {
-            submitAudioBlob(blob, recorder.mimeType || mimeType);
+          const rawMime = recorder.mimeType || mimeType;
+          const cleanMime = rawMime.split(';')[0].trim();
+          const blob = new Blob(chunks, { type: cleanMime });
+          if (blob.size > 600) {
+            submitAudioBlob(blob, cleanMime);
           } else if (isVisibleRef.current && !isAiSpeakingRef.current && !isThinkingRef.current) {
             startListeningRef.current();
           }
@@ -556,16 +564,16 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
             }
             const avgVolume = sum / dataArray.length;
 
-            // Speech detection threshold
-            if (avgVolume > 14) {
+            // Highly responsive speech detection threshold for mobile devices
+            if (avgVolume > 6) {
               hasSpoken = true;
               silenceStartTime = 0;
             } else if (hasSpoken) {
               // User has spoken and is now silent
               if (silenceStartTime === 0) {
                 silenceStartTime = Date.now();
-              } else if (Date.now() - silenceStartTime > 1300) {
-                // 1.3s silence: automatically stop and process!
+              } else if (Date.now() - silenceStartTime > 1200) {
+                // 1.2s silence after speech: stop and process
                 if (vadIntervalRef.current) {
                   clearInterval(vadIntervalRef.current);
                   vadIntervalRef.current = null;
@@ -576,8 +584,8 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
               }
             }
 
-            // Safety limit: if user has spoken and 8s passed, stop and process
-            if (Date.now() - recordingStartTime > 8000 && hasSpoken) {
+            // Safety limit: if 6s elapsed, automatically stop and process speech
+            if (Date.now() - recordingStartTime > 6000) {
               if (vadIntervalRef.current) {
                 clearInterval(vadIntervalRef.current);
                 vadIntervalRef.current = null;
@@ -616,25 +624,30 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     setIsThinking(true);
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const resultStr = reader.result as string;
-        const base64data = resultStr ? resultStr.split(',')[1] : null;
-        if (!base64data) {
-          setIsThinking(false);
-          if (isVisibleRef.current) startListeningRef.current();
-          return;
-        }
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const resultStr = reader.result as string;
+          const base64data = resultStr ? resultStr.split(',')[1] : null;
+          if (!base64data) {
+            setIsThinking(false);
+            if (isVisibleRef.current) startListeningRef.current();
+            return;
+          }
 
-        const historyList = messagesRef.current.map(m => ({
-          role: m.role === 'user' ? 'user' : 'model',
-          text: m.text
-        }));
+          const voiceLabel = language === Language.FR ? '🎤 [Message vocal]' : '🎤 [Voice message]';
+          const userMsg: Message = { role: 'user', text: voiceLabel };
+          messagesRef.current = [...messagesRef.current, userMsg];
+          setMessages([...messagesRef.current]);
 
-        const res = await getVoiceCoachResponse({
-          audioBase64: base64data,
-          mimeType
-        }, language, historyList, profileRef.current);
+          const historyList = messagesRef.current.map(m => ({
+            role: m.role === 'user' ? 'user' : 'model',
+            text: m.text
+          }));
+
+          const res = await getVoiceCoachResponse({
+            audioBase64: base64data,
+            mimeType
+          }, language, historyList, profileRef.current);
 
         setIsThinking(false);
         const hasGenerateToken = res.text.includes('[GENERATE_WORKOUT]');
@@ -744,17 +757,16 @@ const AICoach: React.FC<AICoachProps> = ({ isVisible, onClose }) => {
     if (!isVisibleRef.current) return;
     if (isAiSpeakingRef.current || isThinkingRef.current) return;
 
-    const isStandaloneOrWebView = typeof window !== 'undefined' && (
+    const isMobileOrStandalone = typeof navigator !== 'undefined' && (
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
       window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true ||
-      (/android/i.test(navigator.userAgent) && /wv|WebView|WebIntoApp|Version\/[0-9.]+/i.test(navigator.userAgent))
+      Boolean((window.navigator as any).standalone)
     );
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-    // In Android installed standalone PWA / WebView apps, Web Speech API Google service is unavailable.
-    // Use the native MediaRecorder + Gemini Multimodal Audio engine with real-time VAD directly!
-    if (isStandaloneOrWebView || !SpeechRecognition) {
+    // On mobile devices and installed PWAs, always use native MediaRecorder to guarantee direct hardware mic access
+    if (isMobileOrStandalone || !SpeechRecognition) {
       startMediaRecorderListening();
       return;
     }

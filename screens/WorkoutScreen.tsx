@@ -292,10 +292,6 @@ const WorkoutScreen: React.FC = () => {
             setSessionDurationSeconds(prev => prev + 1);
 
             if (phase === 'prep') {
-                // Wait until 3D Android model is loaded & visible before starting the countdown!
-                if (!isModelLoaded) {
-                    return;
-                }
                 setPrepTimer((prev) => {
                     if (prev <= 1) {
                         return 0;
@@ -326,7 +322,7 @@ const WorkoutScreen: React.FC = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [view, isPaused, phase, plan, isModelLoaded]);
+    }, [view, isPaused, phase, plan]);
 
     // Handle timer completions safely outside of reducer / setState callbacks
     useEffect(() => {

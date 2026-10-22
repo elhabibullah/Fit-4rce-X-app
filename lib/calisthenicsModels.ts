@@ -32,20 +32,22 @@ export interface CalisthenicsExerciseDef {
 }
 
 export const CALISTHENICS_BODYWEIGHT_MODELS: Record<string, string> = {
-  'alternative_arm_plank_hold': '/models/calisthenics/alternative_arm_plank_hold.glb',
-  'alternative_leg_plank_hold': '/models/calisthenics/alternative_leg_plank_hold.glb',
-  'alternative_superman_plank_advanced': '/models/calisthenics/alternative_superman_plank_advanced.glb',
-  'archer_push_up': '/models/calisthenics/archer_push_up.glb',
-  'bear_crawl_forward_backward': '/models/calisthenics/bear_crawl_forward_backward.glb',
-  'diamond_push_ups': '/models/calisthenics/diamond_push_ups.glb',
-  'forearm_to_pushup_plank': '/models/calisthenics/forearm_to_pushup_plank.glb',
-  'hollow_body_hold': '/models/calisthenics/hollow_body_hold.glb',
-  'jumping_squats': '/models/calisthenics/jumping_squats.glb',
-  'plank_hop_to_squat': '/models/calisthenics/plank_hop_to_squat.glb',
-  'plank_knee_to_elbow_advanced': '/models/calisthenics/plank_knee_to_elbow_advanced.glb',
-  'plank_walk_back_and_forth': '/models/calisthenics/plank_walk_back_and_forth.glb',
-  'plank_walk_left_right': '/models/calisthenics/plank_walk_left_right.glb',
-  'plank_variations_buzzsaw': '/models/calisthenics/plank_variations_buzzsaw.glb',
+  'alternative_arm_plank_hold': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/alternative%20arm%20plank%20hold.glb',
+  'alternative_leg_plank_hold': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/alternative%20leg%20plank%20hold.glb',
+  'alternative_superman_plank_advanced': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/alternative%20superman%20plank%20advanced.glb',
+  'archer_push_up': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Archer%20Push-ups.glb',
+  'bear_crawl_forward_backward': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Bear%20crawl%20forward%20backward.glb',
+  'burpees_intermediate': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Burpees%20intermediate.glb',
+  'crunches': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Crunches.glb',
+  'diamond_push_ups': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Diamond%20push%20ups.glb',
+  'forearm_to_pushup_plank': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/forearm%20to%20pushup%20plank.glb',
+  'hollow_body_hold': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Hollow%20body%20hold.glb',
+  'jumping_squats': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Jumping%20Squats.glb',
+  'plank_hop_to_squat': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/plank%20hop%20to%20squat.glb',
+  'plank_knee_to_elbow_advanced': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Plank%20knee%20to%20elbow%20advanced.glb',
+  'plank_walk_back_and_forth': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/plank%20walk%20back%20and%20forth.glb',
+  'plank_walk_left_right': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Plank%20walk%20left%20-%20right.glb',
+  'plank_variations_buzzsaw': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/plank-variations_buzzsaw.glb',
 };
 
 export const CALISTHENICS_EXERCISE_DEFINITIONS: CalisthenicsExerciseDef[] = [
@@ -413,10 +415,62 @@ export const CALISTHENICS_EXERCISE_DEFINITIONS: CalisthenicsExerciseDef[] = [
       ru: 'Одновременный подъем противоположных руки и ноги в планке для развития тотального баланса.',
     },
   },
+  {
+    canonicalId: 'burpees_intermediate',
+    modelUrl: CALISTHENICS_BODYWEIGHT_MODELS['burpees_intermediate'],
+    category: 'cardio',
+    equipment: 'bodyweight',
+    names: {
+      en: 'Burpees (Intermediate)',
+      ar: 'تمرين بيربي كامل (مستوى متوسط)',
+      fr: 'Burpees Intermédiaires',
+      es: 'Burpees intermedios',
+      pt: 'Burpees intermediários',
+      ja: 'バーピー（中級）',
+      zh: '中级波比跳（全身爆发）',
+      ru: 'Берпи (средний уровень)',
+    },
+    descriptions: {
+      en: 'Drop from standing into plank, perform a clean press, jump feet back under hips, and explode upward.',
+      ar: 'الانتقال السريع من الوقوف إلى البلانك ثم أداء ضغطة والقفز بالقدمين والارتقاء للأعلى بقوة.',
+      fr: 'Descendez au sol en planche, effectuez une flexion, ramenez les pieds et sautez avec explosivité.',
+      es: 'Baja a posición de plancha, haz una flexión, salta con los pies al frente y explota verticalmente.',
+      pt: 'Desça para a prancha, faça uma flexão, puxe os pés e salte explosivamente para cima.',
+      ja: '直立から素早くプランクへ移行し、プッシュアップから両足を引き寄せて真上にジャンプします。',
+      zh: '立姿下蹲支撑后蹬腿至平板，完成屈臂俯卧撑后收腿并起跳，极限爆发。',
+      ru: 'Опуститесь в упор лежа, выполните отжимание, подтяните ноги к груди и выпрыгните вверх.',
+    },
+  },
+  {
+    canonicalId: 'crunches',
+    modelUrl: CALISTHENICS_BODYWEIGHT_MODELS['crunches'],
+    category: 'core',
+    equipment: 'bodyweight',
+    names: {
+      en: 'Crunches (Abdominals)',
+      ar: 'تمرين طحن البطن (كرانش)',
+      fr: 'Crunches Abdominaux',
+      es: 'Crunches abdominales',
+      pt: 'Abdominais crunch',
+      ja: 'クランチ（腹直筋）',
+      zh: '标准腹肌卷腹（Crunches）',
+      ru: 'Скручивания на пресс (Crunches)',
+    },
+    descriptions: {
+      en: 'Lie supine and curl shoulder blades off the mat, isolating the rectus abdominis with controlled exhalation.',
+      ar: 'الاستلقاء وثني أعلى الجذع لرفع لوحي الكتف عن الأرض مع تركيز كامل على عضلات البطن.',
+      fr: 'Allongé sur le dos, décollez les omoplates du sol en enroulant le buste, contraction ciblée du grand droit.',
+      es: 'Tumbado boca arriba, despega las escápulas del suelo contrayendo intensamente el abdomen.',
+      pt: 'Deitado de costas, eleve as escápulas do chão enrolando o tronco com foco no abdômen.',
+      ja: '仰向けになり、肩甲骨を床から浮かせるように上体を丸め、腹直筋を強く収縮させます。',
+      zh: '仰卧屈膝，收紧腹直肌向上卷动肩胛骨离地，专注顶峰收缩与离心控制。',
+      ru: 'Лежа на спине, плавно отрывайте лопатки от пола, максимально сокращая мышцы пресса.',
+    },
+  },
 ];
 
 /**
- * Resolves whether a given exercise query (ID or Name) matches one of the 14 custom animated models.
+ * Resolves whether a given exercise query (ID or Name) matches one of the 16 custom animated models.
  */
 export function resolveCalisthenicsModel(idOrName?: string): string | null {
   if (!idOrName) return null;
@@ -429,6 +483,16 @@ export function resolveCalisthenicsModel(idOrName?: string): string | null {
   // Direct ID check
   if (CALISTHENICS_BODYWEIGHT_MODELS[clean]) {
     return CALISTHENICS_BODYWEIGHT_MODELS[clean];
+  }
+
+  // Burpees check
+  if (clean.includes('burpee') || clean.includes('burpe') || clean.includes('بيربي') || clean.includes('берпи')) {
+    return CALISTHENICS_BODYWEIGHT_MODELS['burpees_intermediate'];
+  }
+
+  // Crunches / Abdos check
+  if (clean.includes('crunch') || clean.includes('abdo') || clean.includes('situp') || clean.includes('sit-up') || clean.includes('كرانش') || clean.includes('بطن') || clean.includes('скручиван')) {
+    return CALISTHENICS_BODYWEIGHT_MODELS['crunches'];
   }
 
   // Matching patterns
@@ -488,7 +552,7 @@ export function resolveCalisthenicsModel(idOrName?: string): string | null {
   if (clean.includes('plank') || clean.includes('gainage') || clean.includes('planche') || clean.includes('بلانك')) {
     return CALISTHENICS_BODYWEIGHT_MODELS['plank_walk_back_and_forth'];
   }
-  if (clean.includes('core') || clean.includes('abdo') || clean.includes('abs') || clean.includes('ventre') || clean.includes('crunch')) {
+  if (clean.includes('core') || clean.includes('abdo') || clean.includes('abs') || clean.includes('ventre')) {
     return CALISTHENICS_BODYWEIGHT_MODELS['hollow_body_hold'];
   }
   if (clean.includes('cardio') || clean.includes('crawl') || clean.includes('ours') || clean.includes('bear')) {

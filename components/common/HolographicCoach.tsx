@@ -398,7 +398,12 @@ const HunyuanRiggedCoach: React.FC<{
 
     if (!engineRef.current) return;
 
-    // Strict countdown / prep separation: character stays in starting posture during countdown
+    // Strict countdown / prep separation: character stays completely frozen in starting posture during countdown
+    if (isPrep) {
+      engineRef.current.update(0, 0, undefined, true);
+      return;
+    }
+
     const effectiveDelta = isPaused ? 0 : Math.min(delta, 0.05);
     engineRef.current.update(effectiveDelta, speed, timelineProgress, isPrep);
   });
@@ -504,16 +509,27 @@ const EmbeddedAnimationCoach: React.FC<{
   }, [scene, animations]);
 
   useFrame((_, delta) => {
-    if (!mixerRef.current || !groupRef.current) return;
+    if (!mixerRef.current || !groupRef.current || !actionRef.current) return;
 
+    // During preparation countdown, character stays completely motionless in starting posture (t=0)
     if (isPrep) {
-      mixerRef.current.setTime(0);
-    } else if (timelineProgress !== undefined && actionRef.current) {
+      actionRef.current.time = 0;
+      mixerRef.current.update(0);
+      return;
+    }
+
+    if (isPaused) {
+      mixerRef.current.update(0);
+      return;
+    }
+
+    if (timelineProgress !== undefined) {
       const clip = animations[0];
       if (clip && clip.duration > 0) {
-        mixerRef.current.setTime(timelineProgress * clip.duration);
+        actionRef.current.time = timelineProgress * clip.duration;
+        mixerRef.current.update(0);
       }
-    } else if (!isPaused) {
+    } else {
       const effectiveDelta = Math.min(delta, 0.05);
       mixerRef.current.update(effectiveDelta * speed);
     }
@@ -614,6 +630,46 @@ const UniversalModel: React.FC<{
     />
   );
 };
+
+// Resilient Error Boundary preventing any remote GLB network hiccup from crashing the 3D studio
+interface ModelErrorBoundaryProps {
+  fallbackUrl: string;
+  isPaused?: boolean;
+  exerciseName?: string;
+  exerciseId?: string;
+  isPrep?: boolean;
+  speed?: number;
+  timelineProgress?: number;
+  children: React.ReactNode;
+}
+
+class ModelErrorBoundary extends React.Component<ModelErrorBoundaryProps, { hasError: boolean }> {
+  constructor(props: ModelErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any) {
+    console.warn('3D custom model failed to load:', error);
+  }
+
+  componentDidUpdate(prevProps: ModelErrorBoundaryProps) {
+    if (prevProps.fallbackUrl !== this.props.fallbackUrl && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 // Camera Preset Handler for Face / Profile / Free Orbit
 const CameraPresetHandler: React.FC<{
@@ -755,20 +811,30 @@ const CoachCanvas: React.FC<{
       {/* Realistic contact shadow beneath model onto gym rubber floor */}
       {!isTransparent && <StudioContactShadow isDark={isDark} />}
 
-      {/* 3D Coach Model */}
+      {/* 3D Coach Model: Direct rendering of authentic GLB model onto gym floor */}
       <Suspense fallback={null}>
-        <UniversalModel
-          url={finalUrl}
+        <ModelErrorBoundary
+          fallbackUrl={finalUrl}
           isPaused={isPaused}
           exerciseName={exerciseName}
           exerciseId={exerciseId}
           isPrep={isPrep}
           speed={speed}
           timelineProgress={timelineProgress}
-          puppeteerEngine={puppeteerEngine}
-          isPuppeteerActive={isPuppeteerActive}
-          onLoaded={onLoaded}
-        />
+        >
+          <UniversalModel
+            url={finalUrl}
+            isPaused={isPaused}
+            exerciseName={exerciseName}
+            exerciseId={exerciseId}
+            isPrep={isPrep}
+            speed={speed}
+            timelineProgress={timelineProgress}
+            puppeteerEngine={puppeteerEngine}
+            isPuppeteerActive={isPuppeteerActive}
+            onLoaded={onLoaded}
+          />
+        </ModelErrorBoundary>
       </Suspense>
 
       {/* Fluid 360-degree Orbit Controls with zoom support */}

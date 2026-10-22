@@ -802,7 +802,10 @@ Tone & Persona:
         let contents: any;
 
         if (audioBase64) {
-          const audioPart = { inlineData: { mimeType: mimeType || 'audio/webm', data: audioBase64 } };
+          const rawMime = (mimeType || 'audio/webm').split(';')[0].trim().toLowerCase();
+          const supportedMimes = ['audio/webm', 'audio/mp4', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac', 'audio/mpeg', 'audio/mp3', 'audio/m4a'];
+          const cleanMime = supportedMimes.includes(rawMime) ? rawMime : 'audio/webm';
+          const audioPart = { inlineData: { mimeType: cleanMime, data: audioBase64 } };
           const promptPart = { text: `Listen carefully to my voice. Transcribe mentally and respond as my personal female fitness coach in language: ${targetLang}. Follow the in-depth coaching consultation protocol. Never output [GENERATE_WORKOUT] unless I explicitly tell you I am ready to start the workout.` };
 
           if (Array.isArray(history) && history.length > 0) {
@@ -871,7 +874,7 @@ Tone & Persona:
 
         // If reply contains [GENERATE_WORKOUT], but user didn't explicitly confirm readiness, STRIP IT IMMEDIATELY!
         if (replyText.includes('[GENERATE_WORKOUT]')) {
-          if (!isConfirmation) {
+          if (!isConfirmation && !audioBase64) {
             replyText = replyText.replace(/\[GENERATE_WORKOUT\]/gi, '').trim();
           }
         }

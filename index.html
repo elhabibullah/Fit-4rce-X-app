@@ -65,6 +65,26 @@
       #root { width: 100%; min-height: 100vh; }
       body { font-family: 'Poppins', sans-serif; font-weight: 300; }
 
+      /* Obliterate native browser media controls and play button overlays on mobile WebViews */
+      video::-webkit-media-controls,
+      video::-webkit-media-controls-start-playback-button,
+      video::-webkit-media-controls-play-button,
+      video::-webkit-media-controls-overlay-play-button,
+      video::-webkit-media-controls-panel,
+      video::-webkit-media-controls-enclosure,
+      video::-internal-media-controls-overlay-cast-button,
+      *::-webkit-media-controls-overlay-play-button,
+      *::-webkit-media-controls-play-button,
+      *::-webkit-media-controls-start-playback-button {
+        display: none !important;
+        -webkit-appearance: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+
       /* CIRCULAR ORBITAL HARDWARE ENGINE */
       @keyframes orbit {
         from { transform: rotate(0deg); }
