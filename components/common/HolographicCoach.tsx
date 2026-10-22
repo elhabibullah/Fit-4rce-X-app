@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, useFBX } from '@react-three/drei';
 import { StudioOrbitControls } from './StudioOrbitControls.tsx';
 import * as THREE from 'three';
-import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { Sun, Moon, Sparkles } from 'lucide-react';
 import { COACH_MODEL_URL } from '../../lib/constants.ts';
 import { HumanoidMotionEngine } from '../../lib/animation/humanoidMotionEngine.ts';
@@ -568,7 +568,7 @@ const UniversalModel: React.FC<{
 
   if (isFBX) {
     const fbx = useFBX(url);
-    const cloned = useMemo(() => (fbx ? SkeletonUtils.clone(fbx) : null), [fbx]);
+    const cloned = useMemo(() => (fbx ? cloneSkeleton(fbx) : null), [fbx]);
     useEffect(() => {
       if (cloned && onLoaded) onLoaded();
     }, [cloned, onLoaded]);
@@ -588,8 +588,8 @@ const UniversalModel: React.FC<{
     );
   }
 
-  const gltf = useGLTF(url, '/draco/');
-  const cloned = useMemo(() => (gltf?.scene ? SkeletonUtils.clone(gltf.scene) : null), [gltf]);
+  const gltf = useGLTF(url);
+  const cloned = useMemo(() => (gltf?.scene ? cloneSkeleton(gltf.scene) : null), [gltf]);
 
   useEffect(() => {
     if (cloned && onLoaded) {
@@ -665,6 +665,19 @@ class ModelErrorBoundary extends React.Component<ModelErrorBoundaryProps, { hasE
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallbackUrl !== COACH_MODEL_URL) {
+        return (
+          <UniversalModel
+            url={COACH_MODEL_URL}
+            isPaused={this.props.isPaused}
+            exerciseName={this.props.exerciseName}
+            exerciseId={this.props.exerciseId}
+            isPrep={this.props.isPrep}
+            speed={this.props.speed}
+            timelineProgress={this.props.timelineProgress}
+          />
+        );
+      }
       return null;
     }
     return this.props.children;
