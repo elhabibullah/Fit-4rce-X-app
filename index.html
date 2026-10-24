@@ -14,6 +14,13 @@
 
     <meta name="theme-color" content="#000000">
     <script>
+      // Strictly block any automatic browser PWA / App install popups or banners
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return false;
+      }, true);
+
       // Prevent third-party scripts from failing if attempting to override window.fetch
       try {
         const originalFetch = window.fetch.bind(window);

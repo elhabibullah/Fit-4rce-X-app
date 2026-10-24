@@ -32,22 +32,22 @@ export interface CalisthenicsExerciseDef {
 }
 
 export const CALISTHENICS_BODYWEIGHT_MODELS: Record<string, string> = {
-  'alternative_arm_plank_hold': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/alternative%20arm%20plank%20hold.glb',
-  'alternative_leg_plank_hold': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/alternative%20leg%20plank%20hold.glb',
-  'alternative_superman_plank_advanced': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/alternative%20superman%20plank%20advanced.glb',
-  'archer_push_up': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Archer%20Push-ups.glb',
-  'bear_crawl_forward_backward': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Bear%20crawl%20forward%20backward.glb',
-  'burpees_intermediate': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Burpees%20intermediate.glb',
-  'crunches': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Crunches.glb',
-  'diamond_push_ups': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Diamond%20push%20ups.glb',
-  'forearm_to_pushup_plank': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/forearm%20to%20pushup%20plank.glb',
-  'hollow_body_hold': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Hollow%20body%20hold.glb',
-  'jumping_squats': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Jumping%20Squats.glb',
-  'plank_hop_to_squat': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/plank%20hop%20to%20squat.glb',
-  'plank_knee_to_elbow_advanced': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Plank%20knee%20to%20elbow%20advanced.glb',
-  'plank_walk_back_and_forth': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/plank%20walk%20back%20and%20forth.glb',
-  'plank_walk_left_right': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/Plank%20walk%20left%20-%20right.glb',
-  'plank_variations_buzzsaw': 'https://raw.githubusercontent.com/elhabibullah/mon-stockage-media/main/plank-variations_buzzsaw.glb',
+  'alternative_arm_plank_hold': '/models/calisthenics/alternative_arm_plank_hold.glb',
+  'alternative_leg_plank_hold': '/models/calisthenics/alternative_leg_plank_hold.glb',
+  'alternative_superman_plank_advanced': '/models/calisthenics/alternative_superman_plank_advanced.glb',
+  'archer_push_up': '/models/calisthenics/archer_push_up.glb',
+  'bear_crawl_forward_backward': '/models/calisthenics/bear_crawl_forward_backward.glb',
+  'burpees_intermediate': '/models/calisthenics/burpees_intermediate.glb',
+  'crunches': '/models/calisthenics/crunches.glb',
+  'diamond_push_ups': '/models/calisthenics/diamond_push_ups.glb',
+  'forearm_to_pushup_plank': '/models/calisthenics/forearm_to_pushup_plank.glb',
+  'hollow_body_hold': '/models/calisthenics/hollow_body_hold.glb',
+  'jumping_squats': '/models/calisthenics/jumping_squats.glb',
+  'plank_hop_to_squat': '/models/calisthenics/plank_hop_to_squat.glb',
+  'plank_knee_to_elbow_advanced': '/models/calisthenics/plank_knee_to_elbow_advanced.glb',
+  'plank_walk_back_and_forth': '/models/calisthenics/plank_walk_back_and_forth.glb',
+  'plank_walk_left_right': '/models/calisthenics/plank_walk_left_right.glb',
+  'plank_variations_buzzsaw': '/models/calisthenics/plank_variations_buzzsaw.glb',
 };
 
 export const CALISTHENICS_EXERCISE_DEFINITIONS: CalisthenicsExerciseDef[] = [

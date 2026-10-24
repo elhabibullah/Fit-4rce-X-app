@@ -12,6 +12,15 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 
+// STRICTLY BLOCK ALL AUTOMATIC BROWSER PWA INSTALL PROMPTS AND POPUPS
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    return false;
+  }, true);
+}
+
 // UNREGISTER OLD SERVICE WORKERS TO PREVENT FETCH CONFLICTS
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(registrations => {

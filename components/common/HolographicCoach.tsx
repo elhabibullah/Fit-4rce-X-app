@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { Sun, Moon, Sparkles } from 'lucide-react';
 import { COACH_MODEL_URL } from '../../lib/constants.ts';
+import { CALISTHENICS_BODYWEIGHT_MODELS } from '../../lib/calisthenicsModels.ts';
 import { HumanoidMotionEngine } from '../../lib/animation/humanoidMotionEngine.ts';
 import type { HunyuanPuppeteerEngine } from '../../lib/puppeteer/hunyuanPuppeteer.ts';
 import { HolographicARModal } from './HolographicARModal.tsx';
@@ -577,6 +578,37 @@ const EmbeddedAnimationCoach: React.FC<{
   );
 };
 
+// Normalize model URL to local fast cached assets
+export const normalizeModelUrl = (rawUrl?: string): string => {
+  if (!rawUrl || rawUrl.trim() === '') return '/models/calisthenics/jumping_squats.glb';
+  const trimmed = rawUrl.trim();
+  if (trimmed.startsWith('/models/')) return trimmed;
+
+  const decoded = decodeURIComponent(trimmed).toLowerCase();
+  for (const [key, localPath] of Object.entries(CALISTHENICS_BODYWEIGHT_MODELS)) {
+    const formatted = key.replace(/_/g, ' ');
+    if (decoded.includes(key) || decoded.includes(formatted)) {
+      return localPath;
+    }
+  }
+  if (decoded.includes('hop')) return '/models/calisthenics/plank_hop_to_squat.glb';
+  if (decoded.includes('squat')) return '/models/calisthenics/jumping_squats.glb';
+  if (decoded.includes('knee') || decoded.includes('elbow')) return '/models/calisthenics/plank_knee_to_elbow_advanced.glb';
+  if (decoded.includes('burpee')) return '/models/calisthenics/burpees_intermediate.glb';
+  if (decoded.includes('crunch')) return '/models/calisthenics/crunches.glb';
+  if (decoded.includes('buzzsaw')) return '/models/calisthenics/plank_variations_buzzsaw.glb';
+  if (decoded.includes('archer')) return '/models/calisthenics/archer_push_up.glb';
+  if (decoded.includes('diamond')) return '/models/calisthenics/diamond_push_ups.glb';
+  if (decoded.includes('bear') || decoded.includes('crawl')) return '/models/calisthenics/bear_crawl_forward_backward.glb';
+  if (decoded.includes('hollow')) return '/models/calisthenics/hollow_body_hold.glb';
+  if (decoded.includes('forearm')) return '/models/calisthenics/forearm_to_pushup_plank.glb';
+  if (decoded.includes('walk') && (decoded.includes('back') || decoded.includes('forth'))) return '/models/calisthenics/plank_walk_back_and_forth.glb';
+  if (decoded.includes('walk') && (decoded.includes('left') || decoded.includes('right'))) return '/models/calisthenics/plank_walk_left_right.glb';
+  if (decoded.includes('superman')) return '/models/calisthenics/alternative_superman_plank_advanced.glb';
+
+  return trimmed;
+};
+
 // Universal Model Loader (GLTF & FBX with SkeletonUtils)
 const UniversalModel: React.FC<{
   url: string;
@@ -590,10 +622,11 @@ const UniversalModel: React.FC<{
   isPuppeteerActive?: boolean;
   onLoaded?: () => void;
 }> = ({ url, isPaused, exerciseName, exerciseId, isPrep, speed, timelineProgress, puppeteerEngine, isPuppeteerActive, onLoaded }) => {
-  const isFBX = url.toLowerCase().includes('.fbx') || url.includes('format=fbx');
+  const safeUrl = useMemo(() => normalizeModelUrl(url), [url]);
+  const isFBX = safeUrl.toLowerCase().includes('.fbx') || safeUrl.includes('format=fbx');
 
   if (isFBX) {
-    const fbx = useFBX(url);
+    const fbx = useFBX(safeUrl);
     const cloned = useMemo(() => (fbx ? cloneSkeleton(fbx) : null), [fbx]);
     useEffect(() => {
       if (cloned && onLoaded) onLoaded();
@@ -614,7 +647,7 @@ const UniversalModel: React.FC<{
     );
   }
 
-  const gltf = useGLTF(url);
+  const gltf = useGLTF(safeUrl);
   const cloned = useMemo(() => (gltf?.scene ? cloneSkeleton(gltf.scene) : null), [gltf]);
 
   useEffect(() => {
@@ -691,7 +724,17 @@ class ModelErrorBoundary extends React.Component<ModelErrorBoundaryProps, { hasE
 
   render() {
     if (this.state.hasError) {
-      return null;
+      return (
+        <UniversalModel
+          url="/models/calisthenics/jumping_squats.glb"
+          isPaused={this.props.isPaused}
+          exerciseName={this.props.exerciseName}
+          exerciseId={this.props.exerciseId}
+          isPrep={this.props.isPrep}
+          speed={this.props.speed}
+          timelineProgress={this.props.timelineProgress}
+        />
+      );
     }
     return this.props.children;
   }
@@ -951,7 +994,7 @@ export const HolographicCoach: React.FC<HolographicCoachProps> = ({
   };
 
   const finalUrl = useMemo(() => {
-    return modelUrl && modelUrl.trim() !== '' ? modelUrl : COACH_MODEL_URL;
+    return normalizeModelUrl(modelUrl && modelUrl.trim() !== '' ? modelUrl : undefined);
   }, [modelUrl]);
 
   const category = isPrep ? 'idle' : getExerciseType(exerciseName, exerciseId);

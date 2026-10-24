@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
 import { CALISTHENICS_BODYWEIGHT_MODELS } from './calisthenicsModels.ts';
 
+import { normalizeModelUrl } from '../components/common/HolographicCoach.tsx';
+
 // Enable Three.js internal cache for instant memory hits
 THREE.Cache.enabled = true;
 
-const CACHE_NAME = 'f4x-models-v1';
 const preloadedUrls = new Set<string>();
 
 /**
@@ -15,7 +16,10 @@ const preloadedUrls = new Set<string>();
 export function preloadWorkoutModels(urls: (string | undefined)[]): void {
   if (typeof window === 'undefined') return;
 
-  const validUrls = urls.filter((u): u is string => Boolean(u && (u.trim().startsWith('http') || u.trim().startsWith('/'))));
+  const validUrls = urls
+    .map(u => normalizeModelUrl(u))
+    .filter((u): u is string => Boolean(u && (u.trim().startsWith('http') || u.trim().startsWith('/'))));
+
   if (validUrls.length === 0) return;
 
   // 1. Immediately preload the first/current model on the current tick (zero wait)
@@ -27,23 +31,16 @@ export function preloadWorkoutModels(urls: (string | undefined)[]): void {
     } catch (e) {}
   }
 
-  // 2. Preload upcoming models concurrently
+  // 2. Preload upcoming models sequentially with subtle stagger so mobile doesn't stutter
   const remaining = validUrls.slice(1);
-  if (remaining.length > 0) {
-    const preloadRest = () => {
-      remaining.forEach(url => {
-        if (preloadedUrls.has(url)) return;
-        try {
-          useGLTF.preload(url);
-          preloadedUrls.add(url);
-        } catch (e) {}
-      });
-    };
-    if (typeof queueMicrotask === 'function') {
-      queueMicrotask(preloadRest);
-    } else {
-      setTimeout(preloadRest, 50);
-    }
-  }
+  remaining.forEach((url, i) => {
+    if (preloadedUrls.has(url)) return;
+    setTimeout(() => {
+      try {
+        useGLTF.preload(url);
+        preloadedUrls.add(url);
+      } catch (e) {}
+    }, 1200 * (i + 1));
+  });
 }
 

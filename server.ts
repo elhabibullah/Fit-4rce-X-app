@@ -15,6 +15,20 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Explicitly serve static assets from /public with high-performance caching and GLB binary mime-type
+const publicDir = path.join(process.cwd(), 'public');
+app.use(express.static(publicDir, {
+  maxAge: '1y',
+  immutable: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.glb')) {
+      res.setHeader('Content-Type', 'model/gltf-binary');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
+
 // Standard health check route for container & control-plane orchestration
 app.get('/api/health', (req: express.Request, res: express.Response) => {
   res.json({ status: 'ok' });
