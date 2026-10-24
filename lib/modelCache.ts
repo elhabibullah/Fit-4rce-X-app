@@ -18,22 +18,32 @@ export function preloadWorkoutModels(urls: (string | undefined)[]): void {
   const validUrls = urls.filter((u): u is string => Boolean(u && (u.trim().startsWith('http') || u.trim().startsWith('/'))));
   if (validUrls.length === 0) return;
 
-  const schedulePreload = () => {
-    validUrls.forEach(url => {
-      if (preloadedUrls.has(url)) return;
-      try {
-        useGLTF.preload(url, '/draco/');
-        preloadedUrls.add(url);
-      } catch (e) {
-        // Quietly ignore preload errors
-      }
-    });
-  };
+  // 1. Immediately preload the first/current model on the current tick (zero wait)
+  const firstUrl = validUrls[0];
+  if (firstUrl && !preloadedUrls.has(firstUrl)) {
+    try {
+      useGLTF.preload(firstUrl);
+      preloadedUrls.add(firstUrl);
+    } catch (e) {}
+  }
 
-  if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(schedulePreload, { timeout: 2000 });
-  } else {
-    setTimeout(schedulePreload, 200);
+  // 2. Preload upcoming models concurrently
+  const remaining = validUrls.slice(1);
+  if (remaining.length > 0) {
+    const preloadRest = () => {
+      remaining.forEach(url => {
+        if (preloadedUrls.has(url)) return;
+        try {
+          useGLTF.preload(url);
+          preloadedUrls.add(url);
+        } catch (e) {}
+      });
+    };
+    if (typeof queueMicrotask === 'function') {
+      queueMicrotask(preloadRest);
+    } else {
+      setTimeout(preloadRest, 50);
+    }
   }
 }
 

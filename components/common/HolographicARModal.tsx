@@ -219,7 +219,7 @@ const ARModelRig: React.FC<{
   const groupRef = useRef<THREE.Group>(null);
   const engineRef = useRef<HumanoidMotionEngine | null>(null);
 
-  const gltf = useGLTF(!isFBX ? url : COACH_MODEL_URL, '/draco/');
+  const gltf = useGLTF(!isFBX ? url : COACH_MODEL_URL);
   const fbx = isFBX ? useFBX(url) : null;
   const rawScene = isFBX ? fbx : gltf?.scene;
 

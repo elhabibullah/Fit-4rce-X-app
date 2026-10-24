@@ -539,6 +539,15 @@ export function resolveCalisthenicsModel(idOrName?: string): string | null {
     return CALISTHENICS_BODYWEIGHT_MODELS['alternative_leg_plank_hold'];
   }
 
+  // Pull / Tractions / Row / Back
+  if (clean.includes('pull') || clean.includes('traction') || clean.includes('row') || clean.includes('dors') || clean.includes('tirage')) {
+    return CALISTHENICS_BODYWEIGHT_MODELS['alternative_superman_plank_advanced'];
+  }
+  // Dips / Triceps / Barres
+  if (clean.includes('dip') || clean.includes('fondos') || clean.includes('mergulho')) {
+    return CALISTHENICS_BODYWEIGHT_MODELS['diamond_push_ups'];
+  }
+
   // Broad category fallbacks to guarantee 100% authentic 3D Android animations for any bodyweight workout
   if (clean.includes('push') || clean.includes('pompe') || clean.includes('press') || clean.includes('ضغط')) {
     return CALISTHENICS_BODYWEIGHT_MODELS['diamond_push_ups'];
@@ -559,7 +568,8 @@ export function resolveCalisthenicsModel(idOrName?: string): string | null {
     return CALISTHENICS_BODYWEIGHT_MODELS['bear_crawl_forward_backward'];
   }
 
-  return null;
+  // Absolute safety fallback: always guarantee an authentic animated 3D model
+  return CALISTHENICS_BODYWEIGHT_MODELS['jumping_squats'];
 }
 
 /**

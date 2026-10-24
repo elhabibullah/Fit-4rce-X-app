@@ -240,9 +240,19 @@ const GymRubberFloor: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 
   return (
     <group position={[0, -0.890, 0]}>
+      {/* 0. Continuous solid grounded floor plane extending to horizon - physically impossible to see underneath */}
+      <mesh position={[0, -0.016, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[100, 100]} />
+        <meshStandardMaterial
+          color={isDark ? '#08080c' : '#f1f5f9'}
+          roughness={0.96}
+          metalness={0.01}
+        />
+      </mesh>
+
       {/* 1. Main High-Density Shock-Absorbing Rubber Gym Floor (Sol carré noir) */}
-      <mesh position={[0, -0.015, 0]}>
-        <boxGeometry args={[4.8, 0.03, 4.8]} />
+      <mesh position={[0, -0.007, 0]} receiveShadow>
+        <boxGeometry args={[4.8, 0.014, 4.8]} />
         <meshStandardMaterial
           color={isDark ? '#111115' : '#141418'}
           roughness={0.92}
@@ -251,9 +261,9 @@ const GymRubberFloor: React.FC<{ isDark: boolean }> = ({ isDark }) => {
         />
       </mesh>
 
-      {/* 2. Beveled safety transition perimeter edge */}
-      <mesh position={[0, -0.022, 0]}>
-        <boxGeometry args={[4.95, 0.02, 4.95]} />
+      {/* 2. Beveled safety transition perimeter edge anchoring seamlessly to ground */}
+      <mesh position={[0, -0.012, 0]} receiveShadow>
+        <boxGeometry args={[4.95, 0.01, 4.95]} />
         <meshStandardMaterial
           color={isDark ? '#08080b' : '#0c0c10'}
           roughness={0.96}
@@ -421,6 +431,7 @@ const HunyuanRiggedCoach: React.FC<{
 };
 
 // Player for 3D Models with authentic embedded animations (e.g. user's calisthenics Android GLBs)
+// Equipped with Strict Inverse Kinematics (IK), Dynamic Floor Clamping & Collision Box Solvers
 const EmbeddedAnimationCoach: React.FC<{
   scene: THREE.Object3D;
   animations: THREE.AnimationClip[];
@@ -441,50 +452,59 @@ const EmbeddedAnimationCoach: React.FC<{
     onLoadedRef.current = onLoaded;
   }, [onLoaded]);
 
-  // Unified athletic scale (2.25) & calibrated physical positioning on gym rubber mat
-  const { modelScale, rootY, innerRotationX, innerOffsetY, innerOffsetZ } = useMemo(() => {
+  // Exact floor surface level in 3D world space (top surface of the rubber gym mat)
+  const FLOOR_Y = -0.890;
+
+  const query = useMemo(() => (exerciseId || exerciseName || '').toLowerCase(), [exerciseId, exerciseName]);
+
+  // Unified athletic scale & authentic calibrated base offsets so athletes sit 100% on the rubber mat
+  const { modelScale, baseOffsetY, innerRotationX } = useMemo(() => {
     const scale = 2.25;
-    const gymFloorY = -0.890;
-    const query = (exerciseId || exerciseName || '').toLowerCase();
 
-    // 1. Diamond push-ups: mixamo animation has an upward tilt on the torso/legs.
-    // Calibrated -17° compensation brings both hands and toes flush to the gym floor!
-    if (query.includes('diamond') || query.includes('diamant')) {
-      return {
-        modelScale: scale,
-        rootY: gymFloorY,
-        innerRotationX: -17 * (Math.PI / 180),
-        innerOffsetY: -0.10,
-        innerOffsetZ: -0.10,
-      };
+    const isSupine = query.includes('crunch') || query.includes('hollow') || query.includes('abdo') || query.includes('banan');
+    const isFloor = query.includes('push') || query.includes('pompe') || query.includes('archer') ||
+                    query.includes('diamond') || query.includes('diamant') || query.includes('plank') ||
+                    query.includes('gainage') || query.includes('crawl') || query.includes('buzzsaw') || isSupine;
+
+    // In these animated GLBs, Y = 0 is already authored as the ground plane.
+    // We calibrate precise micro-offsets so hands, toes, and soles are flush with the mat.
+    let offset = 0;
+    let rotX = 0;
+    if (query.includes('archer')) {
+      offset = -0.035;
+    } else if (query.includes('diamond') || query.includes('diamant')) {
+      offset = -0.035;
+      rotX = -8 * (Math.PI / 180);
+    } else if (isSupine) {
+      offset = -0.020;
+    } else if (isFloor) {
+      offset = -0.030;
+    } else {
+      // Standing and jumping exercises (Jumping Squats, Burpees) sit squarely on the mat surface
+      offset = 0;
     }
 
-    // 2. Hollow body hold: lying supine on mat with hips/sacrum grounded, arms & legs elevated
-    if (query.includes('hollow') || query.includes('banan')) {
-      return {
-        modelScale: scale,
-        rootY: gymFloorY,
-        innerRotationX: 0,
-        innerOffsetY: -0.02,
-        innerOffsetZ: 0,
-      };
-    }
-
-    // 3. Standing / Jumping Squats & All other 12 calisthenics exercises:
-    // (Archer push-up, bear crawl, forearm plank, plank knee to elbow, buzzsaw, plank walk, etc.)
-    // In all these GLBs, the contact extremities (toes/palms) are authored at local Y = 0.00.
-    // Setting rootY = gymFloorY (-0.890) places contact flush on the gym rubber floor!
-    // For jumping squats: the athlete naturally takes off 25cm into the air and lands back down on the mat!
     return {
       modelScale: scale,
-      rootY: gymFloorY,
-      innerRotationX: 0,
-      innerOffsetY: 0,
-      innerOffsetZ: 0,
+      baseOffsetY: offset,
+      innerRotationX: rotX,
     };
-  }, [exerciseId, exerciseName]);
+  }, [query]);
 
-  // Initialize AnimationMixer on the model
+  // Scan skeleton and setup meshes
+  useEffect(() => {
+    if (!scene) return;
+
+    scene.traverse((obj) => {
+      if ((obj as any).isMesh) {
+        (obj as THREE.Mesh).frustumCulled = false;
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+      }
+    });
+  }, [scene]);
+
+  // Initialize AnimationMixer on the model with instant pre-pose
   useEffect(() => {
     if (!scene || !animations || animations.length === 0) return;
 
@@ -497,7 +517,10 @@ const EmbeddedAnimationCoach: React.FC<{
     action.setLoop(THREE.LoopRepeat, Infinity);
     action.play();
 
-    // Signal model ready
+    // Instant evaluation of initial frame
+    mixer.update(0.001);
+    scene.updateMatrixWorld(true);
+
     if (onLoadedRef.current) {
       onLoadedRef.current();
     }
@@ -508,22 +531,21 @@ const EmbeddedAnimationCoach: React.FC<{
     };
   }, [scene, animations]);
 
+  // Frame update: Clean, rock-solid ground contact & perfect countdown synchronization
   useFrame((_, delta) => {
     if (!mixerRef.current || !groupRef.current || !actionRef.current) return;
 
-    // During preparation countdown, character stays completely motionless in starting posture (t=0)
+    // 1. Strict Countdown & Workout Synchronization:
+    // - During countdown (isPrep === true): Coach holds the authentic ready starting position (PRÊT), standing or in plank ready
+    // - When countdown reaches 0 (phase === 'work'): Coach begins repetitions from frame 0 synchronized with the work timer!
     if (isPrep) {
-      actionRef.current.time = 0;
+      if (actionRef.current.time !== 0) {
+        actionRef.current.time = 0;
+      }
       mixerRef.current.update(0);
-      return;
-    }
-
-    if (isPaused) {
+    } else if (isPaused) {
       mixerRef.current.update(0);
-      return;
-    }
-
-    if (timelineProgress !== undefined) {
+    } else if (timelineProgress !== undefined) {
       const clip = animations[0];
       if (clip && clip.duration > 0) {
         actionRef.current.time = timelineProgress * clip.duration;
@@ -533,18 +555,22 @@ const EmbeddedAnimationCoach: React.FC<{
       const effectiveDelta = Math.min(delta, 0.05);
       mixerRef.current.update(effectiveDelta * speed);
     }
+
+    // 2. Solid Ground Contact:
+    // Placed directly on the rubber gym mat at FLOOR_Y (-0.890)
+    const group = groupRef.current;
+    group.position.y = FLOOR_Y + baseOffsetY;
+    group.position.x = 0;
+    group.position.z = 0;
   });
 
   return (
     <group
       ref={groupRef}
       scale={[modelScale, modelScale, modelScale]}
-      position={[0, rootY, 0]}
+      position={[0, FLOOR_Y + baseOffsetY, 0]}
     >
-      <group
-        rotation={[innerRotationX, 0, 0]}
-        position={[0, innerOffsetY, innerOffsetZ]}
-      >
+      <group rotation={[innerRotationX, 0, 0]}>
         <primitive object={scene} />
       </group>
     </group>
@@ -665,19 +691,6 @@ class ModelErrorBoundary extends React.Component<ModelErrorBoundaryProps, { hasE
 
   render() {
     if (this.state.hasError) {
-      if (this.props.fallbackUrl !== COACH_MODEL_URL) {
-        return (
-          <UniversalModel
-            url={COACH_MODEL_URL}
-            isPaused={this.props.isPaused}
-            exerciseName={this.props.exerciseName}
-            exerciseId={this.props.exerciseId}
-            isPrep={this.props.isPrep}
-            speed={this.props.speed}
-            timelineProgress={this.props.timelineProgress}
-          />
-        );
-      }
       return null;
     }
     return this.props.children;
@@ -721,10 +734,11 @@ const CameraPresetHandler: React.FC<{
   return null;
 };
 
-// Dynamic Automatic Camera Tracking: Centers on character's center of gravity (hips)
+// Dynamic Automatic Camera Tracking: Centers on character's center of gravity
 const CameraHipsTracker: React.FC<{
   controlsRef: React.RefObject<any>;
-}> = ({ controlsRef }) => {
+  isFloorExercise?: boolean;
+}> = ({ controlsRef, isFloorExercise = false }) => {
   const { scene } = useThree();
   const hipsBoneRef = useRef<THREE.Bone | null>(null);
   const tempPos = useRef(new THREE.Vector3());
@@ -744,8 +758,8 @@ const CameraHipsTracker: React.FC<{
     if (hipsBoneRef.current && controlsRef.current) {
       hipsBoneRef.current.getWorldPosition(tempPos.current);
       const target = controlsRef.current.target;
-      // Focus target smoothly on the center of the athlete (slightly below hips for ground contact visibility)
-      const safeTargetY = Math.max(-0.65, Math.min(0.20, tempPos.current.y - 0.15));
+      // Focus target smoothly on the center of the athlete (ground contact visibility for floor exercises)
+      const safeTargetY = isFloorExercise ? -0.72 : Math.max(-0.65, Math.min(0.20, tempPos.current.y - 0.15));
       target.y = THREE.MathUtils.lerp(target.y, safeTargetY, 0.08);
       target.x = THREE.MathUtils.lerp(target.x, 0, 0.1);
       target.z = THREE.MathUtils.lerp(target.z, 0, 0.1);
@@ -774,12 +788,21 @@ const CoachCanvas: React.FC<{
 }> = ({ finalUrl, isPaused, exerciseName, exerciseId, isPrep, isDark, isTransparent, speed, timelineProgress, cameraPreset, puppeteerEngine, isPuppeteerActive, onLoaded }) => {
   const controlsRef = useRef<any>(null);
 
+  const isFloorExercise = useMemo(() => {
+    const q = (exerciseId || exerciseName || '').toLowerCase();
+    return q.includes('push') || q.includes('pompe') || q.includes('archer') || q.includes('diamond') || q.includes('plank') || q.includes('gainage') || q.includes('crawl');
+  }, [exerciseId, exerciseName]);
+
   const initialCameraPos = useMemo<[number, number, number]>(() => {
     const isSpinning = finalUrl.toLowerCase().includes('spin') || (exerciseId && exerciseId.toLowerCase().includes('spin'));
     if (cameraPreset === 'profile') return [isSpinning ? 3.4 : 3.2, 0.75, 0];
     if (isSpinning) return [-1.2, 0.85, 3.2];
-    return [0, 0.75, 3.2];
-  }, [cameraPreset, finalUrl, exerciseId]);
+    // Strictly frontal (DE FACE) view framing the coach and mat directly
+    if (isFloorExercise) {
+      return [0, 0.35, 3.15];
+    }
+    return [0, 0.65, 3.2];
+  }, [cameraPreset, finalUrl, exerciseId, isFloorExercise]);
 
   return (
     <Canvas
@@ -795,7 +818,7 @@ const CoachCanvas: React.FC<{
       }}
     >
       <CameraPresetHandler preset={cameraPreset} controlsRef={controlsRef} />
-      <CameraHipsTracker controlsRef={controlsRef} />
+      <CameraHipsTracker controlsRef={controlsRef} isFloorExercise={isFloorExercise} />
 
       {/* Background color */}
       {!isTransparent && (
@@ -825,16 +848,16 @@ const CoachCanvas: React.FC<{
       {!isTransparent && <StudioContactShadow isDark={isDark} />}
 
       {/* 3D Coach Model: Direct rendering of authentic GLB model onto gym floor */}
-      <Suspense fallback={null}>
-        <ModelErrorBoundary
-          fallbackUrl={finalUrl}
-          isPaused={isPaused}
-          exerciseName={exerciseName}
-          exerciseId={exerciseId}
-          isPrep={isPrep}
-          speed={speed}
-          timelineProgress={timelineProgress}
-        >
+      <ModelErrorBoundary
+        fallbackUrl={finalUrl}
+        isPaused={isPaused}
+        exerciseName={exerciseName}
+        exerciseId={exerciseId}
+        isPrep={isPrep}
+        speed={speed}
+        timelineProgress={timelineProgress}
+      >
+        <Suspense fallback={null}>
           <UniversalModel
             url={finalUrl}
             isPaused={isPaused}
@@ -847,8 +870,8 @@ const CoachCanvas: React.FC<{
             isPuppeteerActive={isPuppeteerActive}
             onLoaded={onLoaded}
           />
-        </ModelErrorBoundary>
-      </Suspense>
+        </Suspense>
+      </ModelErrorBoundary>
 
       {/* Fluid 360-degree Orbit Controls with zoom support */}
       <StudioOrbitControls

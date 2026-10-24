@@ -32,43 +32,11 @@ const CoachOption: React.FC<{ provider: AIProvider; label: string; isSelected: b
     </div>
 );
 
-// Self-contained Web Audio synth for tactical feedback
-const playSoundEffect = (type: 'beep' | 'done' | 'start') => {
-    try {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        if (type === 'beep') {
-            osc.frequency.setValueAtTime(440, ctx.currentTime);
-            gain.gain.setValueAtTime(0.12, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.15);
-        } else if (type === 'start') {
-            osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
-            gain.gain.setValueAtTime(0.15, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.25);
-        } else if (type === 'done') {
-            osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-            osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
-            gain.gain.setValueAtTime(0.18, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.4);
-        }
-    } catch {
-        // Safe fail if audio context cannot be initialized
-    }
+// Tactical feedback (Audio completely silenced as per user instructions)
+const playSoundEffect = (_type: 'beep' | 'done' | 'start') => {
+    // Muted: all audio sound effects completely disabled
 };
+
 
 const WorkoutScreen: React.FC = () => {
     const { setScreen, language, showStatus, logWorkout, selectedPlan, setSelectedPlan, selectedCoachPersona, setSelectedCoachPersona, setIsGeneratingWorkout, setIsCoachOpen, translate } = useApp();
@@ -91,6 +59,7 @@ const WorkoutScreen: React.FC = () => {
     const [completedSetsTotal, setCompletedSetsTotal] = useState(0);
     const [completedRepsTotal, setCompletedRepsTotal] = useState(0);
     const [sessionDurationSeconds, setSessionDurationSeconds] = useState(0);
+    const [isSessionSaved, setIsSessionSaved] = useState(false);
 
     const [customRequirements, setCustomRequirements] = useState('');
     const [isARModalOpen, setIsARModalOpen] = useState(false);
@@ -284,7 +253,7 @@ const WorkoutScreen: React.FC = () => {
         }
     }, [phase, isModelLoaded, idx]);
 
-    // Main Timer Engine (Clean 1-second cadence, exactly 10s countdown between exercises)
+    // Main Timer Engine (Clean 1-second cadence, exactly 10s countdown between exercises, no audio desync, no jumping)
     useEffect(() => {
         if (view !== 'active' || isPaused || !plan) return;
 
@@ -294,27 +263,27 @@ const WorkoutScreen: React.FC = () => {
             if (phase === 'prep') {
                 setPrepTimer((prev) => {
                     if (prev <= 1) {
-                        return 0;
-                    }
-                    if (prev <= 4) {
-                        playSoundEffect('beep');
+                        setPhase('work');
+                        setTimer(45);
+                        return PREP_COUNTDOWN_SECONDS;
                     }
                     return prev - 1;
                 });
             } else if (phase === 'work') {
                 setTimer((prev) => {
                     if (prev <= 1) {
-                        return 0;
+                        setTimer(45);
+                        handleCompleteSet();
+                        return 45;
                     }
                     return prev - 1;
                 });
             } else if (phase === 'rest') {
                 setRestTimer((prev) => {
                     if (prev <= 1) {
-                        return 0;
-                    }
-                    if (prev <= 4) {
-                        playSoundEffect('beep');
+                        setRestTimer(restBetweenSets);
+                        handleSkipRest();
+                        return restBetweenSets;
                     }
                     return prev - 1;
                 });
@@ -322,25 +291,7 @@ const WorkoutScreen: React.FC = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [view, isPaused, phase, plan]);
-
-    // Handle timer completions safely outside of reducer / setState callbacks
-    useEffect(() => {
-        if (view !== 'active' || isPaused || !plan) return;
-
-        if (phase === 'prep' && prepTimer === 0) {
-            playSoundEffect('start');
-            setPhase('work');
-            setTimer(45);
-            setPrepTimer(PREP_COUNTDOWN_SECONDS);
-        } else if (phase === 'work' && timer === 0) {
-            setTimer(45);
-            handleCompleteSet();
-        } else if (phase === 'rest' && restTimer === 0) {
-            setRestTimer(restBetweenSets);
-            handleSkipRest();
-        }
-    }, [prepTimer, timer, restTimer, phase, view, isPaused, plan, restBetweenSets, handleCompleteSet, handleSkipRest]);
+    }, [view, isPaused, phase, plan, restBetweenSets, handleCompleteSet, handleSkipRest]);
 
     // Generate workout with Gemini or high-performance fallback
     const handleGenerate = async () => {
@@ -518,16 +469,16 @@ const WorkoutScreen: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* PREP COUNTDOWN OVERLAY - RESTORED ORIGINAL STUDIO BLUR */}
+                    {/* PREP COUNTDOWN OVERLAY - RESTORED ELEGANT BACKDROP BLUR AS REQUESTED */}
                     {phase === 'prep' && (
-                        <div className="absolute inset-0 z-[200] bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4 text-center">
-                            <div className="px-4 py-1.5 bg-black/90 border border-yellow-400/80 rounded-full text-yellow-400 text-xs font-bold tracking-widest uppercase mb-3 shadow-[0_0_20px_rgba(250,204,21,0.35)]">
+                        <div className="absolute inset-0 z-[200] bg-black/60 backdrop-blur-md flex flex-col items-center justify-center animate-fadeIn pointer-events-none px-4 text-center">
+                            <div className="px-4 py-1.5 bg-black/85 border border-yellow-400/80 rounded-full text-yellow-400 text-xs font-bold tracking-widest uppercase mb-3 shadow-[0_0_20px_rgba(250,204,21,0.35)]">
                                 {translate('workout.active.prep')}
                             </div>
-                            <div className="text-7xl sm:text-9xl font-black font-mono text-yellow-400 drop-shadow-[0_0_40px_rgba(250,204,21,0.7)] leading-none tabular-nums animate-pulse">
+                            <div className="text-7xl sm:text-9xl font-black font-mono text-yellow-400 drop-shadow-[0_0_35px_rgba(250,204,21,0.8)] leading-none tabular-nums animate-pulse">
                                 {prepTimer}
                             </div>
-                            <div className="px-4 py-2 bg-neutral-900/90 border border-neutral-700 text-white rounded-full font-semibold text-xs sm:text-sm mt-4 shadow-xl text-center max-w-[90%] break-words">
+                            <div className="px-4 py-2 bg-black/85 border border-neutral-700/80 text-white rounded-full font-semibold text-xs sm:text-sm mt-4 shadow-xl text-center max-w-[90%] break-words">
                                 <span className="text-yellow-400 font-bold">{exerciseDisplayName}</span> • {translate('workout.active.set')} {currentSet}/{targetSets} ({targetReps} {translate('workout.active.reps')})
                             </div>
                         </div>
@@ -761,79 +712,135 @@ const WorkoutScreen: React.FC = () => {
         const minutes = Math.floor(sessionDurationSeconds / 60);
         const seconds = sessionDurationSeconds % 60;
 
+        const handleSaveSessionToProfile = () => {
+            if (plan) {
+                logWorkout(plan);
+                setIsSessionSaved(true);
+                showStatus('Séance enregistrée sur votre profil avec succès !');
+            }
+        };
+
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-black font-['Poppins']">
-                <div className="w-20 h-20 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(138,43,226,0.5)]">
-                    <Award size={44} className="text-purple-400" />
-                </div>
-                
-                <h2 className="text-lg sm:text-2xl font-bold text-zinc-100 mb-2 px-2 text-center max-w-full break-words">
-                    {translate('workout.finished.title')}
-                </h2>
-                <p className="text-zinc-400 text-xs mb-8 uppercase tracking-widest leading-relaxed max-w-sm mx-auto px-4 break-words">
-                    {translate('workout.finished.desc')}
-                </p>
-
-                {/* STATS SUMMARY RECAP */}
-                <div className="grid grid-cols-3 gap-3 w-full max-w-md mb-8">
-                    <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 text-center">
-                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{translate('workout.active.set')}s</span>
-                        <span className="text-2xl font-black text-white font-mono">{totalSetsCalculated}</span>
-                    </div>
-                    <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 text-center">
-                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{translate('workout.active.reps')}</span>
-                        <span className="text-2xl font-black text-emerald-400 font-mono">{totalRepsCalculated}</span>
-                    </div>
-                    <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 text-center">
-                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{translate('workout.active.rest_between_sets')}</span>
-                        <span className="text-2xl font-black text-amber-400 font-mono">{restBetweenSets}s</span>
-                    </div>
-                </div>
-
-                <div className="bg-neutral-900/60 border border-zinc-800 rounded-2xl p-4 w-full max-w-md mb-8 text-left">
-                    <div className="flex justify-between items-center text-xs mb-2">
-                        <span className="text-zinc-500 uppercase">{translate('workout.summary.protocol')}</span>
-                        <span className="font-bold text-purple-400">
-                            {targetSets}×{targetReps} ({intensity === 'low' ? `${translate('workout.level.beginner')} 3×15` : intensity === 'high' ? `${translate('workout.level.advanced')} 5×15` : `${translate('workout.level.intermediate')} 4×14`})
-                        </span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs mb-2">
-                        <span className="text-zinc-500 uppercase">{translate('workout.summary.goal')}</span>
-                        <span className="font-bold text-amber-400">
-                            {trainingGoal === 'power_training' ? `${translate('workout.goal.power_training.title')} (60s)` : trainingGoal === 'mass_gaining' ? `${translate('workout.goal.mass_gaining.title')} (45s)` : `${translate('workout.goal.fitness.title')} (30s max)`}
-                        </span>
-                    </div>
-                    {sessionDurationSeconds > 0 && (
-                        <div className="flex justify-between items-center text-xs">
-                            <span className="text-zinc-500 uppercase">{translate('workout.summary.total_time')}</span>
-                            <span className="font-bold text-white font-mono">{minutes}m {seconds}s</span>
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex gap-3 w-full max-w-md">
-                    <Button 
+            <div className="fixed inset-0 z-[3000] bg-black overflow-y-auto overscroll-contain flex flex-col font-['Poppins'] custom-scrollbar">
+                {/* TOP BAR WITH INSTANT BACK NAVIGATION */}
+                <div className="w-full max-w-md mx-auto pt-6 px-4 flex items-center justify-between shrink-0">
+                    <button 
                         onClick={() => {
                             setSelectedPlan(null);
                             setPlan(null);
                             setView('setup');
-                        }} 
-                        className="flex-1 py-5 font-bold text-xs tracking-widest uppercase bg-purple-600 hover:bg-purple-500 shadow-[0_0_30px_rgba(138,43,226,0.4)]"
+                        }}
+                        className="p-2.5 rounded-full bg-neutral-900 border border-neutral-800 text-white hover:bg-neutral-800 active:scale-95 transition-all shadow-md flex items-center gap-1.5"
+                        title="Retour"
                     >
-                        <RotateCcw size={15} className="mr-2 inline" />
-                        Nouvelle séance
-                    </Button>
-                    <Button 
-                        onClick={() => {
-                            setSelectedPlan(null);
-                            setPlan(null);
-                            setScreen(Screen.Home);
-                        }} 
-                        variant="secondary" 
-                        className="flex-1 py-5 font-bold text-xs tracking-widest uppercase border-zinc-800 text-zinc-300 hover:text-white"
+                        <ChevronLeft size={20} />
+                        <span className="text-xs font-medium pr-1">Retour</span>
+                    </button>
+                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+                        Fin de Séance
+                    </span>
+                    <div className="w-16" />
+                </div>
+
+                {/* SCROLLABLE STATS & ACTION CONTENT */}
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto w-full pb-44">
+                    <div className="w-20 h-20 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center mb-5 shadow-[0_0_40px_rgba(138,43,226,0.5)]">
+                        <Award size={44} className="text-purple-400" />
+                    </div>
+                    
+                    <h2 className="text-xl sm:text-2xl font-bold text-zinc-100 mb-2 px-2 text-center max-w-full break-words">
+                        {translate('workout.finished.title')}
+                    </h2>
+                    <p className="text-zinc-400 text-xs mb-6 uppercase tracking-widest leading-relaxed max-w-sm mx-auto px-4 break-words">
+                        {translate('workout.finished.desc')}
+                    </p>
+
+                    {/* STATS SUMMARY RECAP */}
+                    <div className="grid grid-cols-3 gap-3 w-full mb-6">
+                        <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 text-center">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{translate('workout.active.set')}s</span>
+                            <span className="text-2xl font-black text-white font-mono">{totalSetsCalculated}</span>
+                        </div>
+                        <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 text-center">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{translate('workout.active.reps')}</span>
+                            <span className="text-2xl font-black text-emerald-400 font-mono">{totalRepsCalculated}</span>
+                        </div>
+                        <div className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 text-center">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{translate('workout.active.rest_between_sets')}</span>
+                            <span className="text-2xl font-black text-amber-400 font-mono">{restBetweenSets}s</span>
+                        </div>
+                    </div>
+
+                    {/* PROTOCOL DETAILS */}
+                    <div className="bg-neutral-900/60 border border-zinc-800 rounded-2xl p-4 w-full mb-6 text-left">
+                        <div className="flex justify-between items-center text-xs mb-2.5">
+                            <span className="text-zinc-500 uppercase">{translate('workout.summary.protocol')}</span>
+                            <span className="font-bold text-purple-400">
+                                {targetSets}×{targetReps} ({intensity === 'low' ? `${translate('workout.level.beginner')} 3×15` : intensity === 'high' ? `${translate('workout.level.advanced')} 5×15` : `${translate('workout.level.intermediate')} 4×14`})
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs mb-2.5">
+                            <span className="text-zinc-500 uppercase">{translate('workout.summary.goal')}</span>
+                            <span className="font-bold text-amber-400">
+                                {trainingGoal === 'power_training' ? `${translate('workout.goal.power_training.title')} (60s)` : trainingGoal === 'mass_gaining' ? `${translate('workout.goal.mass_gaining.title')} (45s)` : `${translate('workout.goal.fitness.title')} (30s max)`}
+                            </span>
+                        </div>
+                        {sessionDurationSeconds > 0 && (
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-zinc-500 uppercase">{translate('workout.summary.total_time')}</span>
+                                <span className="font-bold text-white font-mono">{minutes}m {seconds}s</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* PRIMARY ACTION: ENREGISTRER SUR MON PROFIL */}
+                    <button
+                        onClick={handleSaveSessionToProfile}
+                        disabled={isSessionSaved}
+                        className={`w-full py-4 rounded-xl border font-bold text-xs tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95 mb-3 ${
+                            isSessionSaved
+                                ? 'bg-emerald-600/90 border-emerald-400 text-white shadow-emerald-900/30 cursor-default'
+                                : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 border-purple-400/50 text-white shadow-[0_0_30px_rgba(138,43,226,0.4)]'
+                        }`}
                     >
-                        {translate('workout.btn.home')}
-                    </Button>
+                        {isSessionSaved ? (
+                            <>
+                                <CheckCircle2 size={16} className="text-emerald-200" />
+                                <span>Séance enregistrée sur votre profil !</span>
+                            </>
+                        ) : (
+                            <>
+                                <Award size={16} />
+                                <span>Enregistrer la séance sur mon profil</span>
+                            </>
+                        )}
+                    </button>
+
+                    {/* SECONDARY ACTIONS: NOUVELLE SEANCE & ACCUEIL */}
+                    <div className="flex gap-3 w-full">
+                        <Button 
+                            onClick={() => {
+                                setSelectedPlan(null);
+                                setPlan(null);
+                                setView('setup');
+                            }} 
+                            className="flex-1 py-4 font-bold text-xs tracking-widest uppercase bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white shadow-lg"
+                        >
+                            <RotateCcw size={15} className="mr-2 inline" />
+                            Nouvelle séance
+                        </Button>
+                        <Button 
+                            onClick={() => {
+                                setSelectedPlan(null);
+                                setPlan(null);
+                                setScreen(Screen.Profile);
+                            }} 
+                            variant="secondary" 
+                            className="flex-1 py-4 font-bold text-xs tracking-widest uppercase border-zinc-800 text-zinc-300 hover:text-white"
+                        >
+                            Voir mon Profil
+                        </Button>
+                    </div>
                 </div>
             </div>
         );
